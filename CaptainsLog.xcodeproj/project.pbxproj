@@ -1,0 +1,713 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		013E60C4538EF953C737634D /* JournalSummarizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95B59BC3FB48BF99838EB20 /* JournalSummarizerTests.swift */; };
+		018670DFB0C54EEDFC9C6144 /* GitHubDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */; };
+		02329EC403EF0508DD83CD37 /* AccountViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FEF62642DDCA1C10E7CB83 /* AccountViews.swift */; };
+		03D352BED1743F105589DE13 /* OpenAIWorkClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE812F928AD5BFA57EA679EC /* OpenAIWorkClassifier.swift */; };
+		0463F8FF549AD7F52BDB0970 /* Kit941 in Frameworks */ = {isa = PBXBuildFile; productRef = BBA8D48E3CAA5B8CEFF2EAF9 /* Kit941 */; };
+		06A44DEC94D8308F6EDFD685 /* WorkClassification.swift in Sources */ = {isa = PBXBuildFile; fileRef = A121798FD0257B44C9A25F9B /* WorkClassification.swift */; };
+		07711B340F62B381A3F42FD3 /* WorkMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51197FC7760CBC461CF9A85E /* WorkMetrics.swift */; };
+		1D3EE83936A0D0815AA93C7B /* DayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */; };
+		26A1AE2E20F120E182EA44BD /* GitHubAppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */; };
+		2E7D779262A497521C0F1DF9 /* AccountViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FEF62642DDCA1C10E7CB83 /* AccountViews.swift */; };
+		322A5BFBE1BB02F01498C19A /* ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */; };
+		33E86E4101BA35597C9E4F69 /* WorkMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51197FC7760CBC461CF9A85E /* WorkMetrics.swift */; };
+		3E1FA340FD77D587DCB592A5 /* WorkOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CC5BEC17862AA07AB58ED4 /* WorkOverviewView.swift */; };
+		3F8E475AF22709038B61219F /* GitRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D06B639DF5034F9E81B270 /* GitRecords.swift */; };
+		3FE6CCB2E939FAB7C3DF55D4 /* OpenAIWorkClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE812F928AD5BFA57EA679EC /* OpenAIWorkClassifier.swift */; };
+		451B36429F5B83534E173DEF /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */; };
+		495FDD752F0555840ACDD79E /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 765A7318103C7B5303C9D85A /* KeychainTokenStore.swift */; };
+		49CEB27D8774F15261CC53EF /* AIProviderCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0D2439EC06220D19EB8EED /* AIProviderCredentialStore.swift */; };
+		4D29EBFFE813BC9A4ED211AA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246542A7586005AA6F2AD266 /* AppModel.swift */; };
+		521E5AC5E9A04894C09E0981 /* CalendarMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD049F4F589A6068AAD2411 /* CalendarMath.swift */; };
+		540B841F84BFA5EC3FC0540E /* CalendarMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C159E0081482BF0FD1B25BA /* CalendarMathTests.swift */; };
+		6414316B596F1F688DFD356A /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */; };
+		6456634246E39507712C50FE /* GitHubAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841C1CBE01067722906EA321 /* GitHubAPIClient.swift */; };
+		6935405B86E26A23EA82D36E /* CalendarMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD049F4F589A6068AAD2411 /* CalendarMath.swift */; };
+		7397103398D6D7ECF2374599 /* CalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D1AC282DD7AED30301545A /* CalendarViews.swift */; };
+		75D26635F7B7A93E2182BAE9 /* AuthAndRepoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */; };
+		7B3F2D6073D9E2CF9AA3C952 /* GitHubAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841C1CBE01067722906EA321 /* GitHubAPIClient.swift */; };
+		7B9853C3A0866ECF8C2244CD /* WorkOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CC5BEC17862AA07AB58ED4 /* WorkOverviewView.swift */; };
+		7B9AD22EF62050EA3357C9A7 /* GitHubDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */; };
+		8524B6C4EB699369EB8D9E29 /* Kit941 in Frameworks */ = {isa = PBXBuildFile; productRef = 066C189ED8DB4620677C41C2 /* Kit941 */; };
+		855508D56990E05D85A3190E /* AuthAndRepoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */; };
+		8EA75CFBAF66C8ACD37C5C51 /* JournalSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */; };
+		9549BD61922DB20EB2C6E00D /* GitRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D06B639DF5034F9E81B270 /* GitRecords.swift */; };
+		9F25A317038EEF6717969BCD /* JournalSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */; };
+		B08E287C88A5D9D6E213A702 /* ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */; };
+		B3A87E602F6914C7ED7D959A /* AIProviderCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0D2439EC06220D19EB8EED /* AIProviderCredentialStore.swift */; };
+		B583A33EAAF948ECD3348734 /* DayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */; };
+		BF0CF3C9BEE70288E6AC7128 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246542A7586005AA6F2AD266 /* AppModel.swift */; };
+		CBC000A75549E99D024E232A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C86B115D692574D1BACDD34 /* RootView.swift */; };
+		D9A6EE02B56DC8BD8400D697 /* GitHubAppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */; };
+		E0AF0F9EFAE7BF77B2F419BB /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 765A7318103C7B5303C9D85A /* KeychainTokenStore.swift */; };
+		E0CE302833D2326B1747374E /* GitHubDTOsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4C31C05A8C5118F8D86E67 /* GitHubDTOsTests.swift */; };
+		E7145DFBC8BA6C388A9C01EA /* CaptainsLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */; };
+		EA94944A2D0558412754745B /* CalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D1AC282DD7AED30301545A /* CalendarViews.swift */; };
+		EBEE0047A1CBA75AA41DF736 /* CaptainsLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */; };
+		F917743F699BCEEA6A9718FE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C86B115D692574D1BACDD34 /* RootView.swift */; };
+		FBD7F9399C7FAE5EF6EFF68F /* WorkClassification.swift in Sources */ = {isa = PBXBuildFile; fileRef = A121798FD0257B44C9A25F9B /* WorkClassification.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		801CEB3661D51955F2ED0FA8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6858EC732BB49DA6E9C9720F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F90387FC825665E8C4662E9B;
+			remoteInfo = "CaptainsLog-iOS";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAndRepoViews.swift; sourceTree = "<group>"; };
+		0A0D2439EC06220D19EB8EED /* AIProviderCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderCredentialStore.swift; sourceTree = "<group>"; };
+		0AD9DB70978FA782C6C30A88 /* CaptainsLog-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "CaptainsLog-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAppConfiguration.swift; sourceTree = "<group>"; };
+		16D1AC282DD7AED30301545A /* CalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViews.swift; sourceTree = "<group>"; };
+		18D06B639DF5034F9E81B270 /* GitRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitRecords.swift; sourceTree = "<group>"; };
+		1C86B115D692574D1BACDD34 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		1F4C31C05A8C5118F8D86E67 /* GitHubDTOsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDTOsTests.swift; sourceTree = "<group>"; };
+		246542A7586005AA6F2AD266 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptainsLogApp.swift; sourceTree = "<group>"; };
+		2D8B0B9A6C17EFFD57D1FAC4 /* CaptainsLog-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CaptainsLog-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3AD049F4F589A6068AAD2411 /* CalendarMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMath.swift; sourceTree = "<group>"; };
+		51197FC7760CBC461CF9A85E /* WorkMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkMetrics.swift; sourceTree = "<group>"; };
+		6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDTOs.swift; sourceTree = "<group>"; };
+		765A7318103C7B5303C9D85A /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
+		7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
+		841C1CBE01067722906EA321 /* GitHubAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAPIClient.swift; sourceTree = "<group>"; };
+		86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSummarizer.swift; sourceTree = "<group>"; };
+		874B754CA1E41549E1C2BA59 /* 941Kit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = 941Kit; path = ../941Kit; sourceTree = SOURCE_ROOT; };
+		9C159E0081482BF0FD1B25BA /* CalendarMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMathTests.swift; sourceTree = "<group>"; };
+		A112BB810F7845F0577280F8 /* CaptainsLogTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CaptainsLogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A121798FD0257B44C9A25F9B /* WorkClassification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkClassification.swift; sourceTree = "<group>"; };
+		B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayDetailView.swift; sourceTree = "<group>"; };
+		B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardService.swift; sourceTree = "<group>"; };
+		B6FEF62642DDCA1C10E7CB83 /* AccountViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountViews.swift; sourceTree = "<group>"; };
+		C95B59BC3FB48BF99838EB20 /* JournalSummarizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSummarizerTests.swift; sourceTree = "<group>"; };
+		CE812F928AD5BFA57EA679EC /* OpenAIWorkClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIWorkClassifier.swift; sourceTree = "<group>"; };
+		D7CC5BEC17862AA07AB58ED4 /* WorkOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkOverviewView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		802B766208F20EE8A15B4B98 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8524B6C4EB699369EB8D9E29 /* Kit941 in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		91081891F029A289D326C319 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0463F8FF549AD7F52BDB0970 /* Kit941 in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1D340778478F416BFE88901F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				0A0D2439EC06220D19EB8EED /* AIProviderCredentialStore.swift */,
+				246542A7586005AA6F2AD266 /* AppModel.swift */,
+				B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */,
+				841C1CBE01067722906EA321 /* GitHubAPIClient.swift */,
+				0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */,
+				6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */,
+				86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */,
+				765A7318103C7B5303C9D85A /* KeychainTokenStore.swift */,
+				CE812F928AD5BFA57EA679EC /* OpenAIWorkClassifier.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		280C5498D54CC5D6D041F140 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		413CE799CC7AC965A88C2E50 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				874B754CA1E41549E1C2BA59 /* 941Kit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		6AC4BD29268BCB3BC7A987DC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0AD9DB70978FA782C6C30A88 /* CaptainsLog-iOS.app */,
+				2D8B0B9A6C17EFFD57D1FAC4 /* CaptainsLog-macOS.app */,
+				A112BB810F7845F0577280F8 /* CaptainsLogTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7F1359208885E88F05B7EBE0 = {
+			isa = PBXGroup;
+			children = (
+				B6D71FF748D0A355F5934EF2 /* CaptainsLog */,
+				8764320E41F639BDF24FB0BB /* CaptainsLogTests */,
+				413CE799CC7AC965A88C2E50 /* Packages */,
+				6AC4BD29268BCB3BC7A987DC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8764320E41F639BDF24FB0BB /* CaptainsLogTests */ = {
+			isa = PBXGroup;
+			children = (
+				9C159E0081482BF0FD1B25BA /* CalendarMathTests.swift */,
+				1F4C31C05A8C5118F8D86E67 /* GitHubDTOsTests.swift */,
+				C95B59BC3FB48BF99838EB20 /* JournalSummarizerTests.swift */,
+			);
+			path = CaptainsLogTests;
+			sourceTree = "<group>";
+		};
+		B5B69621FEF6DBD474FCF71F /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B6FEF62642DDCA1C10E7CB83 /* AccountViews.swift */,
+				7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */,
+				037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */,
+				16D1AC282DD7AED30301545A /* CalendarViews.swift */,
+				B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */,
+				1C86B115D692574D1BACDD34 /* RootView.swift */,
+				D7CC5BEC17862AA07AB58ED4 /* WorkOverviewView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B6D71FF748D0A355F5934EF2 /* CaptainsLog */ = {
+			isa = PBXGroup;
+			children = (
+				D35357F07E272AC6B74A5BC8 /* App */,
+				F39EE95BBCEF947B7BDFF8E5 /* Models */,
+				280C5498D54CC5D6D041F140 /* Resources */,
+				1D340778478F416BFE88901F /* Services */,
+				B5B69621FEF6DBD474FCF71F /* Views */,
+			);
+			path = CaptainsLog;
+			sourceTree = "<group>";
+		};
+		D35357F07E272AC6B74A5BC8 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F39EE95BBCEF947B7BDFF8E5 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				3AD049F4F589A6068AAD2411 /* CalendarMath.swift */,
+				18D06B639DF5034F9E81B270 /* GitRecords.swift */,
+				A121798FD0257B44C9A25F9B /* WorkClassification.swift */,
+				51197FC7760CBC461CF9A85E /* WorkMetrics.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		868191A7FB95C1F892966A94 /* CaptainsLog-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 772A64F767D2B5F9E49802A3 /* Build configuration list for PBXNativeTarget "CaptainsLog-macOS" */;
+			buildPhases = (
+				ABCA470774A3CFC47E73B136 /* Sources */,
+				802B766208F20EE8A15B4B98 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CaptainsLog-macOS";
+			packageProductDependencies = (
+				066C189ED8DB4620677C41C2 /* Kit941 */,
+			);
+			productName = "CaptainsLog-macOS";
+			productReference = 2D8B0B9A6C17EFFD57D1FAC4 /* CaptainsLog-macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B6B68CB240DDDF56A3521DC1 /* CaptainsLogTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3EAA1D4AADD223823AB6873F /* Build configuration list for PBXNativeTarget "CaptainsLogTests" */;
+			buildPhases = (
+				78EF03ECB13568FF595FBD3F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EF54F2C8EEF9BCFBC21DF80F /* PBXTargetDependency */,
+			);
+			name = CaptainsLogTests;
+			packageProductDependencies = (
+			);
+			productName = CaptainsLogTests;
+			productReference = A112BB810F7845F0577280F8 /* CaptainsLogTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F90387FC825665E8C4662E9B /* CaptainsLog-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C5215A8F96DC7CE9447251B7 /* Build configuration list for PBXNativeTarget "CaptainsLog-iOS" */;
+			buildPhases = (
+				E97328EAE300923FADEC33E6 /* Sources */,
+				91081891F029A289D326C319 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CaptainsLog-iOS";
+			packageProductDependencies = (
+				BBA8D48E3CAA5B8CEFF2EAF9 /* Kit941 */,
+			);
+			productName = "CaptainsLog-iOS";
+			productReference = 0AD9DB70978FA782C6C30A88 /* CaptainsLog-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6858EC732BB49DA6E9C9720F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					F90387FC825665E8C4662E9B = {
+						DevelopmentTeam = M4WTLM6RAQ;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = CB8A014709D836D6B6656079 /* Build configuration list for PBXProject "CaptainsLog" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7F1359208885E88F05B7EBE0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BEDE7B7C68D9E54BFC8BEC1E /* XCLocalSwiftPackageReference "../941Kit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F90387FC825665E8C4662E9B /* CaptainsLog-iOS */,
+				868191A7FB95C1F892966A94 /* CaptainsLog-macOS */,
+				B6B68CB240DDDF56A3521DC1 /* CaptainsLogTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		78EF03ECB13568FF595FBD3F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				540B841F84BFA5EC3FC0540E /* CalendarMathTests.swift in Sources */,
+				E0CE302833D2326B1747374E /* GitHubDTOsTests.swift in Sources */,
+				013E60C4538EF953C737634D /* JournalSummarizerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ABCA470774A3CFC47E73B136 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49CEB27D8774F15261CC53EF /* AIProviderCredentialStore.swift in Sources */,
+				451B36429F5B83534E173DEF /* AISettingsView.swift in Sources */,
+				02329EC403EF0508DD83CD37 /* AccountViews.swift in Sources */,
+				BF0CF3C9BEE70288E6AC7128 /* AppModel.swift in Sources */,
+				855508D56990E05D85A3190E /* AuthAndRepoViews.swift in Sources */,
+				521E5AC5E9A04894C09E0981 /* CalendarMath.swift in Sources */,
+				7397103398D6D7ECF2374599 /* CalendarViews.swift in Sources */,
+				EBEE0047A1CBA75AA41DF736 /* CaptainsLogApp.swift in Sources */,
+				322A5BFBE1BB02F01498C19A /* ClipboardService.swift in Sources */,
+				1D3EE83936A0D0815AA93C7B /* DayDetailView.swift in Sources */,
+				7B3F2D6073D9E2CF9AA3C952 /* GitHubAPIClient.swift in Sources */,
+				26A1AE2E20F120E182EA44BD /* GitHubAppConfiguration.swift in Sources */,
+				7B9AD22EF62050EA3357C9A7 /* GitHubDTOs.swift in Sources */,
+				3F8E475AF22709038B61219F /* GitRecords.swift in Sources */,
+				9F25A317038EEF6717969BCD /* JournalSummarizer.swift in Sources */,
+				E0AF0F9EFAE7BF77B2F419BB /* KeychainTokenStore.swift in Sources */,
+				03D352BED1743F105589DE13 /* OpenAIWorkClassifier.swift in Sources */,
+				CBC000A75549E99D024E232A /* RootView.swift in Sources */,
+				FBD7F9399C7FAE5EF6EFF68F /* WorkClassification.swift in Sources */,
+				33E86E4101BA35597C9E4F69 /* WorkMetrics.swift in Sources */,
+				3E1FA340FD77D587DCB592A5 /* WorkOverviewView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E97328EAE300923FADEC33E6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B3A87E602F6914C7ED7D959A /* AIProviderCredentialStore.swift in Sources */,
+				6414316B596F1F688DFD356A /* AISettingsView.swift in Sources */,
+				2E7D779262A497521C0F1DF9 /* AccountViews.swift in Sources */,
+				4D29EBFFE813BC9A4ED211AA /* AppModel.swift in Sources */,
+				75D26635F7B7A93E2182BAE9 /* AuthAndRepoViews.swift in Sources */,
+				6935405B86E26A23EA82D36E /* CalendarMath.swift in Sources */,
+				EA94944A2D0558412754745B /* CalendarViews.swift in Sources */,
+				E7145DFBC8BA6C388A9C01EA /* CaptainsLogApp.swift in Sources */,
+				B08E287C88A5D9D6E213A702 /* ClipboardService.swift in Sources */,
+				B583A33EAAF948ECD3348734 /* DayDetailView.swift in Sources */,
+				6456634246E39507712C50FE /* GitHubAPIClient.swift in Sources */,
+				D9A6EE02B56DC8BD8400D697 /* GitHubAppConfiguration.swift in Sources */,
+				018670DFB0C54EEDFC9C6144 /* GitHubDTOs.swift in Sources */,
+				9549BD61922DB20EB2C6E00D /* GitRecords.swift in Sources */,
+				8EA75CFBAF66C8ACD37C5C51 /* JournalSummarizer.swift in Sources */,
+				495FDD752F0555840ACDD79E /* KeychainTokenStore.swift in Sources */,
+				3FE6CCB2E939FAB7C3DF55D4 /* OpenAIWorkClassifier.swift in Sources */,
+				F917743F699BCEEA6A9718FE /* RootView.swift in Sources */,
+				06A44DEC94D8308F6EDFD685 /* WorkClassification.swift in Sources */,
+				07711B340F62B381A3F42FD3 /* WorkMetrics.swift in Sources */,
+				7B9853C3A0866ECF8C2244CD /* WorkOverviewView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EF54F2C8EEF9BCFBC21DF80F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F90387FC825665E8C4662E9B /* CaptainsLog-iOS */;
+			targetProxy = 801CEB3661D51955F2ED0FA8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1D07734325D4328E09491C3A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.mac;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		26D32A1F4B85F74CEBF28867 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Captain's Log.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Captain's Log";
+			};
+			name = Debug;
+		};
+		48BC0FFA639C254082C8B6AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_LANGUAGE = en;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.2;
+			};
+			name = Debug;
+		};
+		5D9974819162A3439C0ABEB6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		677C682BDD1D8ED69684D6C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Captain's Log.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Captain's Log";
+			};
+			name = Release;
+		};
+		6EADA4752BE9CA137319093E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_LANGUAGE = en;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.2;
+			};
+			name = Release;
+		};
+		B9AEE716F836AC7CFFCE5670 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D6F04496775C19EA8D7F8B1E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.mac;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3EAA1D4AADD223823AB6873F /* Build configuration list for PBXNativeTarget "CaptainsLogTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26D32A1F4B85F74CEBF28867 /* Debug */,
+				677C682BDD1D8ED69684D6C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		772A64F767D2B5F9E49802A3 /* Build configuration list for PBXNativeTarget "CaptainsLog-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1D07734325D4328E09491C3A /* Debug */,
+				D6F04496775C19EA8D7F8B1E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C5215A8F96DC7CE9447251B7 /* Build configuration list for PBXNativeTarget "CaptainsLog-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5D9974819162A3439C0ABEB6 /* Debug */,
+				B9AEE716F836AC7CFFCE5670 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CB8A014709D836D6B6656079 /* Build configuration list for PBXProject "CaptainsLog" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				48BC0FFA639C254082C8B6AE /* Debug */,
+				6EADA4752BE9CA137319093E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		BEDE7B7C68D9E54BFC8BEC1E /* XCLocalSwiftPackageReference "../941Kit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../941Kit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		066C189ED8DB4620677C41C2 /* Kit941 */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Kit941;
+		};
+		BBA8D48E3CAA5B8CEFF2EAF9 /* Kit941 */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Kit941;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 6858EC732BB49DA6E9C9720F /* Project object */;
+}

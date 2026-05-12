@@ -1,0 +1,87 @@
+name: CaptainsLog
+options:
+  bundleIdPrefix: com.blakecrosley
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  xcodeVersion: "26.4"
+  createIntermediateGroups: true
+  defaultConfig: Debug
+  groupSortPosition: top
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.2"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_LANGUAGE: en
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+packages:
+  Kit941:
+    path: ../941Kit
+
+targets:
+  CaptainsLog-iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: CaptainsLog
+    resources:
+      - path: CaptainsLog/Resources
+        excludes:
+          - "**/.gitkeep"
+    dependencies:
+      - package: Kit941
+        product: Kit941
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog
+        PRODUCT_NAME: "Captain's Log"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: M4WTLM6RAQ
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: NO
+        SUPPORTS_MACCATALYST: NO
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+  CaptainsLog-macOS:
+    type: application
+    platform: macOS
+    sources:
+      - path: CaptainsLog
+    resources:
+      - path: CaptainsLog/Resources
+        excludes:
+          - "**/.gitkeep"
+    dependencies:
+      - package: Kit941
+        product: Kit941
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.mac
+        PRODUCT_NAME: "Captain's Log"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        ENABLE_HARDENED_RUNTIME: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+  CaptainsLogTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: CaptainsLogTests
+    dependencies:
+      - target: CaptainsLog-iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Captain's Log.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Captain's Log"
+        BUNDLE_LOADER: "$(TEST_HOST)"

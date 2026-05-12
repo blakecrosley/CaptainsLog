@@ -1,0 +1,23 @@
+.DS_Store
+
+# Swift Package Manager and local build products
+.build/
+.swiftpm/
+
+# Xcode user and derived state
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Local agent scratch files
+.codex/
+
+# Local credentials and environment
+.env
+.env.*
+*.p8
+*.mobileprovision
