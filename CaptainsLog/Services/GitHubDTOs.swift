@@ -2,12 +2,14 @@ import Foundation
 
 struct GitHubViewer: Decodable, Equatable {
     let login: String
+    let nodeID: String?
     let name: String?
     let avatarURL: URL?
     let htmlURL: URL
 
     private enum CodingKeys: String, CodingKey {
         case login
+        case nodeID = "node_id"
         case name
         case avatarURL = "avatar_url"
         case htmlURL = "html_url"
@@ -146,6 +148,77 @@ struct GitHubCommitDetailDTO: Decodable, Equatable {
         htmlURL = try container.decodeIfPresent(URL.self, forKey: .htmlURL)
         stats = try container.decodeIfPresent(Stats.self, forKey: .stats)
         files = try container.decodeIfPresent([File].self, forKey: .files) ?? []
+    }
+}
+
+struct GitHubCommitHistoryPage: Equatable {
+    let commits: [GitHubGraphQLCommitDTO]
+    let hasNextPage: Bool
+    let endCursor: String?
+}
+
+struct GitHubGraphQLCommitDTO: Decodable, Equatable {
+    let oid: String
+    let message: String
+    let authoredDate: Date
+    let url: URL
+    let additions: Int
+    let deletions: Int
+    let changedFilesIfAvailable: Int?
+    let author: Author?
+
+    var totalChanges: Int {
+        additions + deletions
+    }
+
+    var authorLogin: String? {
+        author?.user?.login
+    }
+
+    struct Author: Decodable, Equatable {
+        let user: User?
+    }
+
+    struct User: Decodable, Equatable {
+        let login: String
+    }
+}
+
+struct GitHubCommitHistoryGraphQLData: Decodable, Equatable {
+    let repository: Repository?
+
+    var page: GitHubCommitHistoryPage {
+        guard let history = repository?.defaultBranchRef?.target?.history else {
+            return GitHubCommitHistoryPage(commits: [], hasNextPage: false, endCursor: nil)
+        }
+
+        return GitHubCommitHistoryPage(
+            commits: history.nodes,
+            hasNextPage: history.pageInfo.hasNextPage,
+            endCursor: history.pageInfo.endCursor
+        )
+    }
+
+    struct Repository: Decodable, Equatable {
+        let defaultBranchRef: Ref?
+    }
+
+    struct Ref: Decodable, Equatable {
+        let target: Target?
+    }
+
+    struct Target: Decodable, Equatable {
+        let history: History?
+    }
+
+    struct History: Decodable, Equatable {
+        let nodes: [GitHubGraphQLCommitDTO]
+        let pageInfo: PageInfo
+    }
+
+    struct PageInfo: Decodable, Equatable {
+        let hasNextPage: Bool
+        let endCursor: String?
     }
 }
 

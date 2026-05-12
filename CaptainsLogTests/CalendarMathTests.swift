@@ -34,6 +34,72 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertTrue(calendar.isDate(end, equalTo: lastWeekStart, toGranularity: .weekOfYear))
     }
 
+    func testContributionWeeksCanSpanImportedHistory() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2024, month: 1, day: 2)))
+        let end = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 10)))
+
+        let weeks = CalendarMath.contributionWeeks(from: start, through: end, calendar: calendar)
+
+        XCTAssertGreaterThan(weeks.count, 100)
+        XCTAssertTrue(calendar.isDate(start, equalTo: try XCTUnwrap(weeks.first?.first), toGranularity: .weekOfYear))
+        XCTAssertTrue(calendar.isDate(end, equalTo: try XCTUnwrap(weeks.last?.first), toGranularity: .weekOfYear))
+    }
+
+    func testContributionWeeksForCalendarYearStaysBounded() throws {
+        let calendar = Calendar(identifier: .gregorian)
+
+        let weeks = CalendarMath.contributionWeeks(inYear: 2026, calendar: calendar)
+
+        XCTAssertTrue((52...54).contains(weeks.count))
+        XCTAssertTrue(weeks.allSatisfy { $0.count == 7 })
+        XCTAssertTrue(calendar.isDate(
+            try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1))),
+            equalTo: try XCTUnwrap(weeks.first?.first),
+            toGranularity: .weekOfYear
+        ))
+        XCTAssertTrue(calendar.isDate(
+            try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 12, day: 31))),
+            equalTo: try XCTUnwrap(weeks.last?.first),
+            toGranularity: .weekOfYear
+        ))
+    }
+
+    func testContributionMonthStartOnlyMarksFirstDayOfMonthColumns() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 1
+        let firstMayWeek = CalendarMath.weekDays(
+            containing: try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1))),
+            calendar: calendar
+        )
+        let secondMayWeek = CalendarMath.weekDays(
+            containing: try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 3))),
+            calendar: calendar
+        )
+
+        let marker = try XCTUnwrap(CalendarMath.contributionMonthStart(in: firstMayWeek, calendar: calendar))
+
+        XCTAssertEqual(calendar.component(.month, from: marker), 5)
+        XCTAssertEqual(calendar.component(.day, from: marker), 1)
+        XCTAssertNil(CalendarMath.contributionMonthStart(in: secondMayWeek, calendar: calendar))
+    }
+
+    func testContributionMonthStartIgnoresOutOfRangeYearEdges() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 1
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))
+        let end = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 1)))
+        let interval = DateInterval(start: start, end: end)
+        let firstWeek = CalendarMath.weekDays(containing: start, calendar: calendar)
+        let lastWeek = CalendarMath.weekDays(
+            containing: try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 12, day: 31))),
+            calendar: calendar
+        )
+
+        XCTAssertNotNil(CalendarMath.contributionMonthStart(in: firstWeek, activeInterval: interval, calendar: calendar))
+        XCTAssertNil(CalendarMath.contributionMonthStart(in: lastWeek, activeInterval: interval, calendar: calendar))
+    }
+
     func testActivityDensityScaleKeepsBusyDaysVisuallyDistinct() {
         let scale = ActivityDensityScale(counts: [0, 6, 10, 20, 40, 80, 160])
 
@@ -89,7 +155,40 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(snapshot.commitCount, 2)
         XCTAssertEqual(snapshot.statsBackedCommitCount, 1)
         XCTAssertEqual(snapshot.mode, .commitEstimate)
-        XCTAssertEqual(snapshot.displayValue, 2)
+        XCTAssertEqual(snapshot.displayValue, 100)
+        XCTAssertEqual(snapshot.displayUnit, "known changed lines")
+    }
+
+    func testChangesHeatmapPreservesCommitActivityWhenStatsAreMissing() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commits = [
+            makeCommit(sha: "1111111111111111111111111111111111111111", date: date, message: "Add importer"),
+            makeCommit(sha: "2222222222222222222222222222222222222222", date: date, message: "Fix importer")
+        ]
+
+        let snapshot = WorkMetrics(commits: commits).snapshot(on: date, calendar: calendar)
+
+        XCTAssertEqual(WorkDisplayMetric.changes.value(for: snapshot), 0)
+        XCTAssertEqual(WorkDisplayMetric.changes.heatmapValue(for: snapshot), 2)
+    }
+
+    func testChangesHeatmapUsesKnownLineChangesWhenAvailable() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commit = makeCommit(
+            sha: "3333333333333333333333333333333333333333",
+            date: date,
+            message: "Add diff stats"
+        )
+        commit.additions = 31
+        commit.deletions = 11
+        commit.totalChanges = 42
+        commit.changedFileCount = 3
+
+        let snapshot = WorkMetrics(commits: [commit]).snapshot(on: date, calendar: calendar)
+
+        XCTAssertEqual(WorkDisplayMetric.changes.heatmapValue(for: snapshot), 42)
     }
 
     func testWorkMetricsUsesDiffBackedWorkUnitsAtCoverageThreshold() throws {
@@ -104,6 +203,7 @@ final class CalendarMathTests: XCTestCase {
             commit.deletions = 5
             commit.totalChanges = 25
             commit.changedFileCount = 2
+            commit.changedFiles = ["Sources/App.swift", "Tests/AppTests.swift"]
             commit.diffStatsFetchedAt = date
         }
 
@@ -112,6 +212,63 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(snapshot.mode, .diffBacked)
         XCTAssertEqual(snapshot.workUnits, 50)
         XCTAssertEqual(snapshot.displayValue, 50)
+        XCTAssertEqual(snapshot.displayUnit, "changed lines")
+        XCTAssertEqual(snapshot.languageWeights["Swift"], 4)
+    }
+
+    func testWorkMetricsDisplaysRawChangedLinesForLargeSingleCommit() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commit = makeCommit(
+            sha: "eeeeeee111111111111111111111111111111111",
+            date: date,
+            message: "Initial import"
+        )
+        commit.additions = 5_500
+        commit.deletions = 500
+        commit.totalChanges = 6_000
+        commit.changedFileCount = 48
+        commit.diffStatsFetchedAt = date
+
+        let snapshot = WorkMetrics(commits: [commit]).snapshot(on: date, calendar: calendar)
+
+        XCTAssertEqual(snapshot.workUnits, 2_000)
+        XCTAssertEqual(snapshot.displayValue, 6_000)
+        XCTAssertEqual(snapshot.displayUnit, "changed lines")
+    }
+
+    func testVisibleCommitsRespectSelectedRepositories() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let selectedRepository = makeRepository(fullName: "blakecrosley/captains-log", isSelected: true)
+        let hiddenRepository = makeRepository(fullName: "blakecrosley/hidden", isSelected: false)
+        let visible = makeCommit(
+            sha: "fffffff111111111111111111111111111111111",
+            repositoryFullName: selectedRepository.fullName,
+            date: date,
+            message: "Visible work"
+        )
+        let hidden = makeCommit(
+            sha: "ggggggg111111111111111111111111111111111",
+            repositoryFullName: hiddenRepository.fullName,
+            date: date,
+            message: "Hidden work"
+        )
+
+        let filtered = WorkDataFilter.visibleCommits(
+            [visible, hidden],
+            repositories: [selectedRepository, hiddenRepository],
+            activeLogin: "blakecrosley"
+        )
+
+        XCTAssertEqual(filtered.map(\.id), [visible.id])
+    }
+
+    func testWorkLanguageClassifierMapsCommonExtensions() {
+        XCTAssertEqual(WorkLanguageClassifier.language(for: "Sources/App.swift"), "Swift")
+        XCTAssertEqual(WorkLanguageClassifier.language(for: "web/src/index.tsx"), "TypeScript")
+        XCTAssertEqual(WorkLanguageClassifier.language(for: "README.md"), "Docs")
+        XCTAssertEqual(WorkLanguageClassifier.language(for: "Dockerfile"), "Docker")
     }
 
     func testCredentialStoreSupportsInMemoryBYOK() {
@@ -133,15 +290,35 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(store.keyPreview(for: .openai), "sk-proj-...123456")
     }
 
-    private func makeCommit(sha: String, date: Date, message: String) -> GitCommitRecord {
+    private func makeCommit(
+        sha: String,
+        repositoryFullName: String = "blakecrosley/captains-log",
+        authorLogin: String? = "blakecrosley",
+        date: Date,
+        message: String
+    ) -> GitCommitRecord {
         GitCommitRecord(
             sha: sha,
-            repositoryFullName: "blakecrosley/captains-log",
-            authorLogin: "blakecrosley",
+            repositoryFullName: repositoryFullName,
+            authorLogin: authorLogin,
             message: message,
             authoredAt: date,
             htmlURL: nil,
             calendar: Calendar(identifier: .gregorian)
+        )
+    }
+
+    private func makeRepository(fullName: String, isSelected: Bool) -> GitRepositoryRecord {
+        let parts = fullName.split(separator: "/", maxSplits: 1).map(String.init)
+        return GitRepositoryRecord(
+            id: Int64(abs(fullName.hashValue)),
+            ownerLogin: parts.first ?? "owner",
+            name: parts.dropFirst().first ?? fullName,
+            fullName: fullName,
+            accountLogin: "blakecrosley",
+            isPrivate: true,
+            isSelected: isSelected,
+            htmlURL: nil
         )
     }
 }

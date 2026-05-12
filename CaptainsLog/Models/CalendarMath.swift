@@ -66,6 +66,58 @@ enum CalendarMath {
             }
         }
     }
+
+    static func contributionWeeks(
+        from startDate: Date?,
+        through endDate: Date,
+        calendar: Calendar = .current
+    ) -> [[Date]] {
+        guard let startDate else {
+            return contributionWeeks(ending: endDate, weekCount: 53, calendar: calendar)
+        }
+
+        let startWeek = calendar.dateInterval(of: .weekOfYear, for: startDate)?.start
+            ?? calendar.startOfDay(for: startDate)
+        let endWeek = calendar.dateInterval(of: .weekOfYear, for: endDate)?.start
+            ?? calendar.startOfDay(for: endDate)
+        let weekCount = max(
+            calendar.dateComponents([.weekOfYear], from: startWeek, to: endWeek).weekOfYear.map { $0 + 1 } ?? 1,
+            1
+        )
+
+        return contributionWeeks(ending: endDate, weekCount: weekCount, calendar: calendar)
+    }
+
+    static func contributionWeeks(
+        inYear year: Int,
+        calendar: Calendar = .current
+    ) -> [[Date]] {
+        let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1))
+            ?? Date()
+        let end = calendar.date(from: DateComponents(year: year, month: 12, day: 31))
+            ?? start
+        return contributionWeeks(from: start, through: end, calendar: calendar)
+    }
+
+    static func contributionMonthStart(
+        in week: [Date],
+        activeInterval: DateInterval? = nil,
+        calendar: Calendar = .current
+    ) -> Date? {
+        week.first { day in
+            guard isContributionDay(day, in: activeInterval) else {
+                return false
+            }
+            return calendar.component(.day, from: day) == 1
+        }
+    }
+
+    static func isContributionDay(_ day: Date, in interval: DateInterval?) -> Bool {
+        guard let interval else {
+            return true
+        }
+        return day >= interval.start && day < interval.end
+    }
 }
 
 struct ActivityDensityScale {

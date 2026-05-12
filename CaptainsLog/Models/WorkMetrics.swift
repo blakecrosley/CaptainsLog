@@ -66,6 +66,85 @@ enum WorkMetricMode: Equatable {
     }
 }
 
+enum WorkDisplayMetric: String, CaseIterable, Identifiable {
+    case changes
+    case commits
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .changes: "Changes"
+        case .commits: "Commits"
+        }
+    }
+
+    var shortUnit: String {
+        switch self {
+        case .changes: "lines"
+        case .commits: "commits"
+        }
+    }
+
+    func value(for summary: WorkRangeSummary) -> Int {
+        switch self {
+        case .changes:
+            return summary.totalChanges
+        case .commits:
+            return summary.commitCount
+        }
+    }
+
+    func value(for snapshot: DayWorkSnapshot) -> Int {
+        switch self {
+        case .changes:
+            return snapshot.totalChanges
+        case .commits:
+            return snapshot.commitCount
+        }
+    }
+
+    func heatmapValue(for snapshot: DayWorkSnapshot) -> Int {
+        switch self {
+        case .changes:
+            if snapshot.totalChanges > 0 {
+                return snapshot.totalChanges
+            }
+            return snapshot.commitCount
+        case .commits:
+            return snapshot.commitCount
+        }
+    }
+
+    func unit(for summary: WorkRangeSummary) -> String {
+        switch self {
+        case .changes:
+            guard summary.statsBackedCommitCount > 0 else {
+                return "changed lines"
+            }
+            return summary.mode == .diffBacked ? "changed lines" : "known changed lines"
+        case .commits:
+            return summary.commitCount == 1 ? "commit" : "commits"
+        }
+    }
+
+    func averagePerDay(for summary: WorkRangeSummary) -> Double {
+        guard summary.dayCount > 0 else {
+            return 0
+        }
+        return Double(value(for: summary)) / Double(summary.dayCount)
+    }
+
+    func canCompare(_ current: WorkRangeSummary, _ baseline: WorkRangeSummary) -> Bool {
+        switch self {
+        case .changes:
+            return current.statsBackedCommitCount > 0 && baseline.statsBackedCommitCount > 0
+        case .commits:
+            return true
+        }
+    }
+}
+
 enum WorkTrendDirection: Equatable {
     case up
     case steady
@@ -102,6 +181,7 @@ struct DayWorkSnapshot {
     let changedFiles: Int
     let workUnits: Int
     let categoryWeights: [WorkCategory: Int]
+    let languageWeights: [String: Int]
     let repositoryWeights: [String: Int]
 
     var coverage: Double {
@@ -109,12 +189,23 @@ struct DayWorkSnapshot {
         return Double(statsBackedCommitCount) / Double(commitCount)
     }
 
+    var hasDiffStats: Bool {
+        statsBackedCommitCount > 0
+    }
+
     var mode: WorkMetricMode {
         coverage >= WorkMetrics.diffCoverageThreshold ? .diffBacked : .commitEstimate
     }
 
     var displayValue: Int {
-        mode == .diffBacked ? workUnits : commitCount
+        hasDiffStats ? totalChanges : commitCount
+    }
+
+    var displayUnit: String {
+        if !hasDiffStats {
+            return "commits"
+        }
+        return mode == .diffBacked ? "changed lines" : "known changed lines"
     }
 }
 
@@ -130,6 +221,7 @@ struct WorkRangeSummary {
     let changedFiles: Int
     let workUnits: Int
     let categoryWeights: [WorkCategory: Int]
+    let languageWeights: [String: Int]
     let repositoryWeights: [String: Int]
 
     var coverage: Double {
@@ -137,16 +229,23 @@ struct WorkRangeSummary {
         return Double(statsBackedCommitCount) / Double(commitCount)
     }
 
+    var hasDiffStats: Bool {
+        statsBackedCommitCount > 0
+    }
+
     var mode: WorkMetricMode {
         coverage >= WorkMetrics.diffCoverageThreshold ? .diffBacked : .commitEstimate
     }
 
     var displayValue: Int {
-        mode == .diffBacked ? workUnits : commitCount
+        hasDiffStats ? totalChanges : commitCount
     }
 
     var displayUnit: String {
-        mode == .diffBacked ? "work units" : "commits"
+        if !hasDiffStats {
+            return "commits"
+        }
+        return mode == .diffBacked ? "changed lines" : "known changed lines"
     }
 
     var averagePerDay: Double {
@@ -161,7 +260,7 @@ struct WorkTrendSummary {
     let baseline: WorkRangeSummary
 
     var percentChange: Double? {
-        guard baseline.averagePerDay > 0 else {
+        guard current.hasDiffStats == baseline.hasDiffStats, baseline.averagePerDay > 0 else {
             return nil
         }
         return (current.averagePerDay - baseline.averagePerDay) / baseline.averagePerDay
@@ -186,15 +285,36 @@ struct WorkMetrics {
     private static let maxWorkUnitsPerCommit = 2_000
 
     let commitsByDay: [String: [GitCommitRecord]]
+    private let snapshotsByDay: [String: DayWorkSnapshot]
+    private let oldestCommit: Date?
 
     init(commits: [GitCommitRecord]) {
-        self.commitsByDay = Dictionary(grouping: commits, by: \.dayKey)
+        let grouped = Dictionary(grouping: commits, by: \.dayKey)
+        self.commitsByDay = grouped
+        self.snapshotsByDay = grouped.mapValues { commits in
+            let sorted = commits.sorted { $0.authoredAt > $1.authoredAt }
+            let date = sorted.first.map { Calendar.current.startOfDay(for: $0.authoredAt) } ?? Date()
+            return Self.snapshot(date: date, commits: sorted)
+        }
+        self.oldestCommit = commits.map(\.authoredAt).min()
+    }
+
+    var oldestCommitDate: Date? {
+        oldestCommit
     }
 
     func snapshot(on date: Date, calendar: Calendar = .current) -> DayWorkSnapshot {
         let dayKey = GitCommitRecord.dayKey(for: date, calendar: calendar)
-        let commits = (commitsByDay[dayKey] ?? []).sorted { $0.authoredAt > $1.authoredAt }
-        return snapshot(date: calendar.startOfDay(for: date), commits: commits)
+        return snapshotsByDay[dayKey] ?? Self.emptySnapshot(on: date, calendar: calendar)
+    }
+
+    func commitCount(on date: Date, calendar: Calendar = .current) -> Int {
+        snapshot(on: date, calendar: calendar).commitCount
+    }
+
+    func commits(on date: Date, calendar: Calendar = .current) -> [GitCommitRecord] {
+        let dayKey = GitCommitRecord.dayKey(for: date, calendar: calendar)
+        return snapshotsByDay[dayKey]?.commits ?? []
     }
 
     func rangeSummary(scope: WorkRangeScope, containing date: Date, calendar: Calendar = .current) -> WorkRangeSummary {
@@ -209,7 +329,7 @@ struct WorkMetrics {
         return WorkTrendSummary(scope: scope, current: current, baseline: baseline)
     }
 
-    private func rangeSummary(interval: DateInterval, calendar: Calendar) -> WorkRangeSummary {
+    func rangeSummary(interval: DateInterval, calendar: Calendar = .current) -> WorkRangeSummary {
         let days = days(in: interval, calendar: calendar)
         let snapshots = days.map { snapshot(on: $0, calendar: calendar) }
 
@@ -225,11 +345,12 @@ struct WorkMetrics {
             changedFiles: snapshots.reduce(0) { $0 + $1.changedFiles },
             workUnits: snapshots.reduce(0) { $0 + $1.workUnits },
             categoryWeights: mergedWeights(snapshots.map(\.categoryWeights)),
+            languageWeights: mergedWeights(snapshots.map(\.languageWeights)),
             repositoryWeights: mergedWeights(snapshots.map(\.repositoryWeights))
         )
     }
 
-    private func snapshot(date: Date, commits: [GitCommitRecord]) -> DayWorkSnapshot {
+    private static func snapshot(date: Date, commits: [GitCommitRecord]) -> DayWorkSnapshot {
         var additions = 0
         var deletions = 0
         var totalChanges = 0
@@ -237,11 +358,12 @@ struct WorkMetrics {
         var workUnits = 0
         var statsBacked = 0
         var categoryWeights: [WorkCategory: Int] = [:]
+        var languageWeights: [String: Int] = [:]
         var repositoryWeights: [String: Int] = [:]
 
         for commit in commits {
             let hasStats = commit.hasDiffStats
-            let weight = Self.weight(for: commit)
+            let weight = weight(for: commit)
             if hasStats {
                 statsBacked += 1
                 additions += commit.additions ?? 0
@@ -252,6 +374,9 @@ struct WorkMetrics {
             }
 
             categoryWeights[WorkClassifier.category(for: commit), default: 0] += weight
+            for language in commit.changedFiles.map(WorkLanguageClassifier.language(for:)) {
+                languageWeights[language, default: 0] += 1
+            }
             repositoryWeights[commit.repositoryFullName, default: 0] += weight
         }
 
@@ -266,7 +391,25 @@ struct WorkMetrics {
             changedFiles: changedFiles,
             workUnits: workUnits,
             categoryWeights: categoryWeights,
+            languageWeights: languageWeights,
             repositoryWeights: repositoryWeights
+        )
+    }
+
+    private static func emptySnapshot(on date: Date, calendar: Calendar) -> DayWorkSnapshot {
+        DayWorkSnapshot(
+            date: calendar.startOfDay(for: date),
+            commits: [],
+            commitCount: 0,
+            statsBackedCommitCount: 0,
+            additions: 0,
+            deletions: 0,
+            totalChanges: 0,
+            changedFiles: 0,
+            workUnits: 0,
+            categoryWeights: [:],
+            languageWeights: [:],
+            repositoryWeights: [:]
         )
     }
 

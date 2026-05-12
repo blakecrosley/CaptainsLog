@@ -71,8 +71,8 @@ struct DayDetailView: View {
     }
 
     private var metricSummary: String {
-        if workSnapshot.mode == .diffBacked {
-            return "\(workSnapshot.workUnits.formatted()) work units, +\(workSnapshot.additions.formatted()) -\(workSnapshot.deletions.formatted()), \(workSnapshot.changedFiles.formatted()) files"
+        if workSnapshot.statsBackedCommitCount > 0 {
+            return "\(workSnapshot.displayValue.formatted()) \(workSnapshot.displayUnit), +\(workSnapshot.additions.formatted()) -\(workSnapshot.deletions.formatted()), \(workSnapshot.changedFiles.formatted()) files"
         }
         let coverage = workSnapshot.coverage.formatted(.percent.precision(.fractionLength(0)))
         return "\(commits.count.formatted()) commits, \(coverage) stats coverage"

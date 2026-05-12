@@ -94,3 +94,47 @@ enum WorkClassifier {
         return .code
     }
 }
+
+enum WorkLanguageClassifier {
+    static func language(for path: String) -> String {
+        let lower = path.lowercased()
+        let extensionName = URL(fileURLWithPath: lower).pathExtension
+        let fileName = URL(fileURLWithPath: lower).lastPathComponent
+
+        switch extensionName {
+        case "swift": return "Swift"
+        case "js", "jsx", "mjs", "cjs": return "JavaScript"
+        case "ts", "tsx": return "TypeScript"
+        case "py": return "Python"
+        case "rb": return "Ruby"
+        case "go": return "Go"
+        case "rs": return "Rust"
+        case "java": return "Java"
+        case "kt", "kts": return "Kotlin"
+        case "c", "h": return "C"
+        case "cpp", "cc", "cxx", "hpp": return "C++"
+        case "m", "mm": return "Objective-C"
+        case "html", "htm": return "HTML"
+        case "css", "scss", "sass": return "CSS"
+        case "json", "jsonc": return "JSON"
+        case "yml", "yaml": return "YAML"
+        case "md", "mdx", "txt", "rst": return "Docs"
+        case "sh", "bash", "zsh": return "Shell"
+        case "sql": return "SQL"
+        case "xml": return "XML"
+        case "plist": return "Property List"
+        case "png", "jpg", "jpeg", "webp", "svg", "pdf": return "Assets"
+        default:
+            if fileName == "dockerfile" {
+                return "Docker"
+            }
+            if fileName == "makefile" {
+                return "Make"
+            }
+            if lower.contains(".xcassets") {
+                return "Assets"
+            }
+            return "Other"
+        }
+    }
+}

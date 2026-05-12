@@ -9,6 +9,23 @@ final class GitHubDTOsTests: XCTestCase {
         )
     }
 
+    func testDecodesViewerNodeIDForGraphQLAuthorFiltering() throws {
+        let json = Data("""
+        {
+          "login": "blakecrosley",
+          "node_id": "MDQ6VXNlcjk0MQ==",
+          "name": "Blake Crosley",
+          "avatar_url": "https://avatars.githubusercontent.com/u/941?v=4",
+          "html_url": "https://github.com/blakecrosley"
+        }
+        """.utf8)
+
+        let viewer = try GitHubJSON.decoder.decode(GitHubViewer.self, from: json)
+
+        XCTAssertEqual(viewer.login, "blakecrosley")
+        XCTAssertEqual(viewer.nodeID, "MDQ6VXNlcjk0MQ==")
+    }
+
     func testDemoRepositoryIsNotGitHubBacked() {
         let demo = GitRepositoryRecord(
             id: -941,
@@ -157,9 +174,67 @@ final class GitHubDTOsTests: XCTestCase {
         ])
     }
 
+    func testDecodesGitHubGraphQLCommitHistoryWithDiffStats() throws {
+        struct Envelope: Decodable {
+            let data: GitHubCommitHistoryGraphQLData
+        }
+
+        let json = Data("""
+        {
+          "data": {
+            "repository": {
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "pageInfo": {
+                      "hasNextPage": true,
+                      "endCursor": "history-cursor"
+                    },
+                    "nodes": [
+                      {
+                        "oid": "abcdef1234567890",
+                        "message": "Measure changed lines",
+                        "authoredDate": "2026-05-11T18:42:00Z",
+                        "url": "https://github.com/blakecrosley/captains-log/commit/abcdef1",
+                        "additions": 120,
+                        "deletions": 35,
+                        "changedFilesIfAvailable": 7,
+                        "author": {
+                          "user": {
+                            "login": "blakecrosley"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+        """.utf8)
+
+        let envelope = try GitHubJSON.decoder.decode(Envelope.self, from: json)
+        let page = envelope.data.page
+
+        XCTAssertEqual(page.commits.count, 1)
+        XCTAssertTrue(page.hasNextPage)
+        XCTAssertEqual(page.endCursor, "history-cursor")
+        XCTAssertEqual(page.commits.first?.oid, "abcdef1234567890")
+        XCTAssertEqual(page.commits.first?.additions, 120)
+        XCTAssertEqual(page.commits.first?.deletions, 35)
+        XCTAssertEqual(page.commits.first?.totalChanges, 155)
+        XCTAssertEqual(page.commits.first?.changedFilesIfAvailable, 7)
+        XCTAssertEqual(page.commits.first?.authorLogin, "blakecrosley")
+    }
+
     func testGitHubCommitConflictCanBeTreatedAsEmptyHistory() {
         XCTAssertTrue(GitHubError.httpStatus(409, "{\"message\":\"Git Repository is empty.\"}").isCommitListConflict)
         XCTAssertFalse(GitHubError.httpStatus(404, "{\"message\":\"Not Found\"}").isCommitListConflict)
+    }
+
+    func testFullHistoryBackfillIsNotPageLimited() {
+        XCTAssertNil(RepositoryHistoryBackfillPolicy.fullSyncCommitPageLimit)
     }
 
     func testOpenAIOutputTextReadsResponsesShape() {

@@ -5,6 +5,7 @@ struct GitHubAPIClient: Sendable {
     var appSlug: String? = nil
 
     private let apiBaseURL = URL(string: "https://api.github.com")!
+    private let graphQLURL = URL(string: "https://api.github.com/graphql")!
     private let retryLimit = 2
 
     func viewer() async throws -> GitHubViewer {
@@ -98,6 +99,30 @@ struct GitHubAPIClient: Sendable {
         try await get(path: "/repos/\(owner)/\(repo)/commits/\(sha)")
     }
 
+    func commitHistoryPage(
+        owner: String,
+        repo: String,
+        authorID: String,
+        since: Date,
+        until: Date? = nil,
+        after: String? = nil,
+        perPage: Int = 100
+    ) async throws -> GitHubCommitHistoryPage {
+        let data: GitHubCommitHistoryGraphQLData = try await graphQL(
+            query: Self.commitHistoryQuery,
+            variables: CommitHistoryVariables(
+                owner: owner,
+                name: repo,
+                authorID: authorID,
+                since: githubDateString(since),
+                until: until.map(githubDateString),
+                after: after,
+                first: perPage
+            )
+        )
+        return data.page
+    }
+
     private func get<T: Decodable>(path: String, queryItems: [URLQueryItem] = []) async throws -> T {
         let request = try makeRequest(path: path, queryItems: queryItems)
 
@@ -106,6 +131,42 @@ struct GitHubAPIClient: Sendable {
                 let (data, response) = try await URLSession.shared.data(for: request)
                 try validate(response: response, data: data)
                 return try GitHubJSON.decoder.decode(T.self, from: data)
+            } catch {
+                guard shouldRetry(error), attempt < retryLimit else {
+                    throw error
+                }
+                try await Task.sleep(nanoseconds: UInt64(attempt + 1) * 650_000_000)
+            }
+        }
+
+        throw GitHubError.invalidResponse
+    }
+
+    private func graphQL<T: Decodable, Variables: Encodable>(
+        query: String,
+        variables: Variables
+    ) async throws -> T {
+        var request = URLRequest(url: graphQLURL)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 45
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        request.httpBody = try JSONEncoder().encode(GraphQLRequest(query: query, variables: variables))
+
+        for attempt in 0...retryLimit {
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                try validate(response: response, data: data)
+                let envelope = try GitHubJSON.decoder.decode(GraphQLResponse<T>.self, from: data)
+                if let errors = envelope.errors, !errors.isEmpty {
+                    throw GitHubError.graphQLErrors(errors.map(\.message))
+                }
+                guard let data = envelope.data else {
+                    throw GitHubError.invalidResponse
+                }
+                return data
             } catch {
                 guard shouldRetry(error), attempt < retryLimit else {
                     throw error
@@ -215,6 +276,63 @@ struct GitHubAPIClient: Sendable {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter.string(from: date)
     }
+
+    private struct CommitHistoryVariables: Encodable {
+        let owner: String
+        let name: String
+        let authorID: String
+        let since: String
+        let until: String?
+        let after: String?
+        let first: Int
+    }
+
+    private struct GraphQLRequest<Variables: Encodable>: Encodable {
+        let query: String
+        let variables: Variables
+    }
+
+    private struct GraphQLResponse<DataPayload: Decodable>: Decodable {
+        let data: DataPayload?
+        let errors: [GraphQLError]?
+    }
+
+    private struct GraphQLError: Decodable {
+        let message: String
+    }
+
+    private static let commitHistoryQuery = """
+    query CaptainLogCommitHistory($owner: String!, $name: String!, $authorID: ID!, $since: GitTimestamp!, $until: GitTimestamp, $after: String, $first: Int!) {
+      repository(owner: $owner, name: $name) {
+        defaultBranchRef {
+          target {
+            ... on Commit {
+              history(first: $first, after: $after, since: $since, until: $until, author: { id: $authorID }) {
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+                nodes {
+                  oid
+                  message
+                  authoredDate
+                  url
+                  additions
+                  deletions
+                  changedFilesIfAvailable
+                  author {
+                    user {
+                      login
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
 }
 
 struct GitHubRepositoryAccess: Equatable {
@@ -368,6 +486,7 @@ enum GitHubError: LocalizedError, Equatable {
     case invalidResponse
     case httpStatus(Int, String)
     case noAppInstallations(String?)
+    case graphQLErrors([String])
     case deviceCodeExpired
     case accessDenied
     case oauth(String, String?)
@@ -394,6 +513,8 @@ enum GitHubError: LocalizedError, Equatable {
                 return "Approve repository access for Captain's Log, then refresh."
             }
             return "Approve access to at least one GitHub repository, then refresh."
+        case .graphQLErrors(let messages):
+            return "GitHub GraphQL returned: \(messages.joined(separator: "; "))"
         case .deviceCodeExpired:
             return "The GitHub sign-in code expired. Start again."
         case .accessDenied:

@@ -148,6 +148,7 @@ struct RepositoryPanel: View {
     let appInstallURL: URL?
     let onRefreshRepos: @MainActor @Sendable () -> Void
     let onSyncSelected: @MainActor @Sendable () -> Void
+    let onFullSync: @MainActor @Sendable () -> Void
     let onInstallApp: @MainActor @Sendable () -> Void
 
     var body: some View {
@@ -217,7 +218,14 @@ struct RepositoryPanel: View {
                     Kit941.Button {
                         await MainActor.run { onSyncSelected() }
                     } label: {
-                        Label("Sync", systemImage: "square.and.arrow.down")
+                        Label("Sync Updates", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(repositories.isEmpty || selectedCount == 0)
+
+                    Kit941.Button(role: .secondary) {
+                        await MainActor.run { onFullSync() }
+                    } label: {
+                        Label("Backfill All", systemImage: "square.and.arrow.down")
                     }
                     .disabled(repositories.isEmpty || selectedCount == 0)
                 }

@@ -13,11 +13,11 @@ struct RootView: View {
 
     @StateObject private var appModel = AppModel()
     @State private var selectedDate = Date()
-    @State private var selectedScope: WorkRangeScope = .week
     @State private var isShowingMonthCalendar = false
     @State private var isShowingAccountSwitcher = false
     @State private var isShowingRepositorySettings = false
     @State private var isShowingAISettings = false
+    @State private var isShowingDayDetail = false
     @State private var aiCredentialRevision = 0
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
@@ -38,34 +38,30 @@ struct RootView: View {
         appModel.isSignedIn ? githubRepositories : repositories
     }
 
-    private var metrics: ActivityMetrics {
-        ActivityMetrics(commits: visibleCommits)
-    }
-
-    private var workMetrics: WorkMetrics {
-        WorkMetrics(commits: visibleCommits)
-    }
-
-    private var selectedCommits: [GitCommitRecord] {
-        metrics.commits(on: selectedDate)
-    }
-
-    private var selectedWorkSnapshot: DayWorkSnapshot {
-        workMetrics.snapshot(on: selectedDate)
-    }
-
-    private var selectedSummary: DailyJournalSummaryRecord? {
+    private var workData: RootWorkData {
+        let metrics = WorkMetrics(commits: visibleCommits)
+        let selectedCommits = metrics.commits(on: selectedDate)
+        let selectedWorkSnapshot = metrics.snapshot(on: selectedDate)
         let key = GitCommitRecord.dayKey(for: selectedDate)
         let selectedCommitIDs = Set(selectedCommits.map(\.id))
-        guard !selectedCommitIDs.isEmpty else {
-            return nil
-        }
-        return summaries.first { summary in
-            guard summary.dayKey == key else {
-                return false
+        let selectedSummary: DailyJournalSummaryRecord?
+        if selectedCommitIDs.isEmpty {
+            selectedSummary = nil
+        } else {
+            selectedSummary = summaries.first { summary in
+                guard summary.dayKey == key else {
+                    return false
+                }
+                return !Set(summary.sourceCommitIDs).isDisjoint(with: selectedCommitIDs)
             }
-            return !Set(summary.sourceCommitIDs).isDisjoint(with: selectedCommitIDs)
         }
+
+        return RootWorkData(
+            metrics: metrics,
+            selectedCommits: selectedCommits,
+            selectedWorkSnapshot: selectedWorkSnapshot,
+            selectedSummary: selectedSummary
+        )
     }
 
     private var viewerLogin: String? {
@@ -98,15 +94,23 @@ struct RootView: View {
     }
 
     private var visibleCommits: [GitCommitRecord] {
-        guard let activeLogin else {
-            return commits
-        }
-        return commits.filter { $0.authorLogin == activeLogin || $0.authorLogin == nil }
+        WorkDataFilter.visibleCommits(
+            commits,
+            repositories: repositories,
+            activeLogin: activeLogin
+        )
     }
 
     private var hasOpenAIKey: Bool {
         _ = aiCredentialRevision
         return AIProviderCredentialStore.shared.hasKey(for: .openai)
+    }
+
+    private var lastRepositorySyncDate: Date? {
+        githubRepositories
+            .filter(\.isSelected)
+            .compactMap(\.lastSyncedAt)
+            .max()
     }
 
     private var preferredJournalProvider: JournalSummaryProvider? {
@@ -132,7 +136,7 @@ struct RootView: View {
                 .sheet(isPresented: $isShowingMonthCalendar) {
                     MonthCalendarSheet(
                         selectedDate: $selectedDate,
-                        metrics: metrics,
+                        workMetrics: workData.metrics,
                         lowerBound: lowerCalendarBound,
                         upperBound: Date()
                     )
@@ -146,6 +150,9 @@ struct RootView: View {
                 }
                 .sheet(isPresented: $isShowingAISettings) {
                     AISettingsView(credentialRevision: $aiCredentialRevision)
+                }
+                .sheet(isPresented: $isShowingDayDetail) {
+                    dayDetailSheet
                 }
             }
             .navigationTitle("Captain's Log")
@@ -166,7 +173,7 @@ struct RootView: View {
             }
             .onChange(of: commits.count) { oldCount, newCount in
                 if newCount > oldCount {
-                    selectLatestCommitDateIfUseful(force: true)
+                    selectLatestCommitDateIfUseful()
                 } else {
                     selectedDate = Calendar.current.startOfDay(for: selectedDate)
                 }
@@ -205,15 +212,20 @@ struct RootView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
+        .refreshable {
+            await refreshCurrentAccount()
+        }
     }
 
     private var signedInOverview: some View {
-        VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+        let data = workData
+
+        return VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
             WorkOverviewView(
                 selectedDate: $selectedDate,
-                scope: $selectedScope,
-                workMetrics: workMetrics,
-                activityMetrics: metrics,
+                workMetrics: data.metrics,
+                selectedWorkSnapshot: data.selectedWorkSnapshot,
+                selectedSummary: data.selectedSummary,
                 repositories: githubRepositories,
                 githubLogin: activeLogin,
                 githubAvatarURL: activeAvatarURL,
@@ -221,25 +233,55 @@ struct RootView: View {
                 syncMessage: appModel.syncMessage,
                 importedCommitCount: appModel.importedCommitCount,
                 updatedDiffStatCount: appModel.updatedDiffStatCount,
+                lastSyncedAt: lastRepositorySyncDate,
                 hasOpenAIKey: hasOpenAIKey,
                 onShowAccounts: { isShowingAccountSwitcher = true },
+                onRefreshToday: {
+                    Task { await appModel.syncToday() }
+                },
                 onShowSettings: { isShowingRepositorySettings = true },
                 onShowAISettings: { isShowingAISettings = true },
-                onShowMonth: { isShowingMonthCalendar = true }
-            )
-
-            DayDetailView(
-                selectedDate: selectedDate,
-                commits: selectedCommits,
-                workSnapshot: selectedWorkSnapshot,
-                summary: selectedSummary,
-                isGeneratingSummary: isGeneratingSummary,
-                generationError: generationError,
-                canGenerate: canGenerateSummary,
-                generationProvider: preferredJournalProvider,
-                onGenerate: generateSummary
+                onShowMonth: { isShowingMonthCalendar = true },
+                onShowDayDetail: { isShowingDayDetail = true }
             )
         }
+    }
+
+    private var dayDetailSheet: some View {
+        let data = workData
+
+        return NavigationStack {
+            ScrollView {
+                DayDetailView(
+                    selectedDate: selectedDate,
+                    commits: data.selectedCommits,
+                    workSnapshot: data.selectedWorkSnapshot,
+                    summary: data.selectedSummary,
+                    isGeneratingSummary: isGeneratingSummary,
+                    generationError: generationError,
+                    canGenerate: canGenerateSummary,
+                    generationProvider: preferredJournalProvider,
+                    onGenerate: generateSummary
+                )
+                .padding(.horizontal, Kit941.Spacing.md)
+                .padding(.vertical, Kit941.Spacing.lg)
+                .frame(maxWidth: 680)
+                .frame(maxWidth: .infinity, alignment: .top)
+            }
+            .background(AppSurface.background.ignoresSafeArea())
+            .navigationTitle("Day Detail")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        isShowingDayDetail = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     private var accountSwitcherSheet: some View {
@@ -259,7 +301,7 @@ struct RootView: View {
                 Task { await appModel.completePendingSignIn() }
             },
             onSignOut: {
-                Task { await appModel.signOut() }
+                appModel.signOut()
             }
         )
     }
@@ -496,14 +538,28 @@ struct RootView: View {
             onSyncSelected: {
                 Task { await appModel.syncSelectedRepositories() }
             },
+            onFullSync: {
+                Task { await appModel.fullSyncSelectedRepositories() }
+            },
             onInstallApp: {
                 openGitHubRepositorySelection()
             }
         )
     }
 
+    private func refreshCurrentAccount() async {
+        guard appModel.isSignedIn else {
+            return
+        }
+        if githubRepositories.isEmpty {
+            await appModel.refreshRepositories()
+        } else {
+            await appModel.syncToday()
+        }
+    }
+
     private var canGenerateSummary: Bool {
-        preferredJournalProvider != nil && !selectedCommits.isEmpty
+        preferredJournalProvider != nil && !workData.selectedCommits.isEmpty
     }
 
     private var lowerCalendarBound: Date {
@@ -515,7 +571,7 @@ struct RootView: View {
 
     private func generateSummary() {
         let targetDate = selectedDate
-        let evidence = selectedCommits.map(JournalCommitEvidence.init(record:))
+        let evidence = workData.selectedCommits.map(JournalCommitEvidence.init(record:))
         let sourceIDs = evidence.map(\.id)
         generationError = nil
         isGeneratingSummary = true
@@ -549,13 +605,20 @@ struct RootView: View {
         let calendar = Calendar.current
         let latestDay = calendar.startOfDay(for: latestCommitDate)
         let currentDay = calendar.startOfDay(for: selectedDate)
-        let currentSelectionIsEmpty = metrics.count(on: currentDay) == 0
+        let currentSelectionIsEmpty = workData.metrics.commitCount(on: currentDay) == 0
         let currentSelectionIsToday = calendar.isDateInToday(currentDay)
 
         if force || (currentSelectionIsToday && currentSelectionIsEmpty) {
             selectedDate = latestDay
         }
     }
+}
+
+private struct RootWorkData {
+    let metrics: WorkMetrics
+    let selectedCommits: [GitCommitRecord]
+    let selectedWorkSnapshot: DayWorkSnapshot
+    let selectedSummary: DailyJournalSummaryRecord?
 }
 
 enum AppSurface {

@@ -3,23 +3,30 @@ import Kit941
 
 struct JournalWeekStrip: View {
     @Binding var selectedDate: Date
-    let metrics: ActivityMetrics
+    let workMetrics: WorkMetrics
     let onShowMonth: () -> Void
 
     @State private var weekDragTranslation: CGFloat = 0
     @State private var isSettling = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-            HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+            HStack(alignment: .top, spacing: Kit941.Spacing.md) {
                 Button {
                     onShowMonth()
                 } label: {
-                    HStack(spacing: 6) {
-                        Text(selectedDate, format: .dateTime.month(.wide).year())
-                            .kit941Font(.title, weight: .semibold)
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(selectedDate, format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                                .kit941Font(.title, weight: .semibold)
+                            Text(selectedDate, format: .dateTime.month(.wide).year())
+                                .kit941Font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.secondary)
                     }
                     .foregroundStyle(.primary)
                 }
@@ -27,36 +34,41 @@ struct JournalWeekStrip: View {
 
                 Spacer(minLength: 0)
 
-                Text("\(metrics.count(on: selectedDate)) commits")
-                    .kit941Font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(workMetrics.commitCount(on: selectedDate))")
+                        .kit941Font(.label, weight: .semibold)
+                        .monospacedDigit()
+                        .transaction { transaction in
+                            transaction.animation = nil
+                        }
+                    Text("commits")
+                        .kit941Font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             GeometryReader { proxy in
                 let pageWidth = max(proxy.size.width, 1)
 
-                HStack(spacing: 0) {
-                    weekPage(containing: weekDate(offset: -1), selectedPageDate: weekSelectedDate(offset: -1))
-                        .frame(width: pageWidth)
-                    weekPage(containing: selectedDate, selectedPageDate: selectedDate)
-                        .frame(width: pageWidth)
-                    weekPage(containing: weekDate(offset: 1), selectedPageDate: weekSelectedDate(offset: 1))
-                        .frame(width: pageWidth)
-                }
-                .frame(width: pageWidth * 3, alignment: .leading)
-                .offset(x: -pageWidth + weekDragTranslation)
-                .scaleEffect(weekDragScale(pageWidth: pageWidth))
-                .contentShape(Rectangle())
-                .gesture(weekGesture(pageWidth: pageWidth))
+                weekPage(containing: selectedDate, selectedPageDate: selectedDate)
+                    .frame(width: pageWidth)
+                    .offset(x: weekDragTranslation)
+                    .contentShape(Rectangle())
+                    .gesture(weekGesture(pageWidth: pageWidth))
             }
             .frame(height: 102)
             .clipped()
+            .onChange(of: selectedDate) { _, _ in
+                guard !isSettling else { return }
+                weekDragTranslation = 0
+            }
         }
-        .padding(Kit941.Spacing.md)
-        .background(.background, in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
+        .padding(.horizontal, Kit941.Spacing.md)
+        .padding(.vertical, Kit941.Spacing.md)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         }
     }
 
@@ -68,7 +80,7 @@ struct JournalWeekStrip: View {
                 } label: {
                     CalendarDayChip(
                         date: day,
-                        count: metrics.count(on: day),
+                        count: workMetrics.commitCount(on: day),
                         isSelected: Calendar.current.isDate(day, inSameDayAs: selectedPageDate),
                         isToday: Calendar.current.isDateInToday(day)
                     )
@@ -80,10 +92,6 @@ struct JournalWeekStrip: View {
 
     private func weekDate(offset: Int) -> Date {
         Calendar.current.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
-    }
-
-    private func weekSelectedDate(offset: Int) -> Date {
-        weekDate(offset: offset)
     }
 
     private func select(_ day: Date) {
@@ -117,18 +125,24 @@ struct JournalWeekStrip: View {
         }
 
         let offset = resolved < 0 ? 1 : -1
-        settleWeek(by: offset, pageWidth: pageWidth)
+        settleWeek(by: offset)
     }
 
-    private func settleWeek(by offset: Int, pageWidth: CGFloat) {
+    private func settleWeek(by offset: Int) {
         isSettling = true
-        let targetOffset = CGFloat(-offset) * pageWidth
-        withAnimation(Kit941.Motion.snappy) {
-            weekDragTranslation = targetOffset
+        let targetDate = weekDate(offset: offset)
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            selectedDate = Calendar.current.startOfDay(for: targetDate)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-            selectedDate = weekDate(offset: offset)
+
+        withAnimation(Kit941.Motion.snappy) {
             weekDragTranslation = 0
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             isSettling = false
         }
     }
@@ -141,13 +155,8 @@ struct JournalWeekStrip: View {
     }
 
     private func interactiveWeekOffset(for translation: CGFloat, pageWidth: CGFloat) -> CGFloat {
-        let limit = pageWidth * 0.92
+        let limit = min(pageWidth * 0.16, 54)
         return min(max(translation, -limit), limit)
-    }
-
-    private func weekDragScale(pageWidth: CGFloat) -> CGFloat {
-        let progress = min(abs(weekDragTranslation) / max(pageWidth, 1), 1)
-        return 1 - (progress * 0.018)
     }
 }
 
@@ -166,6 +175,9 @@ private struct CalendarDayChip: View {
             Text(date, format: .dateTime.day())
                 .kit941Font(.title, weight: .semibold)
                 .foregroundStyle(.primary)
+                .transaction { transaction in
+                    transaction.animation = nil
+                }
 
             ZStack {
                 Circle()
@@ -204,7 +216,7 @@ private struct CalendarDayChip: View {
 struct MonthCalendarSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedDate: Date
-    let metrics: ActivityMetrics
+    let workMetrics: WorkMetrics
     let lowerBound: Date
     let upperBound: Date
 
@@ -264,7 +276,7 @@ struct MonthCalendarSheet: View {
                         } label: {
                             MonthDayCell(
                                 date: day,
-                                count: metrics.count(on: day),
+                                count: workMetrics.commitCount(on: day),
                                 isSelected: Calendar.current.isDate(day, inSameDayAs: selectedDate),
                                 isToday: Calendar.current.isDateInToday(day)
                             )
@@ -319,103 +331,245 @@ private struct MonthDayCell: View {
 
 struct ActivityHeatmapView: View {
     @Binding var selectedDate: Date
-    let metrics: ActivityMetrics
+    let workMetrics: WorkMetrics
+    let metric: WorkDisplayMetric
+
+    @State private var selectedYear: Int?
 
     var body: some View {
-        let densityScale = ActivityDensityScale(counts: weeks.flatMap { week in
-            week.map { metrics.count(on: $0) }
-        })
+        let data = heatmapData
+        let densityScale = ActivityDensityScale(counts: data.activityValuesByDay.map(\.value))
 
-        Kit941.Card {
-            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Calendar")
-                            .kit941Font(.title, weight: .semibold)
-                        Text("Last 53 weeks - commit activity")
-                            .kit941Font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: Kit941.Spacing.md)
-
-                    Text("\(yearCommitCount) commits")
-                        .kit941Font(.label)
+        VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+            HStack(alignment: .center, spacing: Kit941.Spacing.md) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(rangeTitle)
+                        .kit941Font(.label, weight: .semibold)
+                    Text(subtitle(for: data))
+                        .kit941Font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal) {
-                        HStack(alignment: .top, spacing: 4) {
-                            ForEach(weeks, id: \.self) { week in
-                                VStack(spacing: 4) {
-                                    ForEach(week, id: \.self) { day in
-                                        let count = metrics.count(on: day)
-                                        let densityLevel = densityScale.level(for: count)
-                                        Button {
-                                            selectedDate = Calendar.current.startOfDay(for: day)
-                                        } label: {
-                                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                                .fill(AppSurface.densityColor(level: densityLevel))
-                                                .frame(width: 12, height: 12)
-                                                .overlay {
-                                                    if Calendar.current.isDate(day, inSameDayAs: selectedDate) {
-                                                        RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                                            .stroke(Color.primary.opacity(0.65), lineWidth: 1.5)
-                                                    }
+                Spacer(minLength: Kit941.Spacing.md)
+
+                Menu {
+                    Button("Last 52 weeks") {
+                        selectedYear = nil
+                    }
+
+                    Divider()
+
+                    ForEach(availableYears, id: \.self) { year in
+                        Button("\(year)") {
+                            selectedYear = year
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(rangePickerTitle)
+                            .kit941Font(.caption, weight: .semibold)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(Color.primary.opacity(0.06), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    LazyHStack(alignment: .top, spacing: 4) {
+                        ForEach(data.weeks, id: \.self) { week in
+                            VStack(spacing: 4) {
+                                Text(monthMarker(for: week) ?? "")
+                                    .kit941Font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 16, height: 14, alignment: .leading)
+
+                                ForEach(week, id: \.self) { day in
+                                    let dayKey = GitCommitRecord.dayKey(for: day)
+                                    let activityValue = data.activityValuesByDay[dayKey] ?? 0
+                                    let densityLevel = densityScale.level(for: activityValue)
+                                    Button {
+                                        selectedDate = Calendar.current.startOfDay(for: day)
+                                    } label: {
+                                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                            .fill(AppSurface.densityColor(level: densityLevel))
+                                            .frame(width: 13, height: 13)
+                                            .overlay {
+                                                if Calendar.current.isDate(day, inSameDayAs: selectedDate) {
+                                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                                        .stroke(Color.primary.opacity(0.72), lineWidth: 1.5)
                                                 }
                                         }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)), \(count) commits")
                                     }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(accessibilityLabel(for: day, data: data))
                                 }
-                                .id(week)
                             }
+                            .id(week)
                         }
-                        .padding(.vertical, 2)
                     }
-                    .scrollIndicators(.hidden)
-                    .onAppear {
-                        scrollToLatestWeek(proxy)
-                    }
-                    .onChange(of: yearCommitCount) { _, _ in
-                        scrollToLatestWeek(proxy)
-                    }
+                    .padding(.vertical, 2)
                 }
-
-                HStack(spacing: 5) {
-                    Text("Less")
-                        .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
-                    ForEach(0..<5) { level in
-                        RoundedRectangle(cornerRadius: 3, style: .continuous)
-                            .fill(AppSurface.densityColor(level: level))
-                            .frame(width: 12, height: 12)
-                    }
-                    Text("More")
-                        .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                .scrollIndicators(.hidden)
+                .onAppear {
+                    scrollToLatestWeek(proxy, weeks: data.weeks)
+                }
+                .onChange(of: data.totalValue) { _, _ in
+                    scrollToLatestWeek(proxy, weeks: data.weeks)
+                }
+                .onChange(of: selectedYear) { _, _ in
+                    scrollToLatestWeek(proxy, weeks: data.weeks)
                 }
             }
         }
     }
 
-    private var weeks: [[Date]] {
-        CalendarMath.contributionWeeks(ending: Date())
+    private var heatmapData: ActivityHeatmapData {
+        let weeks = heatmapWeeks
+        var activityValuesByDay: [String: Int] = [:]
+        var knownLineValuesByDay: [String: Int] = [:]
+        var commitCountsByDay: [String: Int] = [:]
+        var totalValue = 0
+        var commitCount = 0
+        var statsBackedCommitCount = 0
+
+        for day in weeks.flatMap({ $0 }) {
+            let dayKey = GitCommitRecord.dayKey(for: day)
+            if !CalendarMath.isContributionDay(day, in: activeInterval) {
+                activityValuesByDay[dayKey] = 0
+                knownLineValuesByDay[dayKey] = 0
+                commitCountsByDay[dayKey] = 0
+                continue
+            }
+
+            let snapshot = workMetrics.snapshot(on: day)
+            activityValuesByDay[dayKey] = metric.heatmapValue(for: snapshot)
+            knownLineValuesByDay[dayKey] = snapshot.totalChanges
+            commitCountsByDay[dayKey] = snapshot.commitCount
+            let value = metric.value(for: snapshot)
+            totalValue += value
+            commitCount += snapshot.commitCount
+            statsBackedCommitCount += snapshot.statsBackedCommitCount
+        }
+
+        return ActivityHeatmapData(
+            weeks: weeks,
+            activityValuesByDay: activityValuesByDay,
+            knownLineValuesByDay: knownLineValuesByDay,
+            commitCountsByDay: commitCountsByDay,
+            totalValue: totalValue,
+            commitCount: commitCount,
+            statsBackedCommitCount: statsBackedCommitCount
+        )
     }
 
-    private var yearCommitCount: Int {
-        weeks.flatMap { $0 }.reduce(0) { partial, date in
-            partial + metrics.count(on: date)
+    private var heatmapWeeks: [[Date]] {
+        if let selectedYear {
+            return CalendarMath.contributionWeeks(inYear: selectedYear)
+        }
+        return CalendarMath.contributionWeeks(ending: Date(), weekCount: 52)
+    }
+
+    private var activeInterval: DateInterval? {
+        guard let selectedYear else {
+            return nil
+        }
+        let calendar = Calendar.current
+        let start = calendar.date(from: DateComponents(year: selectedYear, month: 1, day: 1))
+            ?? Date()
+        let end = calendar.date(byAdding: .year, value: 1, to: start) ?? start
+        return DateInterval(start: start, end: end)
+    }
+
+    private var rangeTitle: String {
+        if let selectedYear {
+            return "\(selectedYear)"
+        }
+        return "Last 52 weeks"
+    }
+
+    private var rangePickerTitle: String {
+        selectedYear.map(String.init) ?? "52W"
+    }
+
+    private var availableYears: [Int] {
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: Date())
+        let oldestYear = workMetrics.oldestCommitDate.map { calendar.component(.year, from: $0) } ?? currentYear
+        guard oldestYear <= currentYear else {
+            return [currentYear]
+        }
+        return Array((oldestYear...currentYear).reversed())
+    }
+
+    private func subtitle(for data: ActivityHeatmapData) -> String {
+        switch metric {
+        case .changes:
+            let coverage = data.coverage.formatted(.percent.precision(.fractionLength(0)))
+            return "\(data.totalValue.formatted()) known lines. \(coverage) stats coverage"
+        case .commits:
+            return "\(data.totalValue.formatted()) commits"
         }
     }
 
-    private func scrollToLatestWeek(_ proxy: ScrollViewProxy) {
+    private func monthMarker(for week: [Date]) -> String? {
+        guard let firstMonthDay = CalendarMath.contributionMonthStart(
+            in: week,
+            activeInterval: activeInterval
+        ) else {
+            return nil
+        }
+        return firstMonthDay.formatted(.dateTime.month(.narrow))
+    }
+
+    private func accessibilityLabel(for day: Date, data: ActivityHeatmapData) -> String {
+        let dayKey = GitCommitRecord.dayKey(for: day)
+        let commitCount = data.commitCountsByDay[dayKey] ?? 0
+        let knownLines = data.knownLineValuesByDay[dayKey] ?? 0
+        let date = day.formatted(date: .complete, time: .omitted)
+
+        switch metric {
+        case .changes:
+            if knownLines > 0 {
+                return "\(date), \(knownLines) changed lines"
+            }
+            if commitCount > 0 {
+                return "\(date), \(commitCount) commits, line stats pending"
+            }
+            return "\(date), no work"
+        case .commits:
+            return "\(date), \(commitCount) commits"
+        }
+    }
+
+    private func scrollToLatestWeek(_ proxy: ScrollViewProxy, weeks: [[Date]]) {
         guard let latestWeek = weeks.last else {
             return
         }
         DispatchQueue.main.async {
             proxy.scrollTo(latestWeek, anchor: .trailing)
         }
+    }
+}
+
+private struct ActivityHeatmapData {
+    let weeks: [[Date]]
+    let activityValuesByDay: [String: Int]
+    let knownLineValuesByDay: [String: Int]
+    let commitCountsByDay: [String: Int]
+    let totalValue: Int
+    let commitCount: Int
+    let statsBackedCommitCount: Int
+
+    var coverage: Double {
+        guard commitCount > 0 else {
+            return 1
+        }
+        return Double(statsBackedCommitCount) / Double(commitCount)
     }
 }

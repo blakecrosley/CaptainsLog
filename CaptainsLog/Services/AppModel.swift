@@ -2,6 +2,37 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+enum RepositorySyncWindow {
+    static func updateSince(
+        fallbackSince: Date,
+        lastSyncedAt: Date?,
+        newestCommitDate: Date?,
+        overlap: TimeInterval
+    ) -> Date {
+        [
+            fallbackSince,
+            lastSyncedAt?.addingTimeInterval(-overlap),
+            newestCommitDate?.addingTimeInterval(-overlap)
+        ]
+        .compactMap { $0 }
+        .max() ?? fallbackSince
+    }
+}
+
+enum RepositoryHistoryBackfillPolicy {
+    static let fullSyncCommitPageLimit: Int? = nil
+}
+
+private enum DiffStatsBackfillOrder {
+    case newestFirst
+    case oldestFirst
+}
+
+private struct RepositorySyncResult {
+    let updateSince: Date
+    let usedHistoryStats: Bool
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     enum AuthState: Equatable {
@@ -30,6 +61,11 @@ final class AppModel: ObservableObject {
     private let commitSyncOverlap: TimeInterval = 300
     private let diffStatsBackfillPerRepositoryLimit = 100
     private let diffStatsBackfillPerSyncLimit = 300
+    private let todayDiffStatsPerRepositoryLimit = 20
+    private let todayDiffStatsPerSyncLimit = 80
+    private let incrementalDiffStatsPerRepositoryLimit = 25
+    private let incrementalDiffStatsPerSyncLimit = 100
+    private let historicalBackfillCommitPagesPerRepository = RepositoryHistoryBackfillPolicy.fullSyncCommitPageLimit
 
     var isSignedIn: Bool {
         token != nil && viewer != nil
@@ -221,11 +257,11 @@ final class AppModel: ObservableObject {
         isSyncing = true
         importedCommitCount = 0
         updatedDiffStatCount = 0
-        syncMessage = "Syncing commits"
+        syncMessage = "Syncing updates"
         defer { isSyncing = false }
 
         let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
-        let since = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
+        let fallbackSince = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
         var failedRepositories: [(name: String, message: String)] = []
 
         do {
@@ -235,21 +271,25 @@ final class AppModel: ObservableObject {
                 return
             }
 
-            var diffStatsBudget = diffStatsBackfillPerSyncLimit
+            var diffStatsBudget = incrementalDiffStatsPerSyncLimit
             for repository in selected {
                 do {
-                    try await syncRepositoryCommits(
+                    let syncResult = try await syncRepositoryCommits(
                         repository,
                         api: api,
                         author: viewer.login,
-                        since: since,
+                        authorID: viewer.nodeID,
+                        fallbackSince: fallbackSince,
+                        phase: "Syncing updates",
+                        backfillHistoricalGaps: false,
                         modelContext: modelContext
                     )
-                    if diffStatsBudget > 0 {
+                    if !syncResult.usedHistoryStats, diffStatsBudget > 0 {
                         let result = try await backfillDiffStats(
                             repository,
                             api: api,
-                            requestLimit: min(diffStatsBackfillPerRepositoryLimit, diffStatsBudget),
+                            requestLimit: min(incrementalDiffStatsPerRepositoryLimit, diffStatsBudget),
+                            authoredSince: syncResult.updateSince,
                             modelContext: modelContext
                         )
                         diffStatsBudget -= result.attempted
@@ -270,6 +310,157 @@ final class AppModel: ObservableObject {
                 syncMessage = "\(firstFailure.name): \(firstFailure.message)"
             } else {
                 syncMessage = "Sync failed"
+            }
+        } catch {
+            syncMessage = error.localizedDescription
+        }
+    }
+
+    func fullSyncSelectedRepositories(
+        lookbackDays: Int = 7_300
+    ) async {
+        guard !isSyncing else {
+            return
+        }
+        guard let token, let viewer else {
+            authState = .signedOut
+            return
+        }
+        guard let modelContext else {
+            syncMessage = StorageError.missingModelContext.localizedDescription
+            return
+        }
+
+        isSyncing = true
+        importedCommitCount = 0
+        updatedDiffStatCount = 0
+        syncMessage = "Backfilling full history"
+        defer { isSyncing = false }
+
+        let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
+        let fallbackSince = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
+        var failedRepositories: [(name: String, message: String)] = []
+
+        do {
+            let selected = try selectedRepositories(modelContext: modelContext)
+            guard !selected.isEmpty else {
+                syncMessage = "Select at least one repository"
+                return
+            }
+
+            var diffStatsBudget = diffStatsBackfillPerSyncLimit
+            for repository in selected {
+                do {
+                    let usedHistoryStats = try await backfillRepositoryHistory(
+                        repository,
+                        api: api,
+                        author: viewer.login,
+                        authorID: viewer.nodeID,
+                        since: fallbackSince,
+                        maxPages: historicalBackfillCommitPagesPerRepository,
+                        modelContext: modelContext
+                    )
+                    if !usedHistoryStats, diffStatsBudget > 0 {
+                        let result = try await backfillDiffStats(
+                            repository,
+                            api: api,
+                            requestLimit: min(diffStatsBackfillPerRepositoryLimit, diffStatsBudget),
+                            order: .newestFirst,
+                            modelContext: modelContext
+                        )
+                        diffStatsBudget -= result.attempted
+                    }
+                } catch is CancellationError {
+                    syncMessage = "Backfill canceled"
+                    return
+                } catch {
+                    failedRepositories.append((repository.fullName, error.localizedDescription))
+                }
+            }
+
+            if failedRepositories.isEmpty {
+                syncMessage = syncCompleteMessage(prefix: "Backfill complete", failedRepositoryCount: 0)
+            } else if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+                syncMessage = syncCompleteMessage(prefix: "Backfill complete", failedRepositoryCount: failedRepositories.count)
+            } else if let firstFailure = failedRepositories.first {
+                syncMessage = "\(firstFailure.name): \(firstFailure.message)"
+            } else {
+                syncMessage = "Backfill failed"
+            }
+        } catch {
+            syncMessage = error.localizedDescription
+        }
+    }
+
+    func syncToday() async {
+        guard !isSyncing else {
+            return
+        }
+        guard let token, let viewer else {
+            authState = .signedOut
+            return
+        }
+        guard let modelContext else {
+            syncMessage = StorageError.missingModelContext.localizedDescription
+            return
+        }
+
+        isSyncing = true
+        importedCommitCount = 0
+        updatedDiffStatCount = 0
+        syncMessage = "Refreshing today"
+        defer { isSyncing = false }
+
+        let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        var failedRepositories: [(name: String, message: String)] = []
+
+        do {
+            let selected = try selectedRepositories(modelContext: modelContext)
+            guard !selected.isEmpty else {
+                syncMessage = "Select at least one repository"
+                return
+            }
+
+            var diffStatsBudget = todayDiffStatsPerSyncLimit
+            for repository in selected {
+                do {
+                    let syncResult = try await syncRepositoryCommits(
+                        repository,
+                        api: api,
+                        author: viewer.login,
+                        authorID: viewer.nodeID,
+                        fallbackSince: startOfToday,
+                        phase: "Refreshing today",
+                        backfillHistoricalGaps: false,
+                        modelContext: modelContext
+                    )
+                    if !syncResult.usedHistoryStats, diffStatsBudget > 0 {
+                        let result = try await backfillDiffStats(
+                            repository,
+                            api: api,
+                            requestLimit: min(todayDiffStatsPerRepositoryLimit, diffStatsBudget),
+                            authoredSince: syncResult.updateSince,
+                            modelContext: modelContext
+                        )
+                        diffStatsBudget -= result.attempted
+                    }
+                } catch is CancellationError {
+                    syncMessage = "Refresh canceled"
+                    return
+                } catch {
+                    failedRepositories.append((repository.fullName, error.localizedDescription))
+                }
+            }
+
+            if failedRepositories.isEmpty {
+                syncMessage = todaySyncCompleteMessage(failedRepositoryCount: 0)
+            } else if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+                syncMessage = todaySyncCompleteMessage(failedRepositoryCount: failedRepositories.count)
+            } else if let firstFailure = failedRepositories.first {
+                syncMessage = "\(firstFailure.name): \(firstFailure.message)"
+            } else {
+                syncMessage = "Refresh failed"
             }
         } catch {
             syncMessage = error.localizedDescription
@@ -461,58 +652,326 @@ final class AppModel: ObservableObject {
         return inserted
     }
 
+    private func upsertGraphQLCommits(
+        _ remoteCommits: [GitHubGraphQLCommitDTO],
+        repository: GitRepositoryRecord,
+        author: String,
+        existingCommits: inout [String: GitCommitRecord],
+        modelContext: ModelContext
+    ) throws -> (inserted: Int, updatedStats: Int) {
+        var inserted = 0
+        var updatedStats = 0
+
+        for remote in remoteCommits {
+            let id = "\(repository.fullName)#\(remote.oid)"
+            let record: GitCommitRecord
+
+            if let existing = existingCommits[id] {
+                record = existing
+            } else {
+                record = GitCommitRecord(
+                    sha: remote.oid,
+                    repositoryFullName: repository.fullName,
+                    authorLogin: remote.authorLogin ?? author,
+                    message: remote.message,
+                    authoredAt: remote.authoredDate,
+                    htmlURL: remote.url
+                )
+                record.repository = repository
+                modelContext.insert(record)
+                existingCommits[id] = record
+                inserted += 1
+            }
+
+            let changedFileCount = remote.changedFilesIfAvailable ?? 0
+            if record.additions != remote.additions ||
+                record.deletions != remote.deletions ||
+                record.changedFileCount != changedFileCount {
+                record.applyDiffStats(
+                    additions: remote.additions,
+                    deletions: remote.deletions,
+                    changedFileCount: changedFileCount
+                )
+                updatedStats += 1
+            }
+        }
+
+        return (inserted, updatedStats)
+    }
+
     private func syncRepositoryCommits(
         _ repository: GitRepositoryRecord,
         api: GitHubAPIClient,
         author: String,
-        since: Date,
+        authorID: String?,
+        fallbackSince: Date,
+        phase: String = "Syncing",
+        backfillHistoricalGaps: Bool = true,
         modelContext: ModelContext
-    ) async throws {
-        var existingCommitIDs = try existingCommitIDs(
-            repositoryFullName: repository.fullName,
-            modelContext: modelContext
-        )
+    ) async throws -> RepositorySyncResult {
         let newestCommitDate = try newestCommitDate(
             repositoryFullName: repository.fullName,
             modelContext: modelContext
         )
-        let updateSince = max(
-            since,
-            newestCommitDate?.addingTimeInterval(-commitSyncOverlap) ?? since
+        let updateSince = RepositorySyncWindow.updateSince(
+            fallbackSince: fallbackSince,
+            lastSyncedAt: repository.lastSyncedAt,
+            newestCommitDate: newestCommitDate,
+            overlap: commitSyncOverlap
         )
-
-        try await syncCommitPages(
+        var existingCommitIDs: Set<String>?
+        let usedHistoryStats = try await syncCommitHistoryPagesIfAvailable(
             repository,
             api: api,
             author: author,
+            authorID: authorID,
             since: updateSince,
             until: nil,
-            phase: "Syncing",
-            existingCommitIDs: &existingCommitIDs,
+            phase: phase,
+            maxPages: nil,
             modelContext: modelContext
         )
+        if !usedHistoryStats {
+            var fallbackCommitIDs = try self.existingCommitIDs(
+                repositoryFullName: repository.fullName,
+                authoredSince: backfillHistoricalGaps ? nil : updateSince,
+                modelContext: modelContext
+            )
+
+            try await syncCommitPages(
+                repository,
+                api: api,
+                author: author,
+                since: updateSince,
+                until: nil,
+                phase: phase,
+                existingCommitIDs: &fallbackCommitIDs,
+                modelContext: modelContext
+            )
+            existingCommitIDs = fallbackCommitIDs
+        }
+
+        guard backfillHistoricalGaps else {
+            repository.lastSyncedAt = Date()
+            try modelContext.save()
+            return RepositorySyncResult(updateSince: updateSince, usedHistoryStats: usedHistoryStats)
+        }
 
         if let oldestCommitDate = try oldestCommitDate(
             repositoryFullName: repository.fullName,
             modelContext: modelContext
         ) {
             let backfillUntil = oldestCommitDate.addingTimeInterval(-1)
-            if backfillUntil > since {
+            if backfillUntil > fallbackSince {
+                var fallbackCommitIDs: Set<String>
+                if let existingCommitIDs {
+                    fallbackCommitIDs = existingCommitIDs
+                } else {
+                    fallbackCommitIDs = try self.existingCommitIDs(
+                        repositoryFullName: repository.fullName,
+                        modelContext: modelContext
+                    )
+                }
                 try await syncCommitPages(
                     repository,
                     api: api,
                     author: author,
-                    since: since,
+                    since: fallbackSince,
                     until: backfillUntil,
                     phase: "Backfilling",
-                    existingCommitIDs: &existingCommitIDs,
+                    existingCommitIDs: &fallbackCommitIDs,
                     modelContext: modelContext
                 )
+                existingCommitIDs = fallbackCommitIDs
             }
         }
 
         repository.lastSyncedAt = Date()
         try modelContext.save()
+        return RepositorySyncResult(updateSince: updateSince, usedHistoryStats: usedHistoryStats)
+    }
+
+    private func backfillRepositoryHistory(
+        _ repository: GitRepositoryRecord,
+        api: GitHubAPIClient,
+        author: String,
+        authorID: String?,
+        since: Date,
+        maxPages: Int?,
+        modelContext: ModelContext
+    ) async throws -> Bool {
+        var usedHistoryStats = try await syncMissingDiffStatsFromHistory(
+            repository,
+            api: api,
+            author: author,
+            authorID: authorID,
+            since: since,
+            maxPages: maxPages,
+            modelContext: modelContext
+        )
+
+        let oldestCommitDate = try oldestCommitDate(
+            repositoryFullName: repository.fullName,
+            modelContext: modelContext
+        )
+        let until = oldestCommitDate?.addingTimeInterval(-1)
+        let usedOlderHistory = try await syncCommitHistoryPagesIfAvailable(
+            repository,
+            api: api,
+            author: author,
+            authorID: authorID,
+            since: since,
+            until: until,
+            phase: "Backfilling history",
+            maxPages: maxPages,
+            modelContext: modelContext
+        )
+        usedHistoryStats = usedHistoryStats || usedOlderHistory
+        if !usedOlderHistory {
+            var existingCommitIDs = try existingCommitIDs(
+                repositoryFullName: repository.fullName,
+                modelContext: modelContext
+            )
+
+            try await syncCommitPages(
+                repository,
+                api: api,
+                author: author,
+                since: since,
+                until: until,
+                phase: "Backfilling history",
+                maxPages: maxPages,
+                existingCommitIDs: &existingCommitIDs,
+                modelContext: modelContext
+            )
+        }
+
+        repository.lastSyncedAt = Date()
+        try modelContext.save()
+        return usedHistoryStats
+    }
+
+    private func syncMissingDiffStatsFromHistory(
+        _ repository: GitRepositoryRecord,
+        api: GitHubAPIClient,
+        author: String,
+        authorID: String?,
+        since: Date,
+        maxPages: Int?,
+        modelContext: ModelContext
+    ) async throws -> Bool {
+        guard let window = try missingDiffStatsWindow(
+            repositoryFullName: repository.fullName,
+            since: since,
+            modelContext: modelContext
+        ) else {
+            return false
+        }
+
+        return try await syncCommitHistoryPagesIfAvailable(
+            repository,
+            api: api,
+            author: author,
+            authorID: authorID,
+            since: window.start,
+            until: window.end,
+            phase: "Backfilling line stats",
+            maxPages: maxPages,
+            modelContext: modelContext
+        )
+    }
+
+    private func syncCommitHistoryPagesIfAvailable(
+        _ repository: GitRepositoryRecord,
+        api: GitHubAPIClient,
+        author: String,
+        authorID: String?,
+        since: Date,
+        until: Date?,
+        phase: String,
+        maxPages: Int?,
+        modelContext: ModelContext
+    ) async throws -> Bool {
+        do {
+            return try await syncCommitHistoryPages(
+                repository,
+                api: api,
+                author: author,
+                authorID: authorID,
+                since: since,
+                until: until,
+                phase: phase,
+                maxPages: maxPages,
+                modelContext: modelContext
+            )
+        } catch let error as CancellationError {
+            throw error
+        } catch {
+            syncMessage = "GitHub history stats unavailable for \(repository.fullName); using REST"
+            return false
+        }
+    }
+
+    private func syncCommitHistoryPages(
+        _ repository: GitRepositoryRecord,
+        api: GitHubAPIClient,
+        author: String,
+        authorID: String?,
+        since: Date,
+        until: Date?,
+        phase: String,
+        maxPages: Int?,
+        modelContext: ModelContext
+    ) async throws -> Bool {
+        guard let authorID, !authorID.isEmpty else {
+            return false
+        }
+
+        var existingCommits = try existingCommitRecords(
+            repositoryFullName: repository.fullName,
+            authoredSince: until == nil ? since : nil,
+            modelContext: modelContext
+        )
+        var page = 1
+        var after: String?
+
+        while true {
+            if let maxPages, page > maxPages {
+                return false
+            }
+
+            try Task.checkCancellation()
+            syncMessage = "\(phase) \(repository.fullName) page \(page)"
+
+            let history = try await api.commitHistoryPage(
+                owner: repository.ownerLogin,
+                repo: repository.name,
+                authorID: authorID,
+                since: since,
+                until: until,
+                after: after,
+                perPage: commitPageSize
+            )
+
+            let result = try upsertGraphQLCommits(
+                history.commits,
+                repository: repository,
+                author: author,
+                existingCommits: &existingCommits,
+                modelContext: modelContext
+            )
+            importedCommitCount += result.inserted
+            updatedDiffStatCount += result.updatedStats
+            try modelContext.save()
+            syncMessage = "\(phase) \(repository.fullName): \(importedCommitCount) new commits, \(updatedDiffStatCount) line stats"
+
+            guard history.hasNextPage, let endCursor = history.endCursor else {
+                return true
+            }
+
+            after = endCursor
+            page += 1
+        }
     }
 
     private func syncCommitPages(
@@ -522,11 +981,15 @@ final class AppModel: ObservableObject {
         since: Date,
         until: Date?,
         phase: String,
+        maxPages: Int? = nil,
         existingCommitIDs: inout Set<String>,
         modelContext: ModelContext
     ) async throws {
         var page = 1
         while true {
+            if let maxPages, page > maxPages {
+                return
+            }
             try Task.checkCancellation()
             syncMessage = "\(phase) \(repository.fullName) page \(page)"
 
@@ -565,6 +1028,8 @@ final class AppModel: ObservableObject {
         _ repository: GitRepositoryRecord,
         api: GitHubAPIClient,
         requestLimit: Int,
+        authoredSince: Date? = nil,
+        order: DiffStatsBackfillOrder = .newestFirst,
         modelContext: ModelContext
     ) async throws -> (attempted: Int, updated: Int) {
         guard requestLimit > 0 else {
@@ -573,6 +1038,8 @@ final class AppModel: ObservableObject {
 
         let candidates = try commitsNeedingDiffStats(
             repositoryFullName: repository.fullName,
+            authoredSince: authoredSince,
+            order: order,
             modelContext: modelContext
         )
         guard !candidates.isEmpty else {
@@ -612,18 +1079,53 @@ final class AppModel: ObservableObject {
 
     private func commitsNeedingDiffStats(
         repositoryFullName: String,
+        authoredSince: Date? = nil,
+        order: DiffStatsBackfillOrder = .newestFirst,
         modelContext: ModelContext
     ) throws -> [GitCommitRecord] {
         let fullName = repositoryFullName
-        let descriptor = FetchDescriptor<GitCommitRecord>(
-            predicate: #Predicate { $0.repositoryFullName == fullName },
-            sortBy: [SortDescriptor(\.authoredAt, order: .reverse)]
-        )
-        return try modelContext.fetch(descriptor).filter { $0.diffStatsFetchedAt == nil }
+        let sortOrder: SortOrder = order == .newestFirst ? .reverse : .forward
+        if let authoredSince {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                predicate: #Predicate { $0.repositoryFullName == fullName && $0.authoredAt >= authoredSince },
+                sortBy: [SortDescriptor(\.authoredAt, order: sortOrder)]
+            )
+            return try modelContext.fetch(descriptor).filter { $0.diffStatsFetchedAt == nil }
+        } else {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                predicate: #Predicate { $0.repositoryFullName == fullName },
+                sortBy: [SortDescriptor(\.authoredAt, order: sortOrder)]
+            )
+            return try modelContext.fetch(descriptor).filter { $0.diffStatsFetchedAt == nil }
+        }
     }
 
-    private func syncCompleteMessage(failedRepositoryCount: Int) -> String {
-        var parts = ["Imported \(importedCommitCount) new commits"]
+    private func missingDiffStatsWindow(
+        repositoryFullName: String,
+        since: Date,
+        modelContext: ModelContext
+    ) throws -> DateInterval? {
+        let candidates = try commitsNeedingDiffStats(
+            repositoryFullName: repositoryFullName,
+            authoredSince: since,
+            order: .newestFirst,
+            modelContext: modelContext
+        )
+        guard let newestMissingDate = candidates.first?.authoredAt else {
+            return nil
+        }
+
+        let oldestMissingDate = candidates.last?.authoredAt ?? newestMissingDate
+        let start = max(oldestMissingDate.addingTimeInterval(-1), since)
+        let end = newestMissingDate.addingTimeInterval(1)
+        guard start < end else {
+            return nil
+        }
+        return DateInterval(start: start, end: end)
+    }
+
+    private func syncCompleteMessage(prefix: String = "Sync complete", failedRepositoryCount: Int) -> String {
+        var parts = ["\(prefix): \(importedCommitCount) new commits"]
         if updatedDiffStatCount > 0 {
             parts.append("updated \(updatedDiffStatCount) diff stats")
         }
@@ -633,15 +1135,55 @@ final class AppModel: ObservableObject {
         return parts.joined(separator: ". ")
     }
 
+    private func todaySyncCompleteMessage(failedRepositoryCount: Int) -> String {
+        var parts = ["Today refreshed: \(importedCommitCount) new commits"]
+        if updatedDiffStatCount > 0 {
+            parts.append("updated \(updatedDiffStatCount) diff stats")
+        }
+        if failedRepositoryCount > 0 {
+            parts.append("\(failedRepositoryCount) repositories need full sync")
+        }
+        return parts.joined(separator: ". ")
+    }
+
     private func existingCommitIDs(
         repositoryFullName: String,
+        authoredSince: Date? = nil,
         modelContext: ModelContext
     ) throws -> Set<String> {
         let fullName = repositoryFullName
-        let descriptor = FetchDescriptor<GitCommitRecord>(
-            predicate: #Predicate { $0.repositoryFullName == fullName }
-        )
-        return Set(try modelContext.fetch(descriptor).map(\.id))
+        if let authoredSince {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                predicate: #Predicate { $0.repositoryFullName == fullName && $0.authoredAt >= authoredSince }
+            )
+            return Set(try modelContext.fetch(descriptor).map(\.id))
+        } else {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                predicate: #Predicate { $0.repositoryFullName == fullName }
+            )
+            return Set(try modelContext.fetch(descriptor).map(\.id))
+        }
+    }
+
+    private func existingCommitRecords(
+        repositoryFullName: String,
+        authoredSince: Date? = nil,
+        modelContext: ModelContext
+    ) throws -> [String: GitCommitRecord] {
+        let fullName = repositoryFullName
+        let records: [GitCommitRecord]
+        if let authoredSince {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                predicate: #Predicate { $0.repositoryFullName == fullName && $0.authoredAt >= authoredSince }
+            )
+            records = try modelContext.fetch(descriptor)
+        } else {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                predicate: #Predicate { $0.repositoryFullName == fullName }
+            )
+            records = try modelContext.fetch(descriptor)
+        }
+        return Dictionary(uniqueKeysWithValues: records.map { ($0.id, $0) })
     }
 
     private func newestCommitDate(

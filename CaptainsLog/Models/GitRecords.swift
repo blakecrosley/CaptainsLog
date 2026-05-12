@@ -162,6 +162,20 @@ final class GitCommitRecord {
         diffStatsError = nil
     }
 
+    func applyDiffStats(
+        additions: Int,
+        deletions: Int,
+        changedFileCount: Int?,
+        fetchedAt: Date = Date()
+    ) {
+        self.additions = additions
+        self.deletions = deletions
+        totalChanges = additions + deletions
+        self.changedFileCount = changedFileCount
+        diffStatsFetchedAt = fetchedAt
+        diffStatsError = nil
+    }
+
     func markDiffStatsFailed(_ message: String, fetchedAt: Date = Date()) {
         diffStatsFetchedAt = fetchedAt
         diffStatsError = message
@@ -246,5 +260,41 @@ struct ActivityMetrics {
     func commits(on date: Date, calendar: Calendar = .current) -> [GitCommitRecord] {
         let key = GitCommitRecord.dayKey(for: date, calendar: calendar)
         return (commitsByDay[key] ?? []).sorted { $0.authoredAt > $1.authoredAt }
+    }
+}
+
+enum WorkDataFilter {
+    static func visibleCommits(
+        _ commits: [GitCommitRecord],
+        repositories: [GitRepositoryRecord],
+        activeLogin: String?
+    ) -> [GitCommitRecord] {
+        let selectedRepositoryNames = Set(
+            repositories
+                .filter { repository in
+                    guard repository.isSelected else {
+                        return false
+                    }
+                    guard repository.isGitHubBacked, let activeLogin else {
+                        return true
+                    }
+                    return repository.accountLogin == nil || repository.accountLogin == activeLogin
+                }
+                .map(\.fullName)
+        )
+
+        guard !selectedRepositoryNames.isEmpty else {
+            return []
+        }
+
+        return commits.filter { commit in
+            guard selectedRepositoryNames.contains(commit.repositoryFullName) else {
+                return false
+            }
+            guard let activeLogin else {
+                return true
+            }
+            return commit.authorLogin == activeLogin || commit.authorLogin == nil
+        }
     }
 }
