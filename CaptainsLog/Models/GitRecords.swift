@@ -49,6 +49,16 @@ final class GitRepositoryRecord {
     var pushedAt: Date?
     var lastSyncedAt: Date?
     var createdAt: Date
+    var historyBackfillLowerBound: Date?
+    var historyBackfillCursorDate: Date?
+    var historyBackfillMonthStart: Date?
+    var historyBackfillMonthEnd: Date?
+    var historyBackfillPageCursor: String?
+    var historyBackfillCompletedAt: Date?
+    var historyBackfillLastAttemptAt: Date?
+    var historyBackfillLastError: String?
+    var historyBackfillProcessedCommitCount: Int?
+    var historyBackfillUpdatedStatCount: Int?
 
     @Relationship(deleteRule: .cascade, inverse: \GitCommitRecord.repository)
     var commits: [GitCommitRecord]
@@ -81,7 +91,60 @@ final class GitRepositoryRecord {
         self.pushedAt = pushedAt
         self.lastSyncedAt = lastSyncedAt
         self.createdAt = createdAt
+        self.historyBackfillLowerBound = nil
+        self.historyBackfillCursorDate = nil
+        self.historyBackfillMonthStart = nil
+        self.historyBackfillMonthEnd = nil
+        self.historyBackfillPageCursor = nil
+        self.historyBackfillCompletedAt = nil
+        self.historyBackfillLastAttemptAt = nil
+        self.historyBackfillLastError = nil
+        self.historyBackfillProcessedCommitCount = nil
+        self.historyBackfillUpdatedStatCount = nil
         self.commits = []
+    }
+
+    var isHistoryBackfillComplete: Bool {
+        historyBackfillCompletedAt != nil
+    }
+
+    func prepareHistoryBackfill(lowerBound: Date) {
+        if let previousLowerBound = historyBackfillLowerBound, previousLowerBound > lowerBound {
+            historyBackfillCompletedAt = nil
+        }
+        historyBackfillLowerBound = lowerBound
+    }
+
+    func markHistoryBackfillMonth(
+        _ interval: DateInterval,
+        pageCursor: String? = nil,
+        attemptedAt: Date = Date()
+    ) {
+        historyBackfillMonthStart = interval.start
+        historyBackfillMonthEnd = interval.end
+        historyBackfillPageCursor = pageCursor
+        historyBackfillLastAttemptAt = attemptedAt
+        historyBackfillLastError = nil
+        historyBackfillCompletedAt = nil
+    }
+
+    func advanceHistoryBackfillCursor(to date: Date, completedAt: Date? = nil) {
+        historyBackfillCursorDate = date
+        historyBackfillMonthStart = nil
+        historyBackfillMonthEnd = nil
+        historyBackfillPageCursor = nil
+        historyBackfillCompletedAt = completedAt
+        historyBackfillLastError = nil
+    }
+
+    func markHistoryBackfillFailed(_ message: String, attemptedAt: Date = Date()) {
+        historyBackfillLastAttemptAt = attemptedAt
+        historyBackfillLastError = message
+    }
+
+    func recordHistoryBackfillProgress(processedCommits: Int, updatedStats: Int) {
+        historyBackfillProcessedCommitCount = (historyBackfillProcessedCommitCount ?? 0) + processedCommits
+        historyBackfillUpdatedStatCount = (historyBackfillUpdatedStatCount ?? 0) + updatedStats
     }
 }
 
@@ -139,6 +202,19 @@ final class GitCommitRecord {
 
     var hasDiffStats: Bool {
         additions != nil && deletions != nil && changedFileCount != nil
+    }
+
+    func needsDiffStatsBackfill(
+        at date: Date = Date(),
+        retryInterval: TimeInterval = 3_600
+    ) -> Bool {
+        guard !hasDiffStats else {
+            return false
+        }
+        guard diffStatsError != nil, let diffStatsFetchedAt else {
+            return true
+        }
+        return date.timeIntervalSince(diffStatsFetchedAt) >= retryInterval
     }
 
     var changedFiles: [String] {

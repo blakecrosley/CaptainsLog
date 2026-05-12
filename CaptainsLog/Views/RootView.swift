@@ -1,6 +1,9 @@
 import SwiftData
 import SwiftUI
 import Kit941
+import OSLog
+
+private let rootViewLogger = Logger(subsystem: "com.blakecrosley.captainslog", category: "ui")
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
@@ -229,6 +232,7 @@ struct RootView: View {
                 repositories: githubRepositories,
                 githubLogin: activeLogin,
                 githubAvatarURL: activeAvatarURL,
+                isGitHubSignedIn: appModel.isSignedIn,
                 isSyncing: appModel.isSyncing,
                 syncMessage: appModel.syncMessage,
                 importedCommitCount: appModel.importedCommitCount,
@@ -236,8 +240,15 @@ struct RootView: View {
                 lastSyncedAt: lastRepositorySyncDate,
                 hasOpenAIKey: hasOpenAIKey,
                 onShowAccounts: { isShowingAccountSwitcher = true },
-                onRefreshToday: {
-                    Task { await appModel.syncToday() }
+                onSyncLatest: {
+                    rootViewLogger.info("Header sync latest tapped")
+                    Task { await appModel.syncSelectedRepositories() }
+                },
+                onFillLineStats: { scope, interval in
+                    rootViewLogger.info("Period line stats tapped: \(scope.rawValue)")
+                    Task {
+                        await appModel.backfillSelectedPeriodLineStats(scope: scope, interval: interval)
+                    }
                 },
                 onShowSettings: { isShowingRepositorySettings = true },
                 onShowAISettings: { isShowingAISettings = true },
@@ -533,12 +544,15 @@ struct RootView: View {
             importedCommitCount: appModel.importedCommitCount,
             appInstallURL: appModel.githubRepositoryApprovalURL,
             onRefreshRepos: {
+                rootViewLogger.info("Repository panel refresh tapped")
                 Task { await appModel.refreshRepositories() }
             },
             onSyncSelected: {
+                rootViewLogger.info("Repository panel sync updates tapped")
                 Task { await appModel.syncSelectedRepositories() }
             },
             onFullSync: {
+                rootViewLogger.info("Repository panel index history tapped")
                 Task { await appModel.fullSyncSelectedRepositories() }
             },
             onInstallApp: {
@@ -554,7 +568,7 @@ struct RootView: View {
         if githubRepositories.isEmpty {
             await appModel.refreshRepositories()
         } else {
-            await appModel.syncToday()
+            await appModel.syncSelectedRepositories()
         }
     }
 

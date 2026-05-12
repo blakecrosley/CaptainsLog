@@ -3,7 +3,7 @@ import Foundation
 enum WorkRangeScope: String, CaseIterable, Identifiable {
     case day
     case week
-    case quarter
+    case month
     case year
 
     var id: String { rawValue }
@@ -12,8 +12,39 @@ enum WorkRangeScope: String, CaseIterable, Identifiable {
         switch self {
         case .day: "Day"
         case .week: "Week"
-        case .quarter: "Quarter"
+        case .month: "Month"
         case .year: "Year"
+        }
+    }
+
+    var lowerTitle: String {
+        title.lowercased()
+    }
+
+    var pluralTitle: String {
+        switch self {
+        case .day: "days"
+        case .week: "weeks"
+        case .month: "months"
+        case .year: "years"
+        }
+    }
+
+    var syncTitle: String {
+        switch self {
+        case .day: "day"
+        case .week: "week"
+        case .month: "month"
+        case .year: "year"
+        }
+    }
+
+    var trendPointCount: Int {
+        switch self {
+        case .day: 14
+        case .week: 10
+        case .month: 12
+        case .year: 6
         }
     }
 
@@ -25,14 +56,8 @@ enum WorkRangeScope: String, CaseIterable, Identifiable {
             return DateInterval(start: start, end: end)
         case .week:
             return calendar.dateInterval(of: .weekOfYear, for: date) ?? Self.day.interval(containing: date, calendar: calendar)
-        case .quarter:
-            let components = calendar.dateComponents([.year, .month], from: date)
-            let month = components.month ?? 1
-            let quarterStartMonth = ((month - 1) / 3) * 3 + 1
-            let start = calendar.date(from: DateComponents(year: components.year, month: quarterStartMonth, day: 1))
-                ?? calendar.startOfDay(for: date)
-            let end = calendar.date(byAdding: .month, value: 3, to: start) ?? start
-            return DateInterval(start: start, end: end)
+        case .month:
+            return calendar.dateInterval(of: .month, for: date) ?? Self.day.interval(containing: date, calendar: calendar)
         case .year:
             return calendar.dateInterval(of: .year, for: date) ?? Self.day.interval(containing: date, calendar: calendar)
         }
@@ -45,8 +70,8 @@ enum WorkRangeScope: String, CaseIterable, Identifiable {
             start = calendar.date(byAdding: .day, value: -1, to: interval.start) ?? interval.start
         case .week:
             start = calendar.date(byAdding: .weekOfYear, value: -1, to: interval.start) ?? interval.start
-        case .quarter:
-            start = calendar.date(byAdding: .month, value: -3, to: interval.start) ?? interval.start
+        case .month:
+            start = calendar.date(byAdding: .month, value: -1, to: interval.start) ?? interval.start
         case .year:
             start = calendar.date(byAdding: .year, value: -1, to: interval.start) ?? interval.start
         }
@@ -193,6 +218,10 @@ struct DayWorkSnapshot {
         statsBackedCommitCount > 0
     }
 
+    var missingDiffStatsCount: Int {
+        max(commitCount - statsBackedCommitCount, 0)
+    }
+
     var mode: WorkMetricMode {
         coverage >= WorkMetrics.diffCoverageThreshold ? .diffBacked : .commitEstimate
     }
@@ -231,6 +260,10 @@ struct WorkRangeSummary {
 
     var hasDiffStats: Bool {
         statsBackedCommitCount > 0
+    }
+
+    var missingDiffStatsCount: Int {
+        max(commitCount - statsBackedCommitCount, 0)
     }
 
     var mode: WorkMetricMode {

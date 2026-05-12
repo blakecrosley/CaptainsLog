@@ -10,6 +10,7 @@ struct WorkOverviewView: View {
     let repositories: [GitRepositoryRecord]
     let githubLogin: String?
     let githubAvatarURL: URL?
+    let isGitHubSignedIn: Bool
     let isSyncing: Bool
     let syncMessage: String
     let importedCommitCount: Int
@@ -17,13 +18,15 @@ struct WorkOverviewView: View {
     let lastSyncedAt: Date?
     let hasOpenAIKey: Bool
     let onShowAccounts: @MainActor @Sendable () -> Void
-    let onRefreshToday: @MainActor @Sendable () -> Void
+    let onSyncLatest: @MainActor @Sendable () -> Void
+    let onFillLineStats: @MainActor @Sendable (WorkRangeScope, DateInterval) -> Void
     let onShowSettings: @MainActor @Sendable () -> Void
     let onShowAISettings: @MainActor @Sendable () -> Void
     let onShowMonth: @MainActor @Sendable () -> Void
     let onShowDayDetail: @MainActor @Sendable () -> Void
 
     @State private var displayMetric: WorkDisplayMetric = .changes
+    @State private var selectedScope: WorkRangeScope = .week
 
     var body: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.xl) {
@@ -37,7 +40,11 @@ struct WorkOverviewView: View {
                 trend: trend,
                 summary: rangeSummary,
                 trendSummaries: trendLineSummaries,
-                metric: $displayMetric
+                scope: $selectedScope,
+                metric: $displayMetric,
+                isSyncing: isSyncing,
+                canFillLineStats: isGitHubSignedIn,
+                onFillLineStats: onFillLineStats
             )
             ActivityHeatmapView(
                 selectedDate: $selectedDate,
@@ -54,20 +61,33 @@ struct WorkOverviewView: View {
     }
 
     private var trend: WorkTrendSummary {
-        workMetrics.trend(scope: .week, containing: selectedDate)
+        workMetrics.trend(scope: selectedScope, containing: selectedDate)
     }
 
     private var rangeSummary: WorkRangeSummary {
-        workMetrics.rangeSummary(scope: .week, containing: selectedDate)
+        workMetrics.rangeSummary(scope: selectedScope, containing: selectedDate)
     }
 
     private var trendLineSummaries: [WorkRangeSummary] {
-        let calendar = Calendar.current
-        return (0..<10).reversed().compactMap { offset in
-            guard let date = calendar.date(byAdding: .weekOfYear, value: -offset, to: selectedDate) else {
+        (0..<selectedScope.trendPointCount).reversed().compactMap { offset in
+            guard let date = date(byAddingPeriods: -offset, to: selectedDate, scope: selectedScope) else {
                 return nil
             }
-            return workMetrics.rangeSummary(scope: .week, containing: date)
+            return workMetrics.rangeSummary(scope: selectedScope, containing: date)
+        }
+    }
+
+    private func date(byAddingPeriods value: Int, to date: Date, scope: WorkRangeScope) -> Date? {
+        let calendar = Calendar.current
+        switch scope {
+        case .day:
+            return calendar.date(byAdding: .day, value: value, to: date)
+        case .week:
+            return calendar.date(byAdding: .weekOfYear, value: value, to: date)
+        case .month:
+            return calendar.date(byAdding: .month, value: value, to: date)
+        case .year:
+            return calendar.date(byAdding: .year, value: value, to: date)
         }
     }
 
@@ -103,7 +123,11 @@ struct WorkOverviewView: View {
                             .controlSize(.small)
                             .frame(width: 38, height: 38)
                     } else {
-                        iconButton("Refresh Today", systemImage: "arrow.clockwise", action: onRefreshToday)
+                        if isGitHubSignedIn {
+                            iconButton("Sync Latest", systemImage: "arrow.clockwise", action: onSyncLatest)
+                        } else {
+                            iconButton("Sign in with GitHub", systemImage: "person.crop.circle.badge.plus", action: onShowAccounts)
+                        }
                     }
                     iconButton("AI", systemImage: hasOpenAIKey ? "sparkles" : "sparkles.slash", action: onShowAISettings)
                     iconButton("Settings", systemImage: "gearshape", action: onShowSettings)
@@ -113,11 +137,13 @@ struct WorkOverviewView: View {
             SyncStatusStrip(
                 repositoryCount: repositories.count,
                 selectedRepositoryCount: repositories.filter(\.isSelected).count,
+                isGitHubSignedIn: isGitHubSignedIn,
                 isSyncing: isSyncing,
                 syncMessage: syncMessage,
                 importedCommitCount: importedCommitCount,
                 updatedDiffStatCount: updatedDiffStatCount,
-                lastSyncedAt: lastSyncedAt
+                lastSyncedAt: lastSyncedAt,
+                historyIndexDetail: historyIndexDetail
             )
         }
     }
@@ -127,6 +153,27 @@ struct WorkOverviewView: View {
             return githubLogin
         }
         return "GitHub"
+    }
+
+    private var historyIndexDetail: String? {
+        let selectedRepositories = repositories.filter(\.isSelected)
+        guard !selectedRepositories.isEmpty else {
+            return nil
+        }
+
+        if let activeRepository = selectedRepositories.first(where: { $0.historyBackfillMonthStart != nil }) {
+            if let monthStart = activeRepository.historyBackfillMonthStart {
+                let month = monthStart.formatted(.dateTime.month(.abbreviated).year())
+                return "Indexing \(activeRepository.fullName) \(month)"
+            }
+            return "Indexing \(activeRepository.fullName)"
+        }
+
+        let completedCount = selectedRepositories.filter(\.isHistoryBackfillComplete).count
+        guard completedCount > 0 else {
+            return nil
+        }
+        return "History index \(completedCount.formatted()) of \(selectedRepositories.count.formatted()) repositories complete"
     }
 
     private func iconButton(
@@ -151,11 +198,13 @@ struct WorkOverviewView: View {
 private struct SyncStatusStrip: View {
     let repositoryCount: Int
     let selectedRepositoryCount: Int
+    let isGitHubSignedIn: Bool
     let isSyncing: Bool
     let syncMessage: String
     let importedCommitCount: Int
     let updatedDiffStatCount: Int
     let lastSyncedAt: Date?
+    let historyIndexDetail: String?
 
     var body: some View {
         HStack(spacing: Kit941.Spacing.sm) {
@@ -184,14 +233,17 @@ private struct SyncStatusStrip: View {
     }
 
     private var statusIcon: some View {
-        Image(systemName: isSyncing ? "arrow.triangle.2.circlepath" : "checkmark.seal.fill")
+        Image(systemName: statusSymbol)
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(AppSurface.accent)
+            .foregroundStyle(isGitHubSignedIn ? AppSurface.accent : Kit941.Status.warning)
     }
 
     private var title: String {
         if isSyncing {
             return "Syncing GitHub"
+        }
+        if !isGitHubSignedIn {
+            return "GitHub signed out"
         }
         return repositoryCount > 0 ? "GitHub history" : "GitHub connected"
     }
@@ -203,10 +255,20 @@ private struct SyncStatusStrip: View {
         if importedCommitCount > 0 || updatedDiffStatCount > 0 {
             return "\(importedCommitCount.formatted()) commits, \(updatedDiffStatCount.formatted()) diff stats this run"
         }
+        if let historyIndexDetail {
+            return historyIndexDetail
+        }
         if let lastSyncedAt {
             return "Last sync \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"
         }
         return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) repositories selected"
+    }
+
+    private var statusSymbol: String {
+        if isSyncing {
+            return "arrow.triangle.2.circlepath"
+        }
+        return isGitHubSignedIn ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
     }
 }
 
@@ -228,7 +290,11 @@ private struct PeriodReadView: View {
     let trend: WorkTrendSummary
     let summary: WorkRangeSummary
     let trendSummaries: [WorkRangeSummary]
+    @Binding var scope: WorkRangeScope
     @Binding var metric: WorkDisplayMetric
+    let isSyncing: Bool
+    let canFillLineStats: Bool
+    let onFillLineStats: @MainActor @Sendable (WorkRangeScope, DateInterval) -> Void
 
     @State private var breakdownDimension: WorkBreakdownDimension = .type
 
@@ -236,7 +302,7 @@ private struct PeriodReadView: View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
             HStack(alignment: .top, spacing: Kit941.Spacing.md) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Selected week")
+                    Text("Selected \(scope.lowerTitle)")
                         .kit941Font(.label, weight: .semibold)
                     Text(dateRangeLabel)
                         .kit941Font(.caption)
@@ -259,6 +325,13 @@ private struct PeriodReadView: View {
                         .minimumScaleFactor(0.78)
                 }
             }
+
+            Picker("Period", selection: $scope) {
+                ForEach(WorkRangeScope.allCases) { scope in
+                    Text(scope.title).tag(scope)
+                }
+            }
+            .pickerStyle(.segmented)
 
             Picker("Metric", selection: $metric) {
                 ForEach(WorkDisplayMetric.allCases) { metric in
@@ -286,8 +359,13 @@ private struct PeriodReadView: View {
                     .minimumScaleFactor(0.78)
             }
 
+            if shouldShowLineStatsAction {
+                lineStatsAction
+            }
+
             WorkTrendLineView(
                 summaries: trendSummaries,
+                scope: scope,
                 metric: metric
             )
             .frame(height: 96)
@@ -311,7 +389,7 @@ private struct PeriodReadView: View {
 
                 WorkBreakdownStrip(summary: summary, dimension: breakdownDimension)
             } else {
-                Text("No imported work in this week.")
+                Text("No imported work in this \(scope.lowerTitle).")
                     .kit941Font(.body)
                     .foregroundStyle(.secondary)
             }
@@ -333,6 +411,16 @@ private struct PeriodReadView: View {
     private var dateRangeLabel: String {
         let calendar = Calendar.current
         let end = calendar.date(byAdding: .day, value: -1, to: summary.end) ?? summary.end
+        switch scope {
+        case .day:
+            return summary.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+        case .month:
+            return summary.start.formatted(.dateTime.month(.wide).year())
+        case .year:
+            return summary.start.formatted(.dateTime.year())
+        case .week:
+            break
+        }
         if calendar.isDate(summary.start, inSameDayAs: end) {
             return summary.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
         }
@@ -345,7 +433,7 @@ private struct PeriodReadView: View {
         }
         let formatted = percentChange.formatted(.percent.precision(.fractionLength(0)))
         let signed = percentChange > 0 ? "+\(formatted)" : formatted
-        return "\(signed) vs prior week"
+        return "\(signed) vs prior \(scope.lowerTitle)"
     }
 
     private var dataBasisLabel: String {
@@ -368,6 +456,55 @@ private struct PeriodReadView: View {
 
     private var changeCompositionLabel: String {
         "+\(summary.additions.formatted()) -\(summary.deletions.formatted()) across \(summary.changedFiles.formatted()) files"
+    }
+
+    private var shouldShowLineStatsAction: Bool {
+        metric == .changes && canFillLineStats
+    }
+
+    private var lineStatsAction: some View {
+        HStack(spacing: Kit941.Spacing.sm) {
+            Label(lineStatsStatusLabel, systemImage: "chart.bar.doc.horizontal")
+                .kit941Font(.caption, weight: .semibold)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Spacer(minLength: 0)
+
+            Button {
+                onFillLineStats(scope, DateInterval(start: summary.start, end: summary.end))
+            } label: {
+                Label(lineStatsButtonLabel, systemImage: "arrow.down.doc")
+                    .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(isSyncing)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
+    }
+
+    private var lineStatsStatusLabel: String {
+        guard summary.commitCount > 0 else {
+            return "Fetch GitHub history for this \(scope.lowerTitle)"
+        }
+        guard summary.missingDiffStatsCount > 0 else {
+            return "Line stats ready for this \(scope.lowerTitle)"
+        }
+        let count = summary.missingDiffStatsCount
+        let unit = count == 1 ? "commit" : "commits"
+        let verb = count == 1 ? "needs" : "need"
+        return "\(count.formatted()) \(unit) \(verb) line stats"
+    }
+
+    private var lineStatsButtonLabel: String {
+        if summary.missingDiffStatsCount > 0 {
+            return "Fill \(scope.title)"
+        }
+        return "Refresh \(scope.title)"
     }
 
     private var metricPercentChange: Double? {
@@ -492,6 +629,7 @@ private struct ComparisonMarkView: View {
 
 private struct WorkTrendLineView: View {
     let summaries: [WorkRangeSummary]
+    let scope: WorkRangeScope
     let metric: WorkDisplayMetric
 
     var body: some View {
@@ -527,7 +665,7 @@ private struct WorkTrendLineView: View {
             }
 
             HStack {
-                Text("Last \(summaries.count) weeks")
+                Text("Last \(summaries.count) \(scope.pluralTitle)")
                 Spacer(minLength: Kit941.Spacing.sm)
                 Text(peakLabel)
             }
@@ -546,7 +684,7 @@ private struct WorkTrendLineView: View {
 
     private var accessibilityLabel: String {
         let values = summaries.map { metric.value(for: $0).formatted() }.joined(separator: ", ")
-        return "Recent weekly \(metric.title.lowercased()) trend: \(values)"
+        return "Recent \(scope.lowerTitle) \(metric.title.lowercased()) trend: \(values)"
     }
 
     private func trendPoints(values: [Int], size: CGSize) -> [CGPoint] {

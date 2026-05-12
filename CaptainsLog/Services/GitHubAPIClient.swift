@@ -52,12 +52,10 @@ struct GitHubAPIClient: Sendable {
     func commits(
         owner: String,
         repo: String,
-        author: String,
         since: Date
     ) async throws -> [GitHubCommitDTO] {
         do {
             return try await getAllPages(path: "/repos/\(owner)/\(repo)/commits", queryItems: [
-                URLQueryItem(name: "author", value: author),
                 URLQueryItem(name: "since", value: githubDateString(since)),
                 URLQueryItem(name: "per_page", value: "100")
             ])
@@ -69,14 +67,12 @@ struct GitHubAPIClient: Sendable {
     func commitPage(
         owner: String,
         repo: String,
-        author: String,
         since: Date,
         until: Date? = nil,
         page: Int,
         perPage: Int = 100
     ) async throws -> [GitHubCommitDTO] {
         var queryItems = [
-            URLQueryItem(name: "author", value: author),
             URLQueryItem(name: "since", value: githubDateString(since)),
             URLQueryItem(name: "per_page", value: "\(perPage)"),
             URLQueryItem(name: "page", value: "\(page)")
@@ -102,7 +98,6 @@ struct GitHubAPIClient: Sendable {
     func commitHistoryPage(
         owner: String,
         repo: String,
-        authorID: String,
         since: Date,
         until: Date? = nil,
         after: String? = nil,
@@ -113,7 +108,6 @@ struct GitHubAPIClient: Sendable {
             variables: CommitHistoryVariables(
                 owner: owner,
                 name: repo,
-                authorID: authorID,
                 since: githubDateString(since),
                 until: until.map(githubDateString),
                 after: after,
@@ -280,7 +274,6 @@ struct GitHubAPIClient: Sendable {
     private struct CommitHistoryVariables: Encodable {
         let owner: String
         let name: String
-        let authorID: String
         let since: String
         let until: String?
         let after: String?
@@ -302,12 +295,12 @@ struct GitHubAPIClient: Sendable {
     }
 
     private static let commitHistoryQuery = """
-    query CaptainLogCommitHistory($owner: String!, $name: String!, $authorID: ID!, $since: GitTimestamp!, $until: GitTimestamp, $after: String, $first: Int!) {
+    query CaptainLogCommitHistory($owner: String!, $name: String!, $since: GitTimestamp!, $until: GitTimestamp, $after: String, $first: Int!) {
       repository(owner: $owner, name: $name) {
         defaultBranchRef {
           target {
             ... on Commit {
-              history(first: $first, after: $after, since: $since, until: $until, author: { id: $authorID }) {
+              history(first: $first, after: $after, since: $since, until: $until) {
                 pageInfo {
                   hasNextPage
                   endCursor
@@ -498,6 +491,13 @@ enum GitHubError: LocalizedError, Equatable {
         return true
     }
 
+    var isUnauthorized: Bool {
+        guard case .httpStatus(401, _) = self else {
+            return false
+        }
+        return true
+    }
+
     var errorDescription: String? {
         switch self {
         case .missingClientID:
@@ -506,6 +506,8 @@ enum GitHubError: LocalizedError, Equatable {
             return "The GitHub URL could not be built."
         case .invalidResponse:
             return "GitHub returned a response the app could not read."
+        case .httpStatus(401, _):
+            return "GitHub rejected the saved session. Sign in again."
         case .httpStatus(let status, let message):
             return "GitHub returned HTTP \(status): \(message)"
         case .noAppInstallations(let slug):

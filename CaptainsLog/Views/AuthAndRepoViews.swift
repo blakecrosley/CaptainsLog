@@ -225,7 +225,7 @@ struct RepositoryPanel: View {
                     Kit941.Button(role: .secondary) {
                         await MainActor.run { onFullSync() }
                     } label: {
-                        Label("Backfill All", systemImage: "square.and.arrow.down")
+                        Label("Index History", systemImage: "chart.xyaxis.line")
                     }
                     .disabled(repositories.isEmpty || selectedCount == 0)
                 }

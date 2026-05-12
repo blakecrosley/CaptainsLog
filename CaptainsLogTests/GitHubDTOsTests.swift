@@ -9,7 +9,7 @@ final class GitHubDTOsTests: XCTestCase {
         )
     }
 
-    func testDecodesViewerNodeIDForGraphQLAuthorFiltering() throws {
+    func testDecodesViewerNodeIDForSessionIdentity() throws {
         let json = Data("""
         {
           "login": "blakecrosley",
@@ -24,6 +24,21 @@ final class GitHubDTOsTests: XCTestCase {
 
         XCTAssertEqual(viewer.login, "blakecrosley")
         XCTAssertEqual(viewer.nodeID, "MDQ6VXNlcjk0MQ==")
+    }
+
+    func testEmptyLocalRepositorySyncIgnoresStaleLastSyncedAt() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let fallbackSince = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))
+        let staleLastSync = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 12)))
+
+        let updateSince = RepositorySyncWindow.updateSince(
+            fallbackSince: fallbackSince,
+            lastSyncedAt: staleLastSync,
+            newestCommitDate: nil,
+            overlap: 300
+        )
+
+        XCTAssertEqual(updateSince, fallbackSince)
     }
 
     func testDemoRepositoryIsNotGitHubBacked() {
@@ -133,6 +148,32 @@ final class GitHubDTOsTests: XCTestCase {
         XCTAssertNotNil(commits.first?.authoredAt)
     }
 
+    func testDecodesUnlinkedGitAuthorFromCommitResponse() throws {
+        let json = Data("""
+        [
+          {
+            "sha": "abcdef1234567890",
+            "html_url": "https://github.com/blakecrosley/hermes-brain/commit/abcdef1",
+            "author": null,
+            "commit": {
+              "message": "verify-prd",
+              "author": {
+                "name": "Blake",
+                "email": "blake@local",
+                "date": "2026-04-10T03:40:13Z"
+              }
+            }
+          }
+        ]
+        """.utf8)
+
+        let commits = try GitHubJSON.decoder.decode([GitHubCommitDTO].self, from: json)
+
+        XCTAssertEqual(commits.first?.sha, "abcdef1234567890")
+        XCTAssertNil(commits.first?.author?.login)
+        XCTAssertNotNil(commits.first?.authoredAt)
+    }
+
     func testDecodesGitHubCommitDetailStats() throws {
         let json = Data("""
         {
@@ -228,9 +269,62 @@ final class GitHubDTOsTests: XCTestCase {
         XCTAssertEqual(page.commits.first?.authorLogin, "blakecrosley")
     }
 
+    func testDecodesGitHubGraphQLCommitHistoryWithUnlinkedAuthor() throws {
+        struct Envelope: Decodable {
+            let data: GitHubCommitHistoryGraphQLData
+        }
+
+        let json = Data("""
+        {
+          "data": {
+            "repository": {
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "pageInfo": {
+                      "hasNextPage": false,
+                      "endCursor": null
+                    },
+                    "nodes": [
+                      {
+                        "oid": "7fb067b1234567890",
+                        "message": "verify-prd",
+                        "authoredDate": "2026-04-10T03:40:13Z",
+                        "url": "https://github.com/blakecrosley/hermes-brain/commit/7fb067b",
+                        "additions": 10,
+                        "deletions": 2,
+                        "changedFilesIfAvailable": 1,
+                        "author": {
+                          "user": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+        """.utf8)
+
+        let envelope = try GitHubJSON.decoder.decode(Envelope.self, from: json)
+        let page = envelope.data.page
+
+        XCTAssertEqual(page.commits.count, 1)
+        XCTAssertEqual(page.commits.first?.totalChanges, 12)
+        XCTAssertNil(page.commits.first?.authorLogin)
+    }
+
     func testGitHubCommitConflictCanBeTreatedAsEmptyHistory() {
         XCTAssertTrue(GitHubError.httpStatus(409, "{\"message\":\"Git Repository is empty.\"}").isCommitListConflict)
         XCTAssertFalse(GitHubError.httpStatus(404, "{\"message\":\"Not Found\"}").isCommitListConflict)
+    }
+
+    func testGitHubUnauthorizedIsSessionFailure() {
+        let error = GitHubError.httpStatus(401, "{\"message\":\"Bad credentials\"}")
+
+        XCTAssertTrue(error.isUnauthorized)
+        XCTAssertEqual(error.localizedDescription, "GitHub rejected the saved session. Sign in again.")
     }
 
     func testFullHistoryBackfillIsNotPageLimited() {

@@ -120,6 +120,42 @@ enum CalendarMath {
     }
 }
 
+enum HistoryBackfillPlanner {
+    static func monthInterval(
+        cursorDate: Date?,
+        anchorDate: Date,
+        lowerBound: Date,
+        calendar: Calendar = .current
+    ) -> DateInterval? {
+        let monthEnd: Date
+        if let cursorDate {
+            monthEnd = calendar.startOfDay(for: cursorDate)
+        } else {
+            let anchorMonthStart = CalendarMath.monthStart(for: anchorDate, calendar: calendar)
+            monthEnd = calendar.date(byAdding: .month, value: 1, to: anchorMonthStart) ?? anchorMonthStart
+        }
+
+        guard monthEnd > lowerBound,
+              let rawMonthStart = calendar.date(byAdding: .month, value: -1, to: monthEnd) else {
+            return nil
+        }
+
+        let monthStart = max(rawMonthStart, lowerBound)
+        guard monthStart < monthEnd else {
+            return nil
+        }
+        return DateInterval(start: monthStart, end: monthEnd)
+    }
+
+    static func nextCursor(afterCompleted interval: DateInterval) -> Date {
+        interval.start
+    }
+
+    static func isComplete(afterCompleted interval: DateInterval, lowerBound: Date) -> Bool {
+        interval.start <= lowerBound
+    }
+}
+
 struct ActivityDensityScale {
     private let thresholds: [Int]
 

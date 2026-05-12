@@ -113,7 +113,7 @@ final class CalendarMathTests: XCTestCase {
     }
 
     func testWorkRangeScopeUsesDateAnchoredLabels() {
-        XCTAssertEqual(WorkRangeScope.allCases.map(\.title), ["Day", "Week", "Quarter", "Year"])
+        XCTAssertEqual(WorkRangeScope.allCases.map(\.title), ["Day", "Week", "Month", "Year"])
     }
 
     func testWorkRangeScopeYearContainsSelectedDate() throws {
@@ -130,10 +130,10 @@ final class CalendarMathTests: XCTestCase {
         let calendar = Calendar(identifier: .gregorian)
         let selectedDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
 
-        let trend = WorkMetrics(commits: []).trend(scope: .quarter, containing: selectedDate, calendar: calendar)
+        let trend = WorkMetrics(commits: []).trend(scope: .month, containing: selectedDate, calendar: calendar)
 
-        XCTAssertEqual(trend.current.start, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 1))))
-        XCTAssertEqual(trend.baseline.start, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1))))
+        XCTAssertEqual(trend.current.start, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1))))
+        XCTAssertEqual(trend.baseline.start, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 1))))
         XCTAssertEqual(trend.baseline.end, trend.current.start)
     }
 
@@ -157,6 +157,26 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(snapshot.mode, .commitEstimate)
         XCTAssertEqual(snapshot.displayValue, 100)
         XCTAssertEqual(snapshot.displayUnit, "known changed lines")
+    }
+
+    func testWorkRangeSummaryReportsMissingDiffStats() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commits = [
+            makeCommit(sha: "aaaabbb111111111111111111111111111111111", date: date, message: "Known stats"),
+            makeCommit(sha: "aaaaccc111111111111111111111111111111111", date: date, message: "Missing stats")
+        ]
+        commits[0].additions = 24
+        commits[0].deletions = 6
+        commits[0].totalChanges = 30
+        commits[0].changedFileCount = 2
+        commits[0].diffStatsFetchedAt = date
+
+        let summary = WorkMetrics(commits: commits).rangeSummary(scope: .week, containing: date, calendar: calendar)
+
+        XCTAssertEqual(summary.commitCount, 2)
+        XCTAssertEqual(summary.statsBackedCommitCount, 1)
+        XCTAssertEqual(summary.missingDiffStatsCount, 1)
     }
 
     func testChangesHeatmapPreservesCommitActivityWhenStatsAreMissing() throws {
@@ -237,6 +257,69 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(snapshot.displayUnit, "changed lines")
     }
 
+    func testFailedDiffStatsRetryAfterCooldown() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commit = makeCommit(
+            sha: "eeeeeee222222222222222222222222222222222",
+            date: date,
+            message: "Retry stats"
+        )
+
+        commit.markDiffStatsFailed("network connection lost", fetchedAt: date)
+
+        XCTAssertFalse(commit.needsDiffStatsBackfill(at: date.addingTimeInterval(60)))
+        XCTAssertTrue(commit.needsDiffStatsBackfill(at: date.addingTimeInterval(3_601)))
+    }
+
+    func testHistoryBackfillPlannerStartsWithAnchorMonth() throws {
+        let calendar = utcCalendar()
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 12)))
+        let lowerBound = try XCTUnwrap(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
+
+        let interval = try XCTUnwrap(HistoryBackfillPlanner.monthInterval(
+            cursorDate: nil,
+            anchorDate: anchor,
+            lowerBound: lowerBound,
+            calendar: calendar
+        ))
+
+        XCTAssertEqual(interval.start, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1))))
+        XCTAssertEqual(interval.end, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 6, day: 1))))
+    }
+
+    func testHistoryBackfillPlannerWalksBackwardFromCursor() throws {
+        let calendar = utcCalendar()
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 12)))
+        let cursor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1)))
+        let lowerBound = try XCTUnwrap(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
+
+        let interval = try XCTUnwrap(HistoryBackfillPlanner.monthInterval(
+            cursorDate: cursor,
+            anchorDate: anchor,
+            lowerBound: lowerBound,
+            calendar: calendar
+        ))
+
+        XCTAssertEqual(interval.start, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 1))))
+        XCTAssertEqual(interval.end, try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1))))
+        XCTAssertEqual(HistoryBackfillPlanner.nextCursor(afterCompleted: interval), interval.start)
+    }
+
+    func testHistoryBackfillPlannerStopsAtLowerBound() throws {
+        let calendar = utcCalendar()
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 12)))
+        let lowerBound = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1)))
+        let cursor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1)))
+
+        XCTAssertNil(HistoryBackfillPlanner.monthInterval(
+            cursorDate: cursor,
+            anchorDate: anchor,
+            lowerBound: lowerBound,
+            calendar: calendar
+        ))
+    }
+
     func testVisibleCommitsRespectSelectedRepositories() throws {
         let calendar = Calendar(identifier: .gregorian)
         let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
@@ -262,6 +345,34 @@ final class CalendarMathTests: XCTestCase {
         )
 
         XCTAssertEqual(filtered.map(\.id), [visible.id])
+    }
+
+    func testVisibleCommitsIncludeUnlinkedAuthorsButExcludeOtherGitHubUsers() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 10)))
+        let selectedRepository = makeRepository(fullName: "blakecrosley/hermes-brain", isSelected: true)
+        let unlinkedAuthorCommit = makeCommit(
+            sha: "aaaaaaa111111111111111111111111111111111",
+            repositoryFullName: selectedRepository.fullName,
+            authorLogin: nil,
+            date: date,
+            message: "Unlinked local git author"
+        )
+        let otherGitHubUserCommit = makeCommit(
+            sha: "bbbbbbb111111111111111111111111111111111",
+            repositoryFullName: selectedRepository.fullName,
+            authorLogin: "someone-else",
+            date: date,
+            message: "Other GitHub user"
+        )
+
+        let filtered = WorkDataFilter.visibleCommits(
+            [unlinkedAuthorCommit, otherGitHubUserCommit],
+            repositories: [selectedRepository],
+            activeLogin: "blakecrosley"
+        )
+
+        XCTAssertEqual(filtered.map(\.id), [unlinkedAuthorCommit.id])
     }
 
     func testWorkLanguageClassifierMapsCommonExtensions() {
@@ -320,5 +431,11 @@ final class CalendarMathTests: XCTestCase {
             isSelected: isSelected,
             htmlURL: nil
         )
+    }
+
+    private func utcCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
+        return calendar
     }
 }
