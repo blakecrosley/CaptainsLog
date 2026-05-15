@@ -11,10 +11,11 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \GitHubAccountRecord.login) private var accounts: [GitHubAccountRecord]
     @Query(sort: \GitRepositoryRecord.fullName) private var repositories: [GitRepositoryRecord]
-    @Query(sort: \GitCommitRecord.authoredAt, order: .reverse) private var commits: [GitCommitRecord]
     @Query(sort: \DailyJournalSummaryRecord.date, order: .reverse) private var summaries: [DailyJournalSummaryRecord]
 
     @StateObject private var appModel = AppModel()
+    @State private var commits: [GitCommitRecord] = []
+    @State private var workMetrics = WorkMetrics(commits: [])
     @State private var selectedDate = Date()
     @State private var isShowingMonthCalendar = false
     @State private var isShowingAccountSwitcher = false
@@ -24,6 +25,8 @@ struct RootView: View {
     @State private var aiCredentialRevision = 0
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
+    @State private var identityAliasesText = ""
+    @AppStorage(WorkIdentityPreferences.scopeKey) private var workIdentityScopeRaw = WorkIdentityScope.allSelectedRepos.rawValue
 
     private var githubRepositories: [GitRepositoryRecord] {
         repositories.filter { repository in
@@ -42,7 +45,7 @@ struct RootView: View {
     }
 
     private var workData: RootWorkData {
-        let metrics = WorkMetrics(commits: visibleCommits)
+        let metrics = workMetrics
         let selectedCommits = metrics.commits(on: selectedDate)
         let selectedWorkSnapshot = metrics.snapshot(on: selectedDate)
         let key = GitCommitRecord.dayKey(for: selectedDate)
@@ -100,8 +103,35 @@ struct RootView: View {
         WorkDataFilter.visibleCommits(
             commits,
             repositories: repositories,
-            activeLogin: activeLogin
+            activeLogin: activeLogin,
+            identityScope: workIdentityScope,
+            identityAliases: identityAliases
         )
+    }
+
+    private var allSelectedCommits: [GitCommitRecord] {
+        WorkDataFilter.visibleCommits(
+            commits,
+            repositories: repositories,
+            activeLogin: activeLogin,
+            identityScope: .allSelectedRepos
+        )
+    }
+
+    private var workIdentityScope: WorkIdentityScope {
+        WorkIdentityScope(rawValue: workIdentityScopeRaw) ?? .allSelectedRepos
+    }
+
+    private var workIdentityScopeBinding: Binding<WorkIdentityScope> {
+        Binding {
+            workIdentityScope
+        } set: { newValue in
+            workIdentityScopeRaw = newValue.rawValue
+        }
+    }
+
+    private var identityAliases: Set<String> {
+        WorkIdentitySelection.aliases(from: identityAliasesText)
     }
 
     private var hasOpenAIKey: Bool {
@@ -114,6 +144,12 @@ struct RootView: View {
             .filter(\.isSelected)
             .compactMap(\.lastSyncedAt)
             .max()
+    }
+
+    private var selectedRepositoryFingerprint: String {
+        githubRepositories
+            .map { "\($0.id):\($0.isSelected)" }
+            .joined(separator: "|")
     }
 
     private var preferredJournalProvider: JournalSummaryProvider? {
@@ -131,7 +167,7 @@ struct RootView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ZStack {
-                    AppSurface.background
+                    AppSurface.backgroundGradient
                         .ignoresSafeArea()
 
                     mainLayout(maxContentWidth: proxy.size.width >= 900 ? 900 : 760)
@@ -141,7 +177,8 @@ struct RootView: View {
                         selectedDate: $selectedDate,
                         workMetrics: workData.metrics,
                         lowerBound: lowerCalendarBound,
-                        upperBound: Date()
+                        upperBound: Date(),
+                        initialVisibleDate: Date()
                     )
                     .presentationDetents([.large])
                 }
@@ -162,39 +199,49 @@ struct RootView: View {
             #if os(iOS)
             .toolbar(.hidden, for: .navigationBar)
             #endif
+            .foregroundStyle(AppSurface.primaryText)
             .onAppear {
                 appModel.configure(modelContext: modelContext)
+                loadIdentityAliases()
+                reloadCommitSnapshot()
                 selectLatestCommitDateIfUseful()
             }
             .task {
                 appModel.configure(modelContext: modelContext)
+                loadIdentityAliases()
+                reloadCommitSnapshot()
                 await appModel.loadSession()
-                if githubRepositories.isEmpty, appModel.isSignedIn {
-                    await appModel.refreshRepositories()
-                }
+                startForegroundLatestSync()
                 selectLatestCommitDateIfUseful()
+                scheduleHistoricalBackfillIfNeeded()
             }
-            .onChange(of: commits.count) { oldCount, newCount in
-                if newCount > oldCount {
-                    selectLatestCommitDateIfUseful()
-                } else {
-                    selectedDate = Calendar.current.startOfDay(for: selectedDate)
-                }
+            .onChange(of: activeLogin) { _, _ in
+                loadIdentityAliases()
+                rebuildWorkMetrics()
+            }
+            .onChange(of: identityAliasesText) { _, newValue in
+                saveIdentityAliases(newValue)
+                rebuildWorkMetrics()
             }
             .onChange(of: appModel.authState) { _, state in
-                guard case .signedIn = state, githubRepositories.isEmpty else {
+                guard case .signedIn = state else {
+                    scheduleHistoricalBackfillIfNeeded()
                     return
                 }
-                Task {
-                    await appModel.refreshRepositories()
-                }
+                startForegroundLatestSync()
+            }
+            .onChange(of: selectedRepositoryFingerprint) { _, _ in
+                rebuildWorkMetrics()
+                startForegroundLatestSync()
             }
             .onChange(of: scenePhase) { _, phase in
-                guard phase == .active, appModel.isSignedIn, githubRepositories.isEmpty else {
-                    return
-                }
-                Task {
-                    await appModel.refreshRepositories()
+                switch phase {
+                case .active:
+                    startForegroundLatestSync()
+                case .background:
+                    scheduleHistoricalBackfillIfNeeded()
+                default:
+                    break
                 }
             }
         }
@@ -216,7 +263,7 @@ struct RootView: View {
         }
         .scrollIndicators(.hidden)
         .refreshable {
-            await refreshCurrentAccount()
+            startForcedLatestSync()
         }
     }
 
@@ -239,15 +286,19 @@ struct RootView: View {
                 updatedDiffStatCount: appModel.updatedDiffStatCount,
                 lastSyncedAt: lastRepositorySyncDate,
                 hasOpenAIKey: hasOpenAIKey,
+                workIdentityScope: workIdentityScope,
+                identityAliasCount: identityAliases.count,
                 onShowAccounts: { isShowingAccountSwitcher = true },
                 onSyncLatest: {
                     rootViewLogger.info("Header sync latest tapped")
-                    Task { await appModel.syncSelectedRepositories() }
+                    startForcedLatestSync()
                 },
                 onFillLineStats: { scope, interval in
                     rootViewLogger.info("Period line stats tapped: \(scope.rawValue)")
                     Task {
                         await appModel.backfillSelectedPeriodLineStats(scope: scope, interval: interval)
+                        reloadCommitSnapshot()
+                        scheduleHistoricalBackfillIfNeeded()
                     }
                 },
                 onShowSettings: { isShowingRepositorySettings = true },
@@ -279,7 +330,7 @@ struct RootView: View {
                 .frame(maxWidth: 680)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
-            .background(AppSurface.background.ignoresSafeArea())
+            .background(AppSurface.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Day Detail")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -329,6 +380,14 @@ struct RootView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                    WorkIdentitySettingsCard(
+                        scope: workIdentityScopeBinding,
+                        activeLogin: activeLogin,
+                        aliasesText: $identityAliasesText,
+                        visibleCommitCount: visibleCommits.count,
+                        allSelectedCommitCount: allSelectedCommits.count
+                    )
+
                     repoPanel
 
                     Kit941.Card {
@@ -341,7 +400,7 @@ struct RootView: View {
                                         .kit941Font(.title, weight: .semibold)
                                     Text(hasOpenAIKey ? "OpenAI key stored on this device" : "OpenAI BYOK not set")
                                         .kit941Font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AppSurface.secondaryText)
                                 }
                                 Spacer(minLength: 0)
                             }
@@ -361,7 +420,7 @@ struct RootView: View {
                 .frame(maxWidth: 680)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
-            .background(AppSurface.background.ignoresSafeArea())
+            .background(AppSurface.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Settings")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -386,14 +445,14 @@ struct RootView: View {
 
                 Text("Captain's Log")
                     .kit941Font(.display, weight: .bold)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(AppSurface.primaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
             }
 
             Text("GitHub history, written as a daily work journal.")
                 .kit941Font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -406,7 +465,7 @@ struct RootView: View {
                     .foregroundStyle(AppSurface.accent)
                 Text("OpenAI key attached")
                     .kit941Font(.label)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(AppSurface.primaryText)
             }
             .padding(.horizontal, Kit941.Spacing.md)
             .padding(.vertical, Kit941.Spacing.sm)
@@ -420,7 +479,7 @@ struct RootView: View {
                         .foregroundStyle(AppSurface.accent)
                     Text("Apple Foundation Models available")
                         .kit941Font(.label)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(AppSurface.primaryText)
                 }
                 .padding(.horizontal, Kit941.Spacing.md)
                 .padding(.vertical, Kit941.Spacing.sm)
@@ -481,7 +540,7 @@ struct RootView: View {
                                 .kit941Font(.title, weight: .semibold)
                             Text("GitHub connected")
                                 .kit941Font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppSurface.secondaryText)
                         }
                         Spacer(minLength: 0)
                     }
@@ -489,18 +548,18 @@ struct RootView: View {
                     if githubRepositories.isEmpty {
                         Text("Approve access to all repositories or selected repositories in GitHub, then return here to refresh.")
                             .kit941Font(.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
 
                         if !appModel.syncMessage.isEmpty {
                             Text(appModel.syncMessage)
                                 .kit941Font(.caption)
-                                .foregroundStyle(appModel.syncMessage.contains("Contents") ? Kit941.Status.warning : .secondary)
+                                .foregroundStyle(appModel.syncMessage.contains("Contents") ? AppSurface.warning : AppSurface.secondaryText)
                                 .lineLimit(3)
                         }
                     } else {
                         Text("\(githubRepositories.count) repositories available")
                             .kit941Font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                     }
 
                     HStack(spacing: Kit941.Spacing.sm) {
@@ -545,20 +604,39 @@ struct RootView: View {
             appInstallURL: appModel.githubRepositoryApprovalURL,
             onRefreshRepos: {
                 rootViewLogger.info("Repository panel refresh tapped")
-                Task { await appModel.refreshRepositories() }
+                Task {
+                    await appModel.refreshRepositories()
+                    scheduleHistoricalBackfillIfNeeded()
+                }
             },
             onSyncSelected: {
                 rootViewLogger.info("Repository panel sync updates tapped")
-                Task { await appModel.syncSelectedRepositories() }
+                startForcedLatestSync()
             },
             onFullSync: {
                 rootViewLogger.info("Repository panel index history tapped")
-                Task { await appModel.fullSyncSelectedRepositories() }
+                Task {
+                    await appModel.fullSyncSelectedRepositories()
+                    reloadCommitSnapshot()
+                    scheduleHistoricalBackfillIfNeeded()
+                }
             },
             onInstallApp: {
                 openGitHubRepositorySelection()
             }
         )
+    }
+
+    private func startForegroundLatestSync() {
+        Task {
+            await syncLatestForForegroundIfNeeded()
+        }
+    }
+
+    private func startForcedLatestSync() {
+        Task {
+            await refreshCurrentAccount()
+        }
     }
 
     private func refreshCurrentAccount() async {
@@ -567,9 +645,64 @@ struct RootView: View {
         }
         if githubRepositories.isEmpty {
             await appModel.refreshRepositories()
-        } else {
-            await appModel.syncSelectedRepositories()
         }
+        await appModel.syncLatestIfStale(minimumInterval: 0)
+        reloadCommitSnapshot()
+        scheduleHistoricalBackfillIfNeeded()
+    }
+
+    private func syncLatestForForegroundIfNeeded() async {
+        guard appModel.isSignedIn else {
+            return
+        }
+        if githubRepositories.isEmpty {
+            await appModel.refreshRepositories()
+        }
+        await appModel.syncLatestIfStale()
+        reloadCommitSnapshot()
+        scheduleHistoricalBackfillIfNeeded()
+    }
+
+    private func reloadCommitSnapshot() {
+        do {
+            let descriptor = FetchDescriptor<GitCommitRecord>(
+                sortBy: [SortDescriptor(\.authoredAt, order: .reverse)]
+            )
+            commits = try modelContext.fetch(descriptor)
+            rebuildWorkMetrics()
+            selectLatestCommitDateIfUseful()
+        } catch {
+            rootViewLogger.error("Failed to reload commit snapshot: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func rebuildWorkMetrics() {
+        workMetrics = WorkMetrics(commits: visibleCommits)
+    }
+
+    private func scheduleHistoricalBackfillIfNeeded() {
+        guard appModel.isSignedIn else {
+            BackgroundHistoryIndexer.cancelPending()
+            return
+        }
+
+        do {
+            if try appModel.hasHistoricalAnalyticsBackfillWork(lookbackDays: BackgroundHistoryIndexer.lookbackDays) {
+                BackgroundHistoryIndexer.schedule()
+            } else {
+                BackgroundHistoryIndexer.cancelPending()
+            }
+        } catch {
+            rootViewLogger.error("Failed to inspect history backfill backlog: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func loadIdentityAliases() {
+        identityAliasesText = WorkIdentityPreferences.loadAliasesText(for: activeLogin)
+    }
+
+    private func saveIdentityAliases(_ text: String) {
+        WorkIdentityPreferences.saveAliasesText(text, for: activeLogin)
     }
 
     private var canGenerateSummary: Bool {
@@ -635,19 +768,281 @@ private struct RootWorkData {
     let selectedSummary: DailyJournalSummaryRecord?
 }
 
+private struct WorkIdentitySettingsCard: View {
+    @Binding var scope: WorkIdentityScope
+    let activeLogin: String?
+    @Binding var aliasesText: String
+    let visibleCommitCount: Int
+    let allSelectedCommitCount: Int
+
+    var body: some View {
+        Kit941.Card {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                HStack(spacing: Kit941.Spacing.sm) {
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                        .foregroundStyle(AppSurface.accent)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Work Identity")
+                            .kit941Font(.title, weight: .semibold)
+                        Text(scope.label)
+                            .kit941Font(.caption)
+                            .foregroundStyle(AppSurface.secondaryText)
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                Picker("Work scope", selection: $scope) {
+                    ForEach(WorkIdentityScope.allCases) { scope in
+                        Text(scope.title).tag(scope)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                VStack(alignment: .leading, spacing: Kit941.Spacing.xs) {
+                    HStack {
+                        Text("Active login")
+                            .kit941Font(.caption)
+                            .foregroundStyle(AppSurface.secondaryText)
+                        Spacer(minLength: Kit941.Spacing.sm)
+                        Text(activeLogin ?? "None")
+                            .kit941Font(.caption, weight: .semibold)
+                            .lineLimit(1)
+                    }
+
+                    HStack {
+                        Text("Counted commits")
+                            .kit941Font(.caption)
+                            .foregroundStyle(AppSurface.secondaryText)
+                        Spacer(minLength: Kit941.Spacing.sm)
+                        Text(countedCommitsLabel)
+                            .kit941Font(.caption, weight: .semibold)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                    }
+                }
+
+                if scope == .mineAndAliases {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Extra author logins")
+                            .kit941Font(.caption, weight: .semibold)
+                            .foregroundStyle(AppSurface.secondaryText)
+                        TextField("blakeatintrol", text: $aliasesText)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+            }
+        }
+    }
+
+    private var countedCommitsLabel: String {
+        switch scope {
+        case .allSelectedRepos:
+            return allSelectedCommitCount.formatted()
+        case .mineAndAliases:
+            return "\(visibleCommitCount.formatted()) of \(allSelectedCommitCount.formatted())"
+        }
+    }
+}
+
 enum AppSurface {
+    enum Theme: String, Sendable {
+        case github
+
+        var prefersDark: Bool { true }
+        var fontFamily: Kit941.FontFamily { .system }
+        var metricFontDesign: Font.Design { .rounded }
+
+        var background: Color {
+            Color(red: 0.051, green: 0.067, blue: 0.090)
+        }
+
+        var panelBase: Color {
+            Color(red: 0.086, green: 0.106, blue: 0.137)
+        }
+
+        var accent: Color {
+            Color(red: 0.247, green: 0.725, blue: 0.314)
+        }
+
+        var secondaryAccent: Color {
+            Color(red: 0.345, green: 0.651, blue: 0.984)
+        }
+
+        var tertiaryAccent: Color {
+            Color(red: 0.824, green: 0.600, blue: 0.133)
+        }
+
+        var warning: Color {
+            tertiaryAccent
+        }
+
+        var danger: Color {
+            Color(red: 0.973, green: 0.318, blue: 0.286)
+        }
+
+        var primaryText: Color {
+            Color(red: 0.941, green: 0.965, blue: 0.988)
+        }
+
+        var secondaryText: Color {
+            Color(red: 0.545, green: 0.576, blue: 0.620)
+        }
+
+        var tertiaryText: Color {
+            Color(red: 0.431, green: 0.463, blue: 0.506)
+        }
+
+        var divider: Color {
+            Color(red: 0.188, green: 0.224, blue: 0.271)
+        }
+
+        var track: Color {
+            Color(red: 0.129, green: 0.149, blue: 0.176)
+        }
+
+        var selectedStroke: Color {
+            accent.opacity(0.72)
+        }
+
+        var backgroundStops: [Color] {
+            [background, background]
+        }
+
+        func panelFill(highlighted: Bool) -> LinearGradient {
+            let fill = highlighted ? Color(red: 0.102, green: 0.125, blue: 0.161) : panelBase
+            return LinearGradient(colors: [fill, fill], startPoint: .top, endPoint: .bottom)
+        }
+
+        func panelStroke(highlighted: Bool) -> Color {
+            divider.opacity(highlighted ? 1 : 0.78)
+        }
+
+        func panelShadow(highlighted: Bool) -> Color {
+            .clear
+        }
+
+        func mutedFill(opacity: Double) -> Color {
+            track.opacity(opacity)
+        }
+
+        func densityColor(level: Int) -> Color {
+            switch level {
+            case 0: return Color(red: 0.086, green: 0.106, blue: 0.137)
+            case 1: return Color(red: 0.055, green: 0.267, blue: 0.161)
+            case 2: return Color(red: 0.000, green: 0.427, blue: 0.196)
+            case 3: return Color(red: 0.149, green: 0.651, blue: 0.255)
+            default: return Color(red: 0.224, green: 0.827, blue: 0.325)
+            }
+        }
+
+        func languageColor(_ language: String) -> Color {
+            switch language {
+            case "Swift": return accent
+            case "TypeScript": return secondaryAccent
+            case "JavaScript": return tertiaryAccent
+            case "Python": return Color(red: 0.345, green: 0.651, blue: 0.984)
+            case "CSS": return Color(red: 0.635, green: 0.451, blue: 0.961)
+            case "HTML": return warning
+            case "Docs": return tertiaryAccent
+            case "Assets": return secondaryAccent
+            case "JSON", "YAML", "Property List": return tertiaryText
+            default: return tertiaryText
+            }
+        }
+
+        func categoryColor(_ category: WorkCategory) -> Color {
+            switch category {
+            case .code: return accent
+            case .tests: return secondaryAccent
+            case .docs: return tertiaryAccent
+            case .design: return Color(red: 0.859, green: 0.314, blue: 0.584)
+            case .infra: return tertiaryText
+            case .release: return Color(red: 0.635, green: 0.451, blue: 0.961)
+            case .unknown: return tertiaryText
+            }
+        }
+    }
+
+    static let defaultTheme: Theme = .github
+
+    static var currentTheme: Theme {
+        defaultTheme
+    }
+
     static var background: Color {
-        #if os(iOS)
-        Color(.systemGroupedBackground)
-        #elseif os(macOS)
-        Color(nsColor: .windowBackgroundColor)
-        #else
-        Kit941.Surface.background
-        #endif
+        currentTheme.background
+    }
+
+    static var panelBase: Color {
+        currentTheme.panelBase
     }
 
     static var accent: Color {
-        Color(red: 0.10, green: 0.43, blue: 0.26)
+        currentTheme.accent
+    }
+
+    static var secondaryAccent: Color {
+        currentTheme.secondaryAccent
+    }
+
+    static var tertiaryAccent: Color {
+        currentTheme.tertiaryAccent
+    }
+
+    static var warning: Color {
+        currentTheme.warning
+    }
+
+    static var danger: Color {
+        currentTheme.danger
+    }
+
+    static var primaryText: Color {
+        currentTheme.primaryText
+    }
+
+    static var secondaryText: Color {
+        currentTheme.secondaryText
+    }
+
+    static var tertiaryText: Color {
+        currentTheme.tertiaryText
+    }
+
+    static var divider: Color {
+        currentTheme.divider
+    }
+
+    static var track: Color {
+        currentTheme.track
+    }
+
+    static var selectedStroke: Color {
+        currentTheme.selectedStroke
+    }
+
+    static var backgroundGradient: LinearGradient {
+        LinearGradient(colors: currentTheme.backgroundStops, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    static func metricFont(size: CGFloat, weight: Font.Weight = .semibold) -> Font {
+        .system(size: size, weight: weight, design: currentTheme.metricFontDesign)
+    }
+
+    static func panelFill(highlighted: Bool = false) -> LinearGradient {
+        currentTheme.panelFill(highlighted: highlighted)
+    }
+
+    static func panelStroke(highlighted: Bool = false) -> Color {
+        currentTheme.panelStroke(highlighted: highlighted)
+    }
+
+    static func panelShadow(highlighted: Bool = false) -> Color {
+        currentTheme.panelShadow(highlighted: highlighted)
+    }
+
+    static func mutedFill(opacity: Double = 1) -> Color {
+        currentTheme.mutedFill(opacity: opacity)
     }
 
     static func densityColor(count: Int) -> Color {
@@ -666,17 +1061,29 @@ enum AppSurface {
     }
 
     static func densityColor(level: Int) -> Color {
-        switch level {
-        case 0:
-            return Color.primary.opacity(0.055)
-        case 1:
-            return Color(red: 0.05, green: 0.27, blue: 0.16)
-        case 2:
-            return Color(red: 0.00, green: 0.43, blue: 0.20)
-        case 3:
-            return Color(red: 0.15, green: 0.65, blue: 0.25)
-        default:
-            return Color(red: 0.22, green: 0.83, blue: 0.33)
-        }
+        currentTheme.densityColor(level: level)
+    }
+
+    static func languageColor(_ language: String) -> Color {
+        currentTheme.languageColor(language)
+    }
+
+    static func categoryColor(_ category: WorkCategory) -> Color {
+        currentTheme.categoryColor(category)
+    }
+}
+
+extension View {
+    func appPanel(cornerRadius: CGFloat = Kit941.Radius.lg, highlighted: Bool = false) -> some View {
+        self
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(AppSurface.panelFill(highlighted: highlighted))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(AppSurface.panelStroke(highlighted: highlighted), lineWidth: 1)
+            }
+            .shadow(color: AppSurface.panelShadow(highlighted: highlighted), radius: highlighted ? 22 : 14, x: 0, y: highlighted ? 10 : 7)
     }
 }

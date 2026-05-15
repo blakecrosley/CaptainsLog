@@ -112,6 +112,17 @@ final class CalendarMathTests: XCTestCase {
         )
     }
 
+    func testActivityDensityScaleDoesNotLetOneHugeDayFlattenTheMap() {
+        let scale = ActivityDensityScale(counts: [0, 18, 24, 36, 52, 90, 30_000])
+
+        XCTAssertEqual(scale.level(for: 30_000), 4)
+        XCTAssertGreaterThan(scale.level(for: 90), scale.level(for: 18))
+        XCTAssertGreaterThan(
+            Set([18, 24, 36, 52, 90, 30_000].map { scale.level(for: $0) }).count,
+            2
+        )
+    }
+
     func testWorkRangeScopeUsesDateAnchoredLabels() {
         XCTAssertEqual(WorkRangeScope.allCases.map(\.title), ["Day", "Week", "Month", "Year"])
     }
@@ -193,6 +204,20 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(WorkDisplayMetric.changes.heatmapValue(for: snapshot), 2)
     }
 
+    func testChangesTrendDoesNotPlotMissingLineStatsAsZero() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commits = [
+            makeCommit(sha: "1111111222222222222222222222222222222222", date: date, message: "Missing stats")
+        ]
+
+        let summary = WorkMetrics(commits: commits).rangeSummary(scope: .week, containing: date, calendar: calendar)
+
+        XCTAssertEqual(summary.commitCount, 1)
+        XCTAssertNil(WorkDisplayMetric.changes.trendValue(for: summary))
+        XCTAssertEqual(WorkDisplayMetric.commits.trendValue(for: summary), 1)
+    }
+
     func testChangesHeatmapUsesKnownLineChangesWhenAvailable() throws {
         let calendar = Calendar(identifier: .gregorian)
         let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
@@ -209,6 +234,52 @@ final class CalendarMathTests: XCTestCase {
         let snapshot = WorkMetrics(commits: [commit]).snapshot(on: date, calendar: calendar)
 
         XCTAssertEqual(WorkDisplayMetric.changes.heatmapValue(for: snapshot), 42)
+    }
+
+    func testChangesTrendPlotsKnownLineStats() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let commit = makeCommit(
+            sha: "3333333444444444444444444444444444444444",
+            date: date,
+            message: "Known stats"
+        )
+        commit.additions = 31
+        commit.deletions = 11
+        commit.totalChanges = 42
+        commit.changedFileCount = 3
+        commit.diffStatsFetchedAt = date
+
+        let summary = WorkMetrics(commits: [commit]).rangeSummary(scope: .week, containing: date, calendar: calendar)
+
+        XCTAssertEqual(WorkDisplayMetric.changes.trendValue(for: summary), 42)
+    }
+
+    func testChangesTrendRequiresCompleteLineStatsCoverage() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let known = makeCommit(
+            sha: "3333333555555555555555555555555555555555",
+            date: date,
+            message: "Known stats"
+        )
+        known.additions = 31
+        known.deletions = 11
+        known.totalChanges = 42
+        known.changedFileCount = 3
+        known.diffStatsFetchedAt = date
+        let missing = makeCommit(
+            sha: "3333333666666666666666666666666666666666",
+            date: date,
+            message: "Missing stats"
+        )
+
+        let summary = WorkMetrics(commits: [known, missing]).rangeSummary(scope: .week, containing: date, calendar: calendar)
+
+        XCTAssertEqual(summary.totalChanges, 42)
+        XCTAssertEqual(summary.missingDiffStatsCount, 1)
+        XCTAssertEqual(WorkDisplayMetric.changes.unit(for: summary), "known changed lines")
+        XCTAssertNil(WorkDisplayMetric.changes.trendValue(for: summary))
     }
 
     func testWorkMetricsUsesDiffBackedWorkUnitsAtCoverageThreshold() throws {
@@ -255,6 +326,84 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(snapshot.workUnits, 2_000)
         XCTAssertEqual(snapshot.displayValue, 6_000)
         XCTAssertEqual(snapshot.displayUnit, "changed lines")
+    }
+
+    func testWorkMapDayInsightDerivesSelectedDayFacts() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let morning = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11, hour: 9)))
+        let lateMorning = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11, hour: 11, minute: 30)))
+        let first = makeCommit(
+            sha: "eeeeeee333333333333333333333333333333333",
+            date: morning,
+            message: "Add work map tests"
+        )
+        first.additions = 90
+        first.deletions = 10
+        first.totalChanges = 100
+        first.changedFileCount = 2
+        first.changedFiles = ["Tests/WorkMapTests.swift", "Tests/Fixtures.swift"]
+        first.diffStatsFetchedAt = morning
+        let second = makeCommit(
+            sha: "eeeeeee444444444444444444444444444444444",
+            date: lateMorning,
+            message: "Document work map"
+        )
+        second.additions = 5
+        second.deletions = 1
+        second.totalChanges = 6
+        second.changedFileCount = 1
+        second.changedFiles = ["README.md"]
+        second.diffStatsFetchedAt = lateMorning
+
+        let insight = WorkMetrics(commits: [first, second]).workMapDayInsight(on: morning, calendar: calendar)
+
+        XCTAssertEqual(insight.commitCount, 2)
+        XCTAssertEqual(insight.repositoryCount, 1)
+        XCTAssertEqual(insight.topRepository, "blakecrosley/captains-log")
+        XCTAssertEqual(insight.topCategory, .tests)
+        XCTAssertEqual(insight.activeSpanMinutes, 150)
+        XCTAssertEqual(insight.commitSample.map(\.shortSHA), [second.shortSHA, first.shortSHA])
+    }
+
+    func testWorkMapPeriodInsightsSummarizeRhythmLoadAndFocus() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let monday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 11)))
+        let tuesday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 12)))
+        let wednesday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 13)))
+        let friday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15)))
+        let commits = [
+            makeCommit(sha: "eeeeeee555555555555555555555555555555555", repositoryFullName: "blakecrosley/reps", date: monday, message: "Monday"),
+            makeCommit(sha: "eeeeeee666666666666666666666666666666666", repositoryFullName: "blakecrosley/reps", date: tuesday, message: "Tuesday"),
+            makeCommit(sha: "eeeeeee777777777777777777777777777777777", repositoryFullName: "blakecrosley/reps", date: wednesday, message: "Wednesday"),
+            makeCommit(sha: "eeeeeee888888888888888888888888888888888", repositoryFullName: "blakecrosley/site", date: friday, message: "Friday")
+        ]
+        let totals = [20, 30, 100, 10]
+        for (commit, total) in zip(commits, totals) {
+            commit.additions = total
+            commit.deletions = 0
+            commit.totalChanges = total
+            commit.changedFileCount = 1
+            commit.changedFiles = ["Sources/App.swift"]
+            commit.diffStatsFetchedAt = commit.authoredAt
+        }
+
+        let insights = WorkMetrics(commits: commits).workMapPeriodInsights(
+            scope: .week,
+            containing: wednesday,
+            metric: .changes,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(insights.activeDayCount, 4)
+        XCTAssertEqual(insights.currentStreak, 3)
+        XCTAssertEqual(insights.longestStreak, 3)
+        XCTAssertEqual(insights.busiestDay?.date, calendar.startOfDay(for: wednesday))
+        XCTAssertEqual(insights.medianActiveDayValue, 25)
+        XCTAssertEqual(insights.topDayShare, 0.625, accuracy: 0.001)
+        XCTAssertEqual(insights.topRepository?.name, "blakecrosley/reps")
+        XCTAssertEqual(insights.repositoryCount, 2)
+        XCTAssertEqual(insights.firstActiveDate, calendar.startOfDay(for: monday))
+        XCTAssertEqual(insights.lastActiveDate, calendar.startOfDay(for: friday))
     }
 
     func testFailedDiffStatsRetryAfterCooldown() throws {
@@ -373,6 +522,56 @@ final class CalendarMathTests: XCTestCase {
         )
 
         XCTAssertEqual(filtered.map(\.id), [unlinkedAuthorCommit.id])
+    }
+
+    func testVisibleCommitsIncludeConfiguredAuthorAliases() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 12)))
+        let selectedRepository = makeRepository(fullName: "blakecrosley/introl.com", isSelected: true)
+        let aliasCommit = makeCommit(
+            sha: "ccccccc111111111111111111111111111111111",
+            repositoryFullName: selectedRepository.fullName,
+            authorLogin: "blakeatintrol",
+            date: date,
+            message: "Old work identity"
+        )
+
+        let filtered = WorkDataFilter.visibleCommits(
+            [aliasCommit],
+            repositories: [selectedRepository],
+            activeLogin: "blakecrosley",
+            identityAliases: ["blakeatintrol"]
+        )
+
+        XCTAssertEqual(filtered.map(\.id), [aliasCommit.id])
+    }
+
+    func testVisibleCommitsCanIncludeAllSelectedRepoActivity() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 12)))
+        let selectedRepository = makeRepository(fullName: "blakecrosley/team-app", isSelected: true)
+        let teammateCommit = makeCommit(
+            sha: "ddddddd111111111111111111111111111111111",
+            repositoryFullName: selectedRepository.fullName,
+            authorLogin: "someone-else",
+            date: date,
+            message: "Team work"
+        )
+
+        let filtered = WorkDataFilter.visibleCommits(
+            [teammateCommit],
+            repositories: [selectedRepository],
+            activeLogin: "blakecrosley",
+            identityScope: .allSelectedRepos
+        )
+
+        XCTAssertEqual(filtered.map(\.id), [teammateCommit.id])
+    }
+
+    func testWorkIdentityAliasesPreserveHyphenatedLogins() {
+        let aliases = WorkIdentitySelection.aliases(from: "old-blake, blakeatintrol")
+
+        XCTAssertEqual(aliases, ["old-blake", "blakeatintrol"])
     }
 
     func testWorkLanguageClassifierMapsCommonExtensions() {

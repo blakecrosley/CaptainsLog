@@ -169,11 +169,10 @@ struct ActivityDensityScale {
             return
         }
 
-        thresholds = [
-            Self.value(at: 0.25, in: activeCounts),
-            Self.value(at: 0.50, in: activeCounts),
-            Self.value(at: 0.75, in: activeCounts)
-        ]
+        let transformedCounts = activeCounts.map { log1p(Double($0)) }
+        thresholds = [0.25, 0.55, 0.80].map { percentile in
+            max(1, Int(expm1(Self.interpolatedValue(at: percentile, in: transformedCounts)).rounded(.up)))
+        }
     }
 
     func level(for count: Int) -> Int {
@@ -196,13 +195,18 @@ struct ActivityDensityScale {
         return 4
     }
 
-    private static func value(at percentile: Double, in sortedCounts: [Int]) -> Int {
-        guard sortedCounts.count > 1 else {
-            return sortedCounts[0]
+    private static func interpolatedValue(at percentile: Double, in sortedValues: [Double]) -> Double {
+        guard sortedValues.count > 1 else {
+            return sortedValues[0]
         }
         let clamped = min(max(percentile, 0), 1)
-        let rawIndex = Double(sortedCounts.count - 1) * clamped
-        let index = Int(rawIndex.rounded(.toNearestOrAwayFromZero))
-        return sortedCounts[index]
+        let rawIndex = Double(sortedValues.count - 1) * clamped
+        let lowerIndex = Int(rawIndex.rounded(.down))
+        let upperIndex = Int(rawIndex.rounded(.up))
+        guard lowerIndex != upperIndex else {
+            return sortedValues[lowerIndex]
+        }
+        let fraction = rawIndex - Double(lowerIndex)
+        return sortedValues[lowerIndex] + ((sortedValues[upperIndex] - sortedValues[lowerIndex]) * fraction)
     }
 }

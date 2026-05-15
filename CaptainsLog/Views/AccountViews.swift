@@ -8,7 +8,7 @@ struct GitHubAvatarView: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.primary.opacity(0.08))
+                .fill(AppSurface.track)
 
             if let url {
                 AsyncImage(url: url) { phase in
@@ -28,14 +28,14 @@ struct GitHubAvatarView: View {
         .clipShape(Circle())
         .overlay {
             Circle()
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                .strokeBorder(AppSurface.divider.opacity(0.72), lineWidth: 1)
         }
     }
 
     private var fallback: some View {
         Text(loginInitial)
             .kit941Font(.label, weight: .semibold)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(AppSurface.secondaryText)
     }
 
     private var loginInitial: String {
@@ -83,7 +83,7 @@ struct AccountSwitcherSheet: View {
                 .frame(maxWidth: 620)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
-            .background(AppSurface.background.ignoresSafeArea())
+            .background(AppSurface.backgroundGradient.ignoresSafeArea())
             .navigationTitle("GitHub Account")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -104,13 +104,13 @@ struct AccountSwitcherSheet: View {
                         .kit941Font(.title, weight: .semibold)
                     Text(accounts.isEmpty ? "No GitHub account stored" : "\(accounts.count.formatted()) available")
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 }
 
                 if accounts.isEmpty {
                     Text("Sign in with GitHub to sync repositories.")
                         .kit941Font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(accounts) { account in
@@ -132,7 +132,7 @@ struct AccountSwitcherSheet: View {
                     .kit941Font(.title, weight: .semibold)
                 Text("Connect another GitHub account with Device Flow. The overview uses the active account's commits.")
                     .kit941Font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppSurface.secondaryText)
 
                 HStack(spacing: Kit941.Spacing.sm) {
                     Kit941.Button {
@@ -166,16 +166,16 @@ struct AccountSwitcherSheet: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(account.login)
                         .kit941Font(.label, weight: .semibold)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(AppSurface.primaryText)
                     if let name = account.name, !name.isEmpty {
                         Text(name)
                             .kit941Font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                             .lineLimit(1)
                     } else {
                         Text("GitHub")
                             .kit941Font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                     }
                 }
 

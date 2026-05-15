@@ -24,7 +24,7 @@ struct GitHubAuthCard: View {
 
                 Text("Captain's Log uses GitHub Device Flow, stores the token in Keychain, and only sees repositories where the GitHub App is installed.")
                     .kit941Font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppSurface.secondaryText)
 
                 stateContent
 
@@ -43,16 +43,16 @@ struct GitHubAuthCard: View {
                 VStack(alignment: .leading, spacing: Kit941.Spacing.xs) {
                     Label("GitHub sign-in is not configured yet", systemImage: "exclamationmark.triangle")
                         .kit941Font(.label)
-                        .foregroundStyle(Kit941.Status.warning)
+                        .foregroundStyle(AppSurface.warning)
                     Text("Register the GitHub App, enable Device Flow, and set GITHUB_CLIENT_ID in the build.")
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 }
             }
         case .requestingCode:
             Label("Requesting a GitHub code", systemImage: "hourglass")
                 .kit941Font(.label)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
         case .waitingForUser(let code):
             codeContent(code, isChecking: false)
         case .completingSignIn(let code):
@@ -60,7 +60,7 @@ struct GitHubAuthCard: View {
         case .failed(let message):
             Label(message, systemImage: "exclamationmark.triangle")
                 .kit941Font(.label)
-                .foregroundStyle(Kit941.Status.danger)
+                .foregroundStyle(AppSurface.danger)
         case .signedIn:
             EmptyView()
         }
@@ -120,21 +120,21 @@ struct GitHubAuthCard: View {
                 .font(.system(.title, design: .monospaced, weight: .bold))
                 .padding(.horizontal, Kit941.Spacing.md)
                 .padding(.vertical, Kit941.Spacing.sm)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: Kit941.Radius.md))
+                .background(AppSurface.mutedFill(opacity: 1), in: RoundedRectangle(cornerRadius: Kit941.Radius.md))
                 .textSelection(.enabled)
 
             Text("Copy this code, authorize at github.com/login/device, then return and check authorization.")
                 .kit941Font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
 
             if isChecking {
                 Label("Checking GitHub authorization", systemImage: "hourglass")
                     .kit941Font(.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppSurface.secondaryText)
             } else if !authMessage.isEmpty {
                 Label(authMessage, systemImage: "exclamationmark.triangle")
                     .kit941Font(.label)
-                    .foregroundStyle(Kit941.Status.warning)
+                    .foregroundStyle(AppSurface.warning)
             }
         }
     }
@@ -160,7 +160,7 @@ struct RepositoryPanel: View {
                             .kit941Font(.title, weight: .semibold)
                         Text("\(selectedCount) selected")
                             .kit941Font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                     }
 
                     Spacer(minLength: Kit941.Spacing.sm)
@@ -175,7 +175,7 @@ struct RepositoryPanel: View {
                     VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
                         Text("Approve access to all repositories or selected repositories in GitHub, then refresh.")
                             .kit941Font(.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
 
                         if appInstallURL != nil {
                             Kit941.Button(role: .secondary) {
@@ -204,7 +204,7 @@ struct RepositoryPanel: View {
                 if !syncMessage.isEmpty {
                     Text(syncMessage)
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                         .lineLimit(3)
                 }
 
@@ -258,7 +258,7 @@ private struct RepositoryToggleRow: View {
                     }
                 }
                 .kit941Font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
             }
         }
         .toggleStyle(.switch)

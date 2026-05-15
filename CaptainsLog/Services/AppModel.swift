@@ -26,6 +26,12 @@ enum RepositorySyncWindow {
 
 enum RepositoryHistoryBackfillPolicy {
     static let fullSyncCommitPageLimit: Int? = nil
+    static let indexPageBudgetPerRun = 500
+}
+
+enum RepositoryHotSyncPolicy {
+    static let lookbackDays = 14
+    static let minimumForegroundInterval: TimeInterval = 120
 }
 
 private enum DiffStatsBackfillOrder {
@@ -43,6 +49,18 @@ private struct HistoryBackfillStepResult {
     let completedMonth: Bool
     let completedRepository: Bool
     let hadWork: Bool
+}
+
+private struct HistoryPageSyncResult {
+    let pagesUsed: Int
+    let completed: Bool
+    let updatedStats: Int
+}
+
+private struct MissingDiffStatsRepositoryPriority {
+    let repository: GitRepositoryRecord
+    let missingCount: Int
+    let newestMissingAt: Date
 }
 
 @MainActor
@@ -81,8 +99,12 @@ final class AppModel: ObservableObject {
     private let historicalBackfillCommitPagesPerRepository = RepositoryHistoryBackfillPolicy.fullSyncCommitPageLimit
     private let selectedPeriodDiffStatsPerRepositoryLimit = 250
     private let selectedPeriodDiffStatsPerSyncLimit = 1_000
-    private let historicalBackfillPageBudgetPerRun = 40
+    private let historicalBackfillPageBudgetPerRun = RepositoryHistoryBackfillPolicy.indexPageBudgetPerRun
     private let diffStatsRetryInterval: TimeInterval = 3_600
+    private let syncProgressPublishInterval: TimeInterval = 0.45
+    private var lastSyncProgressPublishedAt = Date.distantPast
+    private var pendingImportedCommitCount = 0
+    private var pendingUpdatedDiffStatCount = 0
 
     var isSignedIn: Bool {
         token != nil && viewer != nil
@@ -375,10 +397,9 @@ final class AppModel: ObservableObject {
         }
 
         isSyncing = true
-        importedCommitCount = 0
-        updatedDiffStatCount = 0
+        resetSyncProgress()
         syncMessage = "Syncing updates"
-        defer { isSyncing = false }
+        defer { finishSyncProgress() }
 
         let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
         let fallbackSince = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
@@ -425,7 +446,7 @@ final class AppModel: ObservableObject {
 
             if failedRepositories.isEmpty {
                 syncMessage = syncCompleteMessage(failedRepositoryCount: 0)
-            } else if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+            } else if hasPendingSyncWork {
                 syncMessage = syncCompleteMessage(failedRepositoryCount: failedRepositories.count)
             } else if let firstFailure = failedRepositories.first {
                 syncMessage = "\(firstFailure.name): \(firstFailure.message)"
@@ -438,6 +459,48 @@ final class AppModel: ObservableObject {
             }
             syncMessage = error.localizedDescription
         }
+    }
+
+    func syncLatestIfStale(
+        minimumInterval: TimeInterval = RepositoryHotSyncPolicy.minimumForegroundInterval,
+        lookbackDays: Int = RepositoryHotSyncPolicy.lookbackDays
+    ) async {
+        syncLogger.info("Latest commit sync check requested")
+        guard !isSyncing else {
+            syncLogger.info("Latest commit sync skipped because sync is already running")
+            return
+        }
+        guard let modelContext else {
+            syncLogger.error("Latest commit sync failed: missing model context")
+            return
+        }
+
+        do {
+            let selected = try selectedRepositories(modelContext: modelContext)
+                .filter(\.isGitHubBacked)
+            guard !selected.isEmpty else {
+                syncLogger.info("Latest commit sync skipped because no GitHub repositories are selected")
+                return
+            }
+
+            let now = Date()
+            let hasStaleRepository = selected.contains { repository in
+                guard let lastSyncedAt = repository.lastSyncedAt else {
+                    return true
+                }
+                return now.timeIntervalSince(lastSyncedAt) >= minimumInterval
+            }
+
+            guard hasStaleRepository else {
+                syncLogger.info("Latest commit sync skipped because selected repositories are fresh")
+                return
+            }
+        } catch {
+            syncLogger.error("Latest commit sync failed while checking selected repositories: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        await syncSelectedRepositories(lookbackDays: lookbackDays)
     }
 
     func backfillSelectedPeriodLineStats(
@@ -471,10 +534,9 @@ final class AppModel: ObservableObject {
         }
 
         isSyncing = true
-        importedCommitCount = 0
-        updatedDiffStatCount = 0
+        resetSyncProgress()
         syncMessage = "Filling \(scope.syncTitle) line stats"
-        defer { isSyncing = false }
+        defer { finishSyncProgress() }
 
         let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
         var failedRepositories: [(name: String, message: String)] = []
@@ -541,13 +603,13 @@ final class AppModel: ObservableObject {
 
             if failedRepositories.isEmpty {
                 if diffStatsBudget == 0 {
-                    syncMessage = "Filled \(updatedDiffStatCount.formatted()) line stats; run again for more"
-                } else if importedCommitCount == 0 && updatedDiffStatCount == 0 {
+                    syncMessage = "Filled \(pendingUpdatedDiffStatCount.formatted()) line stats; run again for more"
+                } else if !hasPendingSyncWork {
                     syncMessage = "Line stats already complete for selected \(scope.syncTitle)"
                 } else {
                     syncMessage = syncCompleteMessage(prefix: "Line stats filled", failedRepositoryCount: 0)
                 }
-            } else if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+            } else if hasPendingSyncWork {
                 syncMessage = syncCompleteMessage(prefix: "Line stats filled", failedRepositoryCount: failedRepositories.count)
             } else if let firstFailure = failedRepositories.first {
                 syncMessage = "\(firstFailure.name): \(firstFailure.message)"
@@ -588,10 +650,9 @@ final class AppModel: ObservableObject {
         }
 
         isSyncing = true
-        importedCommitCount = 0
-        updatedDiffStatCount = 0
+        resetSyncProgress()
         syncMessage = "Indexing historical analytics"
-        defer { isSyncing = false }
+        defer { finishSyncProgress() }
 
         let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
         let lowerBound = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
@@ -608,39 +669,99 @@ final class AppModel: ObservableObject {
                 return
             }
 
-            for repository in historyBackfillPriority(selected) {
-                guard pageBudget > 0 else {
+            var touchedRepositoryNames: Set<String> = []
+            var failedRepositoryNames: Set<String> = []
+            while pageBudget > 0 {
+                var madeProgress = false
+                let missingStatPriorities = try missingDiffStatsPriority(
+                    selected,
+                    since: lowerBound,
+                    modelContext: modelContext
+                )
+
+                if !missingStatPriorities.isEmpty {
+                    for priority in missingStatPriorities where !failedRepositoryNames.contains(priority.repository.fullName) {
+                        guard pageBudget > 0 else {
+                            break
+                        }
+
+                        do {
+                            let result = try await backfillNextMissingDiffStatsMonth(
+                                priority.repository,
+                                api: api,
+                                lowerBound: lowerBound,
+                                pageBudget: &pageBudget,
+                                modelContext: modelContext
+                            )
+                            if result.hadWork {
+                                madeProgress = true
+                                touchedRepositoryNames.insert(priority.repository.fullName)
+                            }
+                            if result.completedMonth {
+                                completedMonths += 1
+                            }
+                        } catch is CancellationError {
+                            syncMessage = "Historical index canceled"
+                            return
+                        } catch {
+                            if handleUnauthorizedGitHubError(error, operation: "Historical analytics index") {
+                                return
+                            }
+                            failedRepositoryNames.insert(priority.repository.fullName)
+                            priority.repository.markHistoryBackfillFailed(error.localizedDescription)
+                            try? modelContext.save()
+                            failedRepositories.append((priority.repository.fullName, error.localizedDescription))
+                        }
+                    }
+
+                    guard madeProgress else {
+                        break
+                    }
+                    continue
+                }
+
+                for repository in historyBackfillPriority(selected) where !failedRepositoryNames.contains(repository.fullName) {
+                    guard pageBudget > 0 else {
+                        break
+                    }
+
+                    do {
+                        let result = try await backfillNextHistoryMonth(
+                            repository,
+                            api: api,
+                            lowerBound: lowerBound,
+                            pageBudget: &pageBudget,
+                            modelContext: modelContext
+                        )
+                        if result.hadWork {
+                            madeProgress = true
+                            touchedRepositoryNames.insert(repository.fullName)
+                        }
+                        if result.completedMonth {
+                            completedMonths += 1
+                        }
+                        if result.completedRepository {
+                            completedRepositories += 1
+                        }
+                    } catch is CancellationError {
+                        syncMessage = "Historical index canceled"
+                        return
+                    } catch {
+                        if handleUnauthorizedGitHubError(error, operation: "Historical analytics index") {
+                            return
+                        }
+                        failedRepositoryNames.insert(repository.fullName)
+                        repository.markHistoryBackfillFailed(error.localizedDescription)
+                        try? modelContext.save()
+                        failedRepositories.append((repository.fullName, error.localizedDescription))
+                    }
+                }
+
+                guard madeProgress else {
                     break
                 }
-                do {
-                    let result = try await backfillNextHistoryMonth(
-                        repository,
-                        api: api,
-                        lowerBound: lowerBound,
-                        pageBudget: &pageBudget,
-                        modelContext: modelContext
-                    )
-                    if result.hadWork {
-                        touchedRepositories += 1
-                    }
-                    if result.completedMonth {
-                        completedMonths += 1
-                    }
-                    if result.completedRepository {
-                        completedRepositories += 1
-                    }
-                } catch is CancellationError {
-                    syncMessage = "Historical index canceled"
-                    return
-                } catch {
-                    if handleUnauthorizedGitHubError(error, operation: "Historical analytics index") {
-                        return
-                    }
-                    repository.markHistoryBackfillFailed(error.localizedDescription)
-                    try? modelContext.save()
-                    failedRepositories.append((repository.fullName, error.localizedDescription))
-                }
             }
+            touchedRepositories = touchedRepositoryNames.count
 
             if failedRepositories.isEmpty {
                 syncMessage = historyIndexCompleteMessage(
@@ -650,7 +771,7 @@ final class AppModel: ObservableObject {
                     pageBudgetExhausted: pageBudget == 0,
                     failedRepositoryCount: 0
                 )
-            } else if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+            } else if hasPendingSyncWork {
                 syncMessage = historyIndexCompleteMessage(
                     completedMonths: completedMonths,
                     completedRepositories: completedRepositories,
@@ -668,6 +789,40 @@ final class AppModel: ObservableObject {
                 return
             }
             syncMessage = error.localizedDescription
+        }
+    }
+
+    func hasHistoricalAnalyticsBackfillWork(
+        lookbackDays: Int = 7_300
+    ) throws -> Bool {
+        guard let modelContext else {
+            throw StorageError.missingModelContext
+        }
+
+        let lowerBound = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
+        let selected = try selectedRepositories(modelContext: modelContext)
+            .filter(\.isGitHubBacked)
+
+        guard !selected.isEmpty else {
+            return false
+        }
+
+        if try !missingDiffStatsPriority(
+            selected,
+            since: lowerBound,
+            modelContext: modelContext
+        ).isEmpty {
+            return true
+        }
+
+        return selected.contains { repository in
+            guard repository.isHistoryBackfillComplete else {
+                return true
+            }
+            guard let completedLowerBound = repository.historyBackfillLowerBound else {
+                return true
+            }
+            return completedLowerBound > lowerBound
         }
     }
 
@@ -695,10 +850,9 @@ final class AppModel: ObservableObject {
         }
 
         isSyncing = true
-        importedCommitCount = 0
-        updatedDiffStatCount = 0
+        resetSyncProgress()
         syncMessage = "Refreshing today"
-        defer { isSyncing = false }
+        defer { finishSyncProgress() }
 
         let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
         let startOfToday = Calendar.current.startOfDay(for: Date())
@@ -745,7 +899,7 @@ final class AppModel: ObservableObject {
 
             if failedRepositories.isEmpty {
                 syncMessage = todaySyncCompleteMessage(failedRepositoryCount: 0)
-            } else if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+            } else if hasPendingSyncWork {
                 syncMessage = todaySyncCompleteMessage(failedRepositoryCount: failedRepositories.count)
             } else if let firstFailure = failedRepositories.first {
                 syncMessage = "\(firstFailure.name): \(firstFailure.message)"
@@ -974,13 +1128,17 @@ final class AppModel: ObservableObject {
                 inserted += 1
             }
 
+            guard let additions = remote.additions,
+                  let deletions = remote.deletions else {
+                continue
+            }
             let changedFileCount = remote.changedFilesIfAvailable ?? 0
             if record.additions != remote.additions ||
                 record.deletions != remote.deletions ||
                 record.changedFileCount != changedFileCount {
                 record.applyDiffStats(
-                    additions: remote.additions,
-                    deletions: remote.deletions,
+                    additions: additions,
+                    deletions: deletions,
                     changedFileCount: changedFileCount
                 )
                 updatedStats += 1
@@ -1015,7 +1173,7 @@ final class AppModel: ObservableObject {
 
         let startingCursor = repository.historyBackfillPageCursor
         repository.markHistoryBackfillMonth(interval, pageCursor: startingCursor)
-        try modelContext.save()
+        try await saveSyncBatch(modelContext: modelContext)
 
         var existingCommits = try existingCommitRecords(
             repositoryFullName: repository.fullName,
@@ -1029,7 +1187,7 @@ final class AppModel: ObservableObject {
         while pageBudget > 0 {
             try Task.checkCancellation()
             let monthLabel = interval.start.formatted(.dateTime.month(.abbreviated).year())
-            syncMessage = "Indexing \(repository.fullName) \(monthLabel)"
+            await publishSyncProgress("Indexing \(repository.fullName) \(monthLabel)")
 
             let history = try await api.commitHistoryPage(
                 owner: repository.ownerLogin,
@@ -1048,8 +1206,7 @@ final class AppModel: ObservableObject {
                 existingCommits: &existingCommits,
                 modelContext: modelContext
             )
-            importedCommitCount += result.inserted
-            updatedDiffStatCount += result.updatedStats
+            recordSyncProgress(insertedCommits: result.inserted, updatedDiffStats: result.updatedStats)
             repository.recordHistoryBackfillProgress(
                 processedCommits: history.commits.count,
                 updatedStats: result.updatedStats
@@ -1065,7 +1222,7 @@ final class AppModel: ObservableObject {
                     to: nextCursor,
                     completedAt: completedRepository ? Date() : nil
                 )
-                try modelContext.save()
+                try await saveSyncBatch(modelContext: modelContext)
                 return HistoryBackfillStepResult(
                     pagesUsed: pagesUsed,
                     completedMonth: true,
@@ -1081,7 +1238,7 @@ final class AppModel: ObservableObject {
             repository.historyBackfillLastAttemptAt = Date()
             repository.historyBackfillLastError = nil
             after = endCursor
-            try modelContext.save()
+            try await saveSyncBatch(modelContext: modelContext)
         }
 
         return HistoryBackfillStepResult(
@@ -1089,6 +1246,42 @@ final class AppModel: ObservableObject {
             completedMonth: false,
             completedRepository: false,
             hadWork: pagesUsed > 0
+        )
+    }
+
+    private func backfillNextMissingDiffStatsMonth(
+        _ repository: GitRepositoryRecord,
+        api: GitHubAPIClient,
+        lowerBound: Date,
+        pageBudget: inout Int,
+        modelContext: ModelContext
+    ) async throws -> HistoryBackfillStepResult {
+        guard pageBudget > 0 else {
+            return HistoryBackfillStepResult(pagesUsed: 0, completedMonth: false, completedRepository: false, hadWork: false)
+        }
+        guard let interval = try missingDiffStatsMonthInterval(
+            repositoryFullName: repository.fullName,
+            since: lowerBound,
+            modelContext: modelContext
+        ) else {
+            return HistoryBackfillStepResult(pagesUsed: 0, completedMonth: false, completedRepository: false, hadWork: false)
+        }
+
+        let result = try await syncCommitHistoryPagesWithBudget(
+            repository,
+            api: api,
+            since: interval.start,
+            until: interval.end,
+            phase: "Indexing line stats",
+            pageBudget: &pageBudget,
+            modelContext: modelContext
+        )
+
+        return HistoryBackfillStepResult(
+            pagesUsed: result.pagesUsed,
+            completedMonth: result.completed,
+            completedRepository: false,
+            hadWork: result.pagesUsed > 0
         )
     }
 
@@ -1157,6 +1350,79 @@ final class AppModel: ObservableObject {
         }
     }
 
+    private func missingDiffStatsPriority(
+        _ repositories: [GitRepositoryRecord],
+        since: Date,
+        modelContext: ModelContext
+    ) throws -> [MissingDiffStatsRepositoryPriority] {
+        try repositories.compactMap { repository in
+            let candidates = try commitsNeedingDiffStats(
+                repositoryFullName: repository.fullName,
+                authoredSince: since,
+                order: .newestFirst,
+                modelContext: modelContext
+            )
+            guard let newestMissingAt = candidates.first?.authoredAt else {
+                return nil
+            }
+            return MissingDiffStatsRepositoryPriority(
+                repository: repository,
+                missingCount: candidates.count,
+                newestMissingAt: newestMissingAt
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.missingCount != rhs.missingCount {
+                return lhs.missingCount > rhs.missingCount
+            }
+            if lhs.newestMissingAt != rhs.newestMissingAt {
+                return lhs.newestMissingAt > rhs.newestMissingAt
+            }
+            return lhs.repository.fullName.localizedStandardCompare(rhs.repository.fullName) == .orderedAscending
+        }
+    }
+
+    private var hasPendingSyncWork: Bool {
+        pendingImportedCommitCount > 0 || pendingUpdatedDiffStatCount > 0
+    }
+
+    private func resetSyncProgress() {
+        pendingImportedCommitCount = 0
+        pendingUpdatedDiffStatCount = 0
+        importedCommitCount = 0
+        updatedDiffStatCount = 0
+        lastSyncProgressPublishedAt = .distantPast
+    }
+
+    private func finishSyncProgress() {
+        importedCommitCount = pendingImportedCommitCount
+        updatedDiffStatCount = pendingUpdatedDiffStatCount
+        isSyncing = false
+    }
+
+    private func recordSyncProgress(insertedCommits: Int = 0, updatedDiffStats: Int = 0) {
+        pendingImportedCommitCount += insertedCommits
+        pendingUpdatedDiffStatCount += updatedDiffStats
+    }
+
+    private func publishSyncProgress(_ message: String, force: Bool = false) async {
+        let now = Date()
+        guard force || now.timeIntervalSince(lastSyncProgressPublishedAt) >= syncProgressPublishInterval else {
+            return
+        }
+
+        importedCommitCount = pendingImportedCommitCount
+        updatedDiffStatCount = pendingUpdatedDiffStatCount
+        syncMessage = message
+        lastSyncProgressPublishedAt = now
+        await Task.yield()
+    }
+
+    private func saveSyncBatch(modelContext: ModelContext) async throws {
+        try modelContext.save()
+        await Task.yield()
+    }
+
     private func syncRepositoryCommits(
         _ repository: GitRepositoryRecord,
         api: GitHubAPIClient,
@@ -1206,7 +1472,7 @@ final class AppModel: ObservableObject {
 
         guard backfillHistoricalGaps else {
             repository.lastSyncedAt = Date()
-            try modelContext.save()
+            try await saveSyncBatch(modelContext: modelContext)
             return RepositorySyncResult(updateSince: updateSince, usedHistoryStats: usedHistoryStats)
         }
 
@@ -1239,7 +1505,7 @@ final class AppModel: ObservableObject {
         }
 
         repository.lastSyncedAt = Date()
-        try modelContext.save()
+        try await saveSyncBatch(modelContext: modelContext)
         return RepositorySyncResult(updateSince: updateSince, usedHistoryStats: usedHistoryStats)
     }
 
@@ -1292,7 +1558,7 @@ final class AppModel: ObservableObject {
         }
 
         repository.lastSyncedAt = Date()
-        try modelContext.save()
+        try await saveSyncBatch(modelContext: modelContext)
         return usedHistoryStats
     }
 
@@ -1358,6 +1624,28 @@ final class AppModel: ObservableObject {
         maxPages: Int?,
         modelContext: ModelContext
     ) async throws -> Bool {
+        var pageBudget = maxPages ?? Int.max
+        let result = try await syncCommitHistoryPagesWithBudget(
+            repository,
+            api: api,
+            since: since,
+            until: until,
+            phase: phase,
+            pageBudget: &pageBudget,
+            modelContext: modelContext
+        )
+        return result.completed
+    }
+
+    private func syncCommitHistoryPagesWithBudget(
+        _ repository: GitRepositoryRecord,
+        api: GitHubAPIClient,
+        since: Date,
+        until: Date?,
+        phase: String,
+        pageBudget: inout Int,
+        modelContext: ModelContext
+    ) async throws -> HistoryPageSyncResult {
         var existingCommits = try existingCommitRecords(
             repositoryFullName: repository.fullName,
             authoredSince: since,
@@ -1366,14 +1654,16 @@ final class AppModel: ObservableObject {
         )
         var page = 1
         var after: String?
+        var pagesUsed = 0
+        var updatedStats = 0
 
-        while true {
-            if let maxPages, page > maxPages {
-                return false
+        while pageBudget > 0 {
+            if pageBudget != Int.max {
+                pageBudget -= 1
             }
 
             try Task.checkCancellation()
-            syncMessage = "\(phase) \(repository.fullName) page \(page)"
+            await publishSyncProgress("\(phase) \(repository.fullName) page \(page)")
 
             let history = try await api.commitHistoryPage(
                 owner: repository.ownerLogin,
@@ -1383,6 +1673,7 @@ final class AppModel: ObservableObject {
                 after: after,
                 perPage: commitPageSize
             )
+            pagesUsed += 1
 
             let result = try upsertGraphQLCommits(
                 history.commits,
@@ -1390,18 +1681,20 @@ final class AppModel: ObservableObject {
                 existingCommits: &existingCommits,
                 modelContext: modelContext
             )
-            importedCommitCount += result.inserted
-            updatedDiffStatCount += result.updatedStats
-            try modelContext.save()
-            syncMessage = "\(phase) \(repository.fullName): \(importedCommitCount) new commits, \(updatedDiffStatCount) line stats"
+            recordSyncProgress(insertedCommits: result.inserted, updatedDiffStats: result.updatedStats)
+            updatedStats += result.updatedStats
+            try await saveSyncBatch(modelContext: modelContext)
+            await publishSyncProgress("\(phase) \(repository.fullName): \(pendingImportedCommitCount) new commits, \(pendingUpdatedDiffStatCount) line stats")
 
             guard history.hasNextPage, let endCursor = history.endCursor else {
-                return true
+                return HistoryPageSyncResult(pagesUsed: pagesUsed, completed: true, updatedStats: updatedStats)
             }
 
             after = endCursor
             page += 1
         }
+
+        return HistoryPageSyncResult(pagesUsed: pagesUsed, completed: false, updatedStats: updatedStats)
     }
 
     private func syncCommitPages(
@@ -1420,7 +1713,7 @@ final class AppModel: ObservableObject {
                 return
             }
             try Task.checkCancellation()
-            syncMessage = "\(phase) \(repository.fullName) page \(page)"
+            await publishSyncProgress("\(phase) \(repository.fullName) page \(page)")
 
             let commits = try await api.commitPage(
                 owner: repository.ownerLogin,
@@ -1440,9 +1733,9 @@ final class AppModel: ObservableObject {
                 existingCommitIDs: &existingCommitIDs,
                 modelContext: modelContext
             )
-            importedCommitCount += inserted
-            try modelContext.save()
-            syncMessage = "\(phase) \(repository.fullName): \(importedCommitCount) new commits"
+            recordSyncProgress(insertedCommits: inserted)
+            try await saveSyncBatch(modelContext: modelContext)
+            await publishSyncProgress("\(phase) \(repository.fullName): \(pendingImportedCommitCount) new commits")
 
             guard commits.count == commitPageSize else {
                 return
@@ -1480,7 +1773,7 @@ final class AppModel: ObservableObject {
         for commit in candidates.prefix(requestLimit) {
             try Task.checkCancellation()
             attempted += 1
-            syncMessage = "Fetching stats \(repository.fullName): \(attempted) of \(min(candidates.count, requestLimit))"
+            await publishSyncProgress("Fetching stats \(repository.fullName): \(attempted) of \(min(candidates.count, requestLimit))")
 
             do {
                 let detail = try await api.commitDetail(
@@ -1490,18 +1783,18 @@ final class AppModel: ObservableObject {
                 )
                 commit.applyDiffStats(from: detail)
                 updated += 1
-                updatedDiffStatCount += 1
+                recordSyncProgress(updatedDiffStats: 1)
             } catch {
                 commit.markDiffStatsFailed(error.localizedDescription)
             }
 
             if attempted % 10 == 0 {
-                try modelContext.save()
+                try await saveSyncBatch(modelContext: modelContext)
             }
         }
 
         if attempted > 0 {
-            try modelContext.save()
+            try await saveSyncBatch(modelContext: modelContext)
         }
         return (attempted, updated)
     }
@@ -1580,10 +1873,35 @@ final class AppModel: ObservableObject {
         return DateInterval(start: start, end: end)
     }
 
+    private func missingDiffStatsMonthInterval(
+        repositoryFullName: String,
+        since: Date,
+        modelContext: ModelContext
+    ) throws -> DateInterval? {
+        let candidates = try commitsNeedingDiffStats(
+            repositoryFullName: repositoryFullName,
+            authoredSince: since,
+            order: .newestFirst,
+            modelContext: modelContext
+        )
+        guard let newestMissingDate = candidates.first?.authoredAt else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+        let rawMonthStart = CalendarMath.monthStart(for: newestMissingDate, calendar: calendar)
+        let start = max(rawMonthStart, since)
+        let end = calendar.date(byAdding: .month, value: 1, to: rawMonthStart) ?? newestMissingDate.addingTimeInterval(1)
+        guard start < end else {
+            return nil
+        }
+        return DateInterval(start: start, end: end)
+    }
+
     private func syncCompleteMessage(prefix: String = "Sync complete", failedRepositoryCount: Int) -> String {
-        var parts = ["\(prefix): \(importedCommitCount) new commits"]
-        if updatedDiffStatCount > 0 {
-            parts.append("updated \(updatedDiffStatCount) diff stats")
+        var parts = ["\(prefix): \(pendingImportedCommitCount) new commits"]
+        if pendingUpdatedDiffStatCount > 0 {
+            parts.append("updated \(pendingUpdatedDiffStatCount) diff stats")
         }
         if failedRepositoryCount > 0 {
             parts.append("\(failedRepositoryCount) repositories need another sync")
@@ -1598,7 +1916,7 @@ final class AppModel: ObservableObject {
         pageBudgetExhausted: Bool,
         failedRepositoryCount: Int
     ) -> String {
-        var parts = ["Historical index: \(importedCommitCount.formatted()) commits, \(updatedDiffStatCount.formatted()) line stats"]
+        var parts = ["Historical index: \(pendingImportedCommitCount.formatted()) commits, \(pendingUpdatedDiffStatCount.formatted()) line stats"]
         if completedMonths > 0 {
             parts.append("\(completedMonths.formatted()) months indexed")
         }
@@ -1617,9 +1935,9 @@ final class AppModel: ObservableObject {
     }
 
     private func todaySyncCompleteMessage(failedRepositoryCount: Int) -> String {
-        var parts = ["Today refreshed: \(importedCommitCount) new commits"]
-        if updatedDiffStatCount > 0 {
-            parts.append("updated \(updatedDiffStatCount) diff stats")
+        var parts = ["Today refreshed: \(pendingImportedCommitCount) new commits"]
+        if pendingUpdatedDiffStatCount > 0 {
+            parts.append("updated \(pendingUpdatedDiffStatCount) diff stats")
         }
         if failedRepositoryCount > 0 {
             parts.append("\(failedRepositoryCount) repositories need full sync")

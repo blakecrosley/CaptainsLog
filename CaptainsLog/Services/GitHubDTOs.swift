@@ -162,13 +162,16 @@ struct GitHubGraphQLCommitDTO: Decodable, Equatable {
     let message: String
     let authoredDate: Date
     let url: URL
-    let additions: Int
-    let deletions: Int
+    let additions: Int?
+    let deletions: Int?
     let changedFilesIfAvailable: Int?
     let author: Author?
 
-    var totalChanges: Int {
-        additions + deletions
+    var totalChanges: Int? {
+        guard let additions, let deletions else {
+            return nil
+        }
+        return additions + deletions
     }
 
     var authorLogin: String? {

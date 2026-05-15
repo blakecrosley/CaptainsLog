@@ -3,23 +3,43 @@ import SwiftUI
 import Kit941
 
 @main
+@MainActor
 struct CaptainsLogApp: App {
+    #if os(iOS)
+    @UIApplicationDelegateAdaptor(CaptainsLogAppDelegate.self) private var appDelegate
+    #endif
+    static let sharedModelContainer = makeModelContainer()
+
     var body: some Scene {
         WindowGroup {
             RootView()
-                .kit941Theme(CaptainsLogTheme())
+                .kit941Theme(CaptainsLogTheme(theme: selectedTheme))
+                .tint(selectedTheme.accent)
+                .preferredColorScheme(selectedTheme.prefersDark ? .dark : .light)
                 #if DEBUG
                 .task {
                     seedOpenAICredentialFromLaunchEnvironmentIfPresent()
                 }
                 #endif
         }
-        .modelContainer(for: [
-            GitHubAccountRecord.self,
-            GitRepositoryRecord.self,
-            GitCommitRecord.self,
-            DailyJournalSummaryRecord.self
-        ])
+        .modelContainer(Self.sharedModelContainer)
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        do {
+            return try ModelContainer(
+                for: GitHubAccountRecord.self,
+                GitRepositoryRecord.self,
+                GitCommitRecord.self,
+                DailyJournalSummaryRecord.self
+            )
+        } catch {
+            fatalError("Failed to create Captain's Log model container: \(error)")
+        }
+    }
+
+    private var selectedTheme: AppSurface.Theme {
+        AppSurface.defaultTheme
     }
 }
 
@@ -51,8 +71,15 @@ private func seedOpenAICredentialFromLaunchEnvironmentIfPresent() {
 #endif
 
 private struct CaptainsLogTheme: Kit941Theme {
-    var accent: Color { Color(red: 0.10, green: 0.43, blue: 0.26) }
-    var fontFamily: Kit941.FontFamily { .system }
+    let theme: AppSurface.Theme
+
+    var accent: Color { theme.accent }
+    var primaryContent: Color { theme.primaryText }
+    var secondaryContent: Color { theme.secondaryText }
+    var danger: Color { theme.danger }
+    var surfaceFill: Color { theme.panelBase }
+    var surfaceStroke: Color { theme.panelStroke(highlighted: false) }
+    var fontFamily: Kit941.FontFamily { theme.fontFamily }
     var cornerStyle: Kit941.CornerStyle { .continuous }
     var motionFeel: Kit941.MotionFeel { .system }
 }

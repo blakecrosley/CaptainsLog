@@ -35,7 +35,7 @@ struct AISettingsView: View {
                 .frame(maxWidth: 620)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
-            .background(AppSurface.background.ignoresSafeArea())
+            .background(AppSurface.backgroundGradient.ignoresSafeArea())
             .navigationTitle("AI")
             .confirmationDialog("Remove OpenAI key?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
                 Button("Delete Key", role: .destructive) {
@@ -65,7 +65,7 @@ struct AISettingsView: View {
                 .kit941Font(.display, weight: .bold)
             Text("When a key is attached, Captain's Log uses OpenAI for journal generation. Without a key, it uses Apple Foundation Models.")
                 .kit941Font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -75,13 +75,13 @@ struct AISettingsView: View {
             VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
                 HStack(spacing: Kit941.Spacing.sm) {
                     Image(systemName: hasKey ? "key.fill" : "key")
-                        .foregroundStyle(hasKey ? AppSurface.accent : .secondary)
+                        .foregroundStyle(hasKey ? AppSurface.accent : AppSurface.tertiaryText)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("OpenAI key")
                             .kit941Font(.title, weight: .semibold)
                         Text(hasKey ? "Key attached to this device" : "No key attached")
                             .kit941Font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                     }
                     Spacer(minLength: 0)
                 }
@@ -101,12 +101,12 @@ struct AISettingsView: View {
                     #endif
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
+                    .background(AppSurface.mutedFill(opacity: 1), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
 
                 if let message {
                     Label(message, systemImage: messageIsError ? "exclamationmark.triangle" : "checkmark.circle")
                         .kit941Font(.caption)
-                        .foregroundStyle(messageIsError ? Kit941.Status.warning : Kit941.Status.success)
+                        .foregroundStyle(messageIsError ? AppSurface.warning : AppSurface.accent)
                 }
 
                 HStack(spacing: Kit941.Spacing.sm) {
@@ -142,7 +142,7 @@ struct AISettingsView: View {
                     .kit941Font(.label, weight: .semibold)
                 Text(preview)
                     .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppSurface.secondaryText)
                     .privacySensitive()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -155,7 +155,7 @@ struct AISettingsView: View {
             } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Kit941.Status.warning)
+                    .foregroundStyle(AppSurface.warning)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -171,7 +171,7 @@ struct AISettingsView: View {
     private var note: some View {
         Text("Keys are stored in this device's Keychain. Captain's Log will only send requests directly to OpenAI after you choose a feature that needs cloud classification.")
             .kit941Font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(AppSurface.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
     }
 

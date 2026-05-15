@@ -14,11 +14,15 @@
 		0463F8FF549AD7F52BDB0970 /* Kit941 in Frameworks */ = {isa = PBXBuildFile; productRef = BBA8D48E3CAA5B8CEFF2EAF9 /* Kit941 */; };
 		06A44DEC94D8308F6EDFD685 /* WorkClassification.swift in Sources */ = {isa = PBXBuildFile; fileRef = A121798FD0257B44C9A25F9B /* WorkClassification.swift */; };
 		07711B340F62B381A3F42FD3 /* WorkMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51197FC7760CBC461CF9A85E /* WorkMetrics.swift */; };
+		08581C1E48B92E1F8D278326 /* WorkIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D7424BA09E39999612D107A /* WorkIdentity.swift */; };
+		A7D52CF467684E8DB3AD2A02 /* BackgroundHistoryIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D52CF467684E8DB3AD2A01 /* BackgroundHistoryIndexer.swift */; };
+		A7D52CF467684E8DB3AD2A03 /* BackgroundHistoryIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D52CF467684E8DB3AD2A01 /* BackgroundHistoryIndexer.swift */; };
 		1D3EE83936A0D0815AA93C7B /* DayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */; };
 		26A1AE2E20F120E182EA44BD /* GitHubAppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */; };
 		2E7D779262A497521C0F1DF9 /* AccountViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FEF62642DDCA1C10E7CB83 /* AccountViews.swift */; };
 		322A5BFBE1BB02F01498C19A /* ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */; };
 		33E86E4101BA35597C9E4F69 /* WorkMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51197FC7760CBC461CF9A85E /* WorkMetrics.swift */; };
+		35A01D1229675F5CC6E5FB6A /* WorkIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D7424BA09E39999612D107A /* WorkIdentity.swift */; };
 		3E1FA340FD77D587DCB592A5 /* WorkOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CC5BEC17862AA07AB58ED4 /* WorkOverviewView.swift */; };
 		3F8E475AF22709038B61219F /* GitRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D06B639DF5034F9E81B270 /* GitRecords.swift */; };
 		3FE6CCB2E939FAB7C3DF55D4 /* OpenAIWorkClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE812F928AD5BFA57EA679EC /* OpenAIWorkClassifier.swift */; };
@@ -80,6 +84,7 @@
 		2D8B0B9A6C17EFFD57D1FAC4 /* CaptainsLog-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CaptainsLog-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3AD049F4F589A6068AAD2411 /* CalendarMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMath.swift; sourceTree = "<group>"; };
 		51197FC7760CBC461CF9A85E /* WorkMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkMetrics.swift; sourceTree = "<group>"; };
+		5D7424BA09E39999612D107A /* WorkIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkIdentity.swift; sourceTree = "<group>"; };
 		6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDTOs.swift; sourceTree = "<group>"; };
 		765A7318103C7B5303C9D85A /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
 		7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
@@ -87,6 +92,8 @@
 		86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSummarizer.swift; sourceTree = "<group>"; };
 		874B754CA1E41549E1C2BA59 /* 941Kit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = 941Kit; path = ../941Kit; sourceTree = SOURCE_ROOT; };
 		9C159E0081482BF0FD1B25BA /* CalendarMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMathTests.swift; sourceTree = "<group>"; };
+		A7D52CF467684E8DB3AD2A01 /* BackgroundHistoryIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundHistoryIndexer.swift; sourceTree = "<group>"; };
+		A7D52CF467684E8DB3AD2A04 /* CaptainsLog-iOS-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "CaptainsLog-iOS-Info.plist"; sourceTree = "<group>"; };
 		A112BB810F7845F0577280F8 /* CaptainsLogTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CaptainsLogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A121798FD0257B44C9A25F9B /* WorkClassification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkClassification.swift; sourceTree = "<group>"; };
 		B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayDetailView.swift; sourceTree = "<group>"; };
@@ -122,6 +129,7 @@
 			children = (
 				0A0D2439EC06220D19EB8EED /* AIProviderCredentialStore.swift */,
 				246542A7586005AA6F2AD266 /* AppModel.swift */,
+				A7D52CF467684E8DB3AD2A01 /* BackgroundHistoryIndexer.swift */,
 				B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */,
 				841C1CBE01067722906EA321 /* GitHubAPIClient.swift */,
 				0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */,
@@ -207,6 +215,7 @@
 		D35357F07E272AC6B74A5BC8 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				A7D52CF467684E8DB3AD2A04 /* CaptainsLog-iOS-Info.plist */,
 				2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */,
 			);
 			path = App;
@@ -218,6 +227,7 @@
 				3AD049F4F589A6068AAD2411 /* CalendarMath.swift */,
 				18D06B639DF5034F9E81B270 /* GitRecords.swift */,
 				A121798FD0257B44C9A25F9B /* WorkClassification.swift */,
+				5D7424BA09E39999612D107A /* WorkIdentity.swift */,
 				51197FC7760CBC461CF9A85E /* WorkMetrics.swift */,
 			);
 			path = Models;
@@ -340,6 +350,7 @@
 				451B36429F5B83534E173DEF /* AISettingsView.swift in Sources */,
 				02329EC403EF0508DD83CD37 /* AccountViews.swift in Sources */,
 				BF0CF3C9BEE70288E6AC7128 /* AppModel.swift in Sources */,
+				A7D52CF467684E8DB3AD2A03 /* BackgroundHistoryIndexer.swift in Sources */,
 				855508D56990E05D85A3190E /* AuthAndRepoViews.swift in Sources */,
 				521E5AC5E9A04894C09E0981 /* CalendarMath.swift in Sources */,
 				7397103398D6D7ECF2374599 /* CalendarViews.swift in Sources */,
@@ -355,6 +366,7 @@
 				03D352BED1743F105589DE13 /* OpenAIWorkClassifier.swift in Sources */,
 				CBC000A75549E99D024E232A /* RootView.swift in Sources */,
 				FBD7F9399C7FAE5EF6EFF68F /* WorkClassification.swift in Sources */,
+				35A01D1229675F5CC6E5FB6A /* WorkIdentity.swift in Sources */,
 				33E86E4101BA35597C9E4F69 /* WorkMetrics.swift in Sources */,
 				3E1FA340FD77D587DCB592A5 /* WorkOverviewView.swift in Sources */,
 			);
@@ -368,6 +380,7 @@
 				6414316B596F1F688DFD356A /* AISettingsView.swift in Sources */,
 				2E7D779262A497521C0F1DF9 /* AccountViews.swift in Sources */,
 				4D29EBFFE813BC9A4ED211AA /* AppModel.swift in Sources */,
+				A7D52CF467684E8DB3AD2A02 /* BackgroundHistoryIndexer.swift in Sources */,
 				75D26635F7B7A93E2182BAE9 /* AuthAndRepoViews.swift in Sources */,
 				6935405B86E26A23EA82D36E /* CalendarMath.swift in Sources */,
 				EA94944A2D0558412754745B /* CalendarViews.swift in Sources */,
@@ -383,6 +396,7 @@
 				3FE6CCB2E939FAB7C3DF55D4 /* OpenAIWorkClassifier.swift in Sources */,
 				F917743F699BCEEA6A9718FE /* RootView.swift in Sources */,
 				06A44DEC94D8308F6EDFD685 /* WorkClassification.swift in Sources */,
+				08581C1E48B92E1F8D278326 /* WorkIdentity.swift in Sources */,
 				07711B340F62B381A3F42FD3 /* WorkMetrics.swift in Sources */,
 				7B9853C3A0866ECF8C2244CD /* WorkOverviewView.swift in Sources */,
 			);
@@ -511,10 +525,8 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = M4WTLM6RAQ;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "CaptainsLog/App/CaptainsLog-iOS-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -613,10 +625,8 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = M4WTLM6RAQ;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "CaptainsLog/App/CaptainsLog-iOS-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

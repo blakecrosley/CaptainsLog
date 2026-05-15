@@ -103,18 +103,31 @@ struct GitHubAPIClient: Sendable {
         after: String? = nil,
         perPage: Int = 100
     ) async throws -> GitHubCommitHistoryPage {
-        let data: GitHubCommitHistoryGraphQLData = try await graphQL(
-            query: Self.commitHistoryQuery,
-            variables: CommitHistoryVariables(
-                owner: owner,
-                name: repo,
-                since: githubDateString(since),
-                until: until.map(githubDateString),
-                after: after,
-                first: perPage
-            )
+        let variables = CommitHistoryVariables(
+            owner: owner,
+            name: repo,
+            since: githubDateString(since),
+            until: until.map(githubDateString),
+            after: after,
+            first: perPage
         )
-        return data.page
+        do {
+            let data: GitHubCommitHistoryGraphQLData = try await graphQL(
+                query: Self.commitHistoryQuery,
+                variables: variables
+            )
+            return data.page
+        } catch {
+            guard let gitHubError = error as? GitHubError,
+                  gitHubError.isRecoverableCommitHistoryStatsFailure else {
+                throw error
+            }
+            return try await commitHistoryPageWithRESTStatsFallback(
+                owner: owner,
+                repo: repo,
+                variables: variables
+            )
+        }
     }
 
     private func get<T: Decodable>(path: String, queryItems: [URLQueryItem] = []) async throws -> T {
@@ -253,6 +266,13 @@ struct GitHubAPIClient: Sendable {
     }
 
     private func shouldRetry(_ error: Error) -> Bool {
+        if let gitHubError = error as? GitHubError {
+            if case let .httpStatus(status, _) = gitHubError,
+               [500, 502, 503, 504].contains(status) {
+                return true
+            }
+        }
+
         guard let urlError = error as? URLError else {
             return false
         }
@@ -280,6 +300,36 @@ struct GitHubAPIClient: Sendable {
         let first: Int
     }
 
+    private func commitHistoryPageWithRESTStatsFallback(
+        owner: String,
+        repo: String,
+        variables: CommitHistoryVariables
+    ) async throws -> GitHubCommitHistoryPage {
+        let data: GitHubCommitIdentityHistoryGraphQLData = try await graphQL(
+            query: Self.commitIdentityHistoryQuery,
+            variables: variables
+        )
+        let identityPage = data.page
+        var commits: [GitHubGraphQLCommitDTO] = []
+        commits.reserveCapacity(identityPage.commits.count)
+
+        for identity in identityPage.commits {
+            try Task.checkCancellation()
+            do {
+                let detail = try await commitDetail(owner: owner, repo: repo, sha: identity.oid)
+                commits.append(identity.graphQLCommit(with: detail))
+            } catch {
+                commits.append(identity.graphQLCommitWithoutDiffStats())
+            }
+        }
+
+        return GitHubCommitHistoryPage(
+            commits: commits,
+            hasNextPage: identityPage.hasNextPage,
+            endCursor: identityPage.endCursor
+        )
+    }
+
     private struct GraphQLRequest<Variables: Encodable>: Encodable {
         let query: String
         let variables: Variables
@@ -292,6 +342,79 @@ struct GitHubAPIClient: Sendable {
 
     private struct GraphQLError: Decodable {
         let message: String
+    }
+
+    private struct GitHubCommitIdentityHistoryPage: Equatable {
+        let commits: [GitHubCommitIdentityDTO]
+        let hasNextPage: Bool
+        let endCursor: String?
+    }
+
+    private struct GitHubCommitIdentityDTO: Decodable, Equatable {
+        let oid: String
+        let message: String
+        let authoredDate: Date
+        let url: URL
+        let author: GitHubGraphQLCommitDTO.Author?
+
+        func graphQLCommit(with detail: GitHubCommitDetailDTO) -> GitHubGraphQLCommitDTO {
+            GitHubGraphQLCommitDTO(
+                oid: oid,
+                message: message,
+                authoredDate: authoredDate,
+                url: detail.htmlURL ?? url,
+                additions: detail.stats?.additions,
+                deletions: detail.stats?.deletions,
+                changedFilesIfAvailable: detail.files.count,
+                author: author
+            )
+        }
+
+        func graphQLCommitWithoutDiffStats() -> GitHubGraphQLCommitDTO {
+            GitHubGraphQLCommitDTO(
+                oid: oid,
+                message: message,
+                authoredDate: authoredDate,
+                url: url,
+                additions: nil,
+                deletions: nil,
+                changedFilesIfAvailable: nil,
+                author: author
+            )
+        }
+    }
+
+    private struct GitHubCommitIdentityHistoryGraphQLData: Decodable, Equatable {
+        let repository: Repository?
+
+        var page: GitHubCommitIdentityHistoryPage {
+            guard let history = repository?.defaultBranchRef?.target?.history else {
+                return GitHubCommitIdentityHistoryPage(commits: [], hasNextPage: false, endCursor: nil)
+            }
+
+            return GitHubCommitIdentityHistoryPage(
+                commits: history.nodes,
+                hasNextPage: history.pageInfo.hasNextPage,
+                endCursor: history.pageInfo.endCursor
+            )
+        }
+
+        struct Repository: Decodable, Equatable {
+            let defaultBranchRef: Ref?
+        }
+
+        struct Ref: Decodable, Equatable {
+            let target: Target?
+        }
+
+        struct Target: Decodable, Equatable {
+            let history: History?
+        }
+
+        struct History: Decodable, Equatable {
+            let nodes: [GitHubCommitIdentityDTO]
+            let pageInfo: GitHubCommitHistoryGraphQLData.PageInfo
+        }
     }
 
     private static let commitHistoryQuery = """
@@ -313,6 +436,36 @@ struct GitHubAPIClient: Sendable {
                   additions
                   deletions
                   changedFilesIfAvailable
+                  author {
+                    user {
+                      login
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    private static let commitIdentityHistoryQuery = """
+    query CaptainLogCommitIdentityHistory($owner: String!, $name: String!, $since: GitTimestamp!, $until: GitTimestamp, $after: String, $first: Int!) {
+      repository(owner: $owner, name: $name) {
+        defaultBranchRef {
+          target {
+            ... on Commit {
+              history(first: $first, after: $after, since: $since, until: $until) {
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+                nodes {
+                  oid
+                  message
+                  authoredDate
+                  url
                   author {
                     user {
                       login
@@ -496,6 +649,23 @@ enum GitHubError: LocalizedError, Equatable {
             return false
         }
         return true
+    }
+
+    var isRecoverableCommitHistoryStatsFailure: Bool {
+        switch self {
+        case .httpStatus(let status, _):
+            return [500, 502, 503, 504].contains(status)
+        case .graphQLErrors(let messages):
+            return messages.contains { message in
+                let lowercased = message.lowercased()
+                return lowercased.contains("count for this commit is unavailable") ||
+                    lowercased.contains("additions count") ||
+                    lowercased.contains("deletions count") ||
+                    lowercased.contains("changed files")
+            }
+        default:
+            return false
+        }
     }
 
     var errorDescription: String? {

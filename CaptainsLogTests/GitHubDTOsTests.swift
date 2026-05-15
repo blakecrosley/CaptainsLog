@@ -9,6 +9,20 @@ final class GitHubDTOsTests: XCTestCase {
         )
     }
 
+    func testBackgroundHistoryIndexerUsesPermittedIdentifier() {
+        XCTAssertEqual(
+            BackgroundHistoryIndexer.taskIdentifier,
+            "com.blakecrosley.captainslog.history-index"
+        )
+        XCTAssertEqual(BackgroundHistoryIndexer.lookbackDays, 7_300)
+        XCTAssertEqual(BackgroundHistoryIndexer.defaultEarliestDelay, 30 * 60)
+    }
+
+    func testHotSyncPolicyKeepsForegroundRefreshSmall() {
+        XCTAssertEqual(RepositoryHotSyncPolicy.lookbackDays, 14)
+        XCTAssertEqual(RepositoryHotSyncPolicy.minimumForegroundInterval, 120)
+    }
+
     func testDecodesViewerNodeIDForSessionIdentity() throws {
         let json = Data("""
         {
@@ -315,6 +329,55 @@ final class GitHubDTOsTests: XCTestCase {
         XCTAssertNil(page.commits.first?.authorLogin)
     }
 
+    func testGraphQLCommitHistoryCanRepresentMissingDiffStats() throws {
+        struct Envelope: Decodable {
+            let data: GitHubCommitHistoryGraphQLData
+        }
+
+        let json = Data("""
+        {
+          "data": {
+            "repository": {
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "pageInfo": {
+                      "hasNextPage": false,
+                      "endCursor": null
+                    },
+                    "nodes": [
+                      {
+                        "oid": "missingstats123",
+                        "message": "commit with unavailable stat fields",
+                        "authoredDate": "2026-01-22T18:00:00Z",
+                        "url": "https://github.com/blakecrosley/resumegeni/commit/missingstats123",
+                        "additions": null,
+                        "deletions": null,
+                        "changedFilesIfAvailable": null,
+                        "author": {
+                          "user": {
+                            "login": "blakecrosley"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+        """.utf8)
+
+        let envelope = try GitHubJSON.decoder.decode(Envelope.self, from: json)
+        let commit = try XCTUnwrap(envelope.data.page.commits.first)
+
+        XCTAssertNil(commit.additions)
+        XCTAssertNil(commit.deletions)
+        XCTAssertNil(commit.totalChanges)
+        XCTAssertEqual(commit.authorLogin, "blakecrosley")
+    }
+
     func testGitHubCommitConflictCanBeTreatedAsEmptyHistory() {
         XCTAssertTrue(GitHubError.httpStatus(409, "{\"message\":\"Git Repository is empty.\"}").isCommitListConflict)
         XCTAssertFalse(GitHubError.httpStatus(404, "{\"message\":\"Not Found\"}").isCommitListConflict)
@@ -327,8 +390,24 @@ final class GitHubDTOsTests: XCTestCase {
         XCTAssertEqual(error.localizedDescription, "GitHub rejected the saved session. Sign in again.")
     }
 
+    func testCommitHistoryStatsFailuresCanUseRESTFallback() {
+        let unavailableCount = GitHubError.graphQLErrors([
+            "The additions count for this commit is unavailable."
+        ])
+        let serviceUnavailable = GitHubError.httpStatus(502, "Bad Gateway")
+        let unauthorized = GitHubError.httpStatus(401, "Bad credentials")
+
+        XCTAssertTrue(unavailableCount.isRecoverableCommitHistoryStatsFailure)
+        XCTAssertTrue(serviceUnavailable.isRecoverableCommitHistoryStatsFailure)
+        XCTAssertFalse(unauthorized.isRecoverableCommitHistoryStatsFailure)
+    }
+
     func testFullHistoryBackfillIsNotPageLimited() {
         XCTAssertNil(RepositoryHistoryBackfillPolicy.fullSyncCommitPageLimit)
+    }
+
+    func testHistoricalIndexRunHasEnoughPageBudgetForRealHistory() {
+        XCTAssertGreaterThanOrEqual(RepositoryHistoryBackfillPolicy.indexPageBudgetPerRun, 300)
     }
 
     func testOpenAIOutputTextReadsResponsesShape() {

@@ -343,8 +343,15 @@ enum WorkDataFilter {
     static func visibleCommits(
         _ commits: [GitCommitRecord],
         repositories: [GitRepositoryRecord],
-        activeLogin: String?
+        activeLogin: String?,
+        identityScope: WorkIdentityScope = .mineAndAliases,
+        identityAliases: Set<String> = []
     ) -> [GitCommitRecord] {
+        let identity = WorkIdentitySelection(
+            activeLogin: activeLogin,
+            scope: identityScope,
+            aliases: identityAliases
+        )
         let selectedRepositoryNames = Set(
             repositories
                 .filter { repository in
@@ -367,10 +374,7 @@ enum WorkDataFilter {
             guard selectedRepositoryNames.contains(commit.repositoryFullName) else {
                 return false
             }
-            guard let activeLogin else {
-                return true
-            }
-            return commit.authorLogin == activeLogin || commit.authorLogin == nil
+            return identity.includes(authorLogin: commit.authorLogin)
         }
     }
 }

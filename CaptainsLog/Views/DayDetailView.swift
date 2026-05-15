@@ -20,7 +20,7 @@ struct DayDetailView: View {
                         .kit941Font(.title, weight: .bold)
                     Text(metricSummary)
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 }
 
                 Spacer(minLength: Kit941.Spacing.md)
@@ -36,7 +36,7 @@ struct DayDetailView: View {
             if let generationError {
                 Label(generationError, systemImage: "exclamationmark.triangle")
                     .kit941Font(.label)
-                    .foregroundStyle(Kit941.Status.danger)
+                    .foregroundStyle(AppSurface.danger)
             }
 
             if isGeneratingSummary {
@@ -45,7 +45,7 @@ struct DayDetailView: View {
                         ProgressView()
                         Text("Generating journal entry")
                             .kit941Font(.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                     }
                 }
             } else if let summary {
@@ -91,12 +91,12 @@ private struct SummaryView: View {
                     Spacer(minLength: Kit941.Spacing.sm)
                     Text(summary.generatedAt, style: .time)
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 }
 
                 Text(summary.narrative)
                     .kit941Font(.body)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(AppSurface.primaryText)
 
                 if !summary.bullets.isEmpty {
                     VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
@@ -120,14 +120,14 @@ private struct SummaryView: View {
                                 .kit941Font(.caption)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(Color.primary.opacity(0.07), in: Capsule())
+                                .background(AppSurface.mutedFill(opacity: 0.92), in: Capsule())
                         }
                     }
                 }
 
                 Text("\(summary.sourceCommitIDs.count) source commits - \(summary.modelName)")
                     .kit941Font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppSurface.secondaryText)
             }
         }
     }
@@ -144,7 +144,7 @@ private struct CommitListView: View {
             if commits.isEmpty {
                 Text("Nothing imported for this day.")
                     .kit941Font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppSurface.secondaryText)
             } else {
                 VStack(spacing: 0) {
                     ForEach(commits) { commit in
@@ -154,11 +154,7 @@ private struct CommitListView: View {
                         }
                     }
                 }
-                .background(.background, in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                }
+                .appPanel()
             }
         }
     }
@@ -174,7 +170,7 @@ private struct CommitRow: View {
                     .fill(AppSurface.accent)
                     .frame(width: 9, height: 9)
                 Rectangle()
-                    .fill(Color.primary.opacity(0.12))
+                    .fill(AppSurface.divider.opacity(0.82))
                     .frame(width: 1)
                     .frame(maxHeight: .infinity)
             }
@@ -191,7 +187,7 @@ private struct CommitRow: View {
                     Text(commit.authoredAt, style: .time)
                 }
                 .kit941Font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
 
                 Text(statsLabel)
                     .kit941Font(.caption)
@@ -200,7 +196,7 @@ private struct CommitRow: View {
                 if !commit.messageBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(commit.messageBody)
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                         .lineLimit(3)
                 }
             }
@@ -221,7 +217,7 @@ private struct CommitRow: View {
     }
 
     private var statsColor: Color {
-        commit.hasDiffStats ? AppSurface.accent : .secondary
+        commit.hasDiffStats ? AppSurface.accent : AppSurface.secondaryText
     }
 }
 

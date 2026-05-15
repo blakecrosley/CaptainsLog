@@ -21,14 +21,14 @@ struct JournalWeekStrip: View {
                                 .kit941Font(.title, weight: .semibold)
                             Text(selectedDate, format: .dateTime.month(.wide).year())
                                 .kit941Font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppSurface.secondaryText)
                         }
 
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppSurface.secondaryText)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(AppSurface.primaryText)
                 }
                 .buttonStyle(.plain)
 
@@ -43,7 +43,7 @@ struct JournalWeekStrip: View {
                         }
                     Text("commits")
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 }
             }
 
@@ -65,11 +65,7 @@ struct JournalWeekStrip: View {
         }
         .padding(.horizontal, Kit941.Spacing.md)
         .padding(.vertical, Kit941.Spacing.md)
-        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
-        }
+        .appPanel(highlighted: true)
     }
 
     private func weekPage(containing date: Date, selectedPageDate: Date) -> some View {
@@ -170,11 +166,11 @@ private struct CalendarDayChip: View {
         VStack(spacing: 7) {
             Text(date, format: .dateTime.weekday(.narrow))
                 .kit941Font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppSurface.secondaryText)
 
             Text(date, format: .dateTime.day())
                 .kit941Font(.title, weight: .semibold)
-                .foregroundStyle(.primary)
+                .foregroundStyle(AppSurface.primaryText)
                 .transaction { transaction in
                     transaction.animation = nil
                 }
@@ -190,7 +186,7 @@ private struct CalendarDayChip: View {
                         .frame(width: markerSize, height: markerSize)
                 } else if isToday {
                     Circle()
-                        .fill(Color.primary.opacity(0.20))
+                        .fill(AppSurface.accent.opacity(0.22))
                         .frame(width: 8, height: 8)
                 }
             }
@@ -199,11 +195,11 @@ private struct CalendarDayChip: View {
         .padding(.vertical, Kit941.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous)
-                .fill(isSelected ? Color.primary.opacity(0.08) : Color.clear)
+                .fill(isSelected ? AppSurface.accent.opacity(0.08) : Color.clear)
         )
         .overlay {
             RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous)
-                .stroke(isToday && !isSelected ? Color.primary.opacity(0.18) : Color.clear, lineWidth: 1)
+                .stroke(isToday && !isSelected ? AppSurface.accent.opacity(0.18) : Color.clear, lineWidth: 1)
         }
         .accessibilityLabel("\(date.formatted(date: .complete, time: .omitted)), \(count) commits")
     }
@@ -219,6 +215,7 @@ struct MonthCalendarSheet: View {
     let workMetrics: WorkMetrics
     let lowerBound: Date
     let upperBound: Date
+    let initialVisibleDate: Date
 
     var body: some View {
         NavigationStack {
@@ -233,14 +230,14 @@ struct MonthCalendarSheet: View {
                     .padding(Kit941.Spacing.lg)
                 }
                 .scrollIndicators(.hidden)
-                .navigationTitle("Calendar")
+                .navigationTitle("Choose Date")
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }
                     }
                 }
                 .onAppear {
-                    proxy.scrollTo(CalendarMath.monthStart(for: selectedDate), anchor: .center)
+                    proxy.scrollTo(CalendarMath.monthStart(for: initialVisibleDate), anchor: .center)
                 }
             }
         }
@@ -262,7 +259,7 @@ struct MonthCalendarSheet: View {
                 ForEach(weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -308,7 +305,7 @@ private struct MonthDayCell: View {
         VStack(spacing: 4) {
             Text(date, format: .dateTime.day())
                 .kit941Font(.label, weight: .semibold)
-                .foregroundStyle(.primary)
+                .foregroundStyle(AppSurface.primaryText)
                 .frame(height: 20)
 
             Circle()
@@ -319,11 +316,11 @@ private struct MonthDayCell: View {
         .frame(maxWidth: .infinity, minHeight: 58)
         .background(
             RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous)
-                .fill(isSelected ? Color.primary.opacity(0.08) : Color.clear)
+                .fill(isSelected ? AppSurface.accent.opacity(0.08) : Color.clear)
         )
         .overlay {
             RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous)
-                .stroke(isToday && !isSelected ? Color.primary.opacity(0.18) : Color.clear, lineWidth: 1)
+                .stroke(isToday && !isSelected ? AppSurface.accent.opacity(0.18) : Color.clear, lineWidth: 1)
         }
         .accessibilityLabel("\(date.formatted(date: .complete, time: .omitted)), \(count) commits")
     }
@@ -333,8 +330,24 @@ struct ActivityHeatmapView: View {
     @Binding var selectedDate: Date
     let workMetrics: WorkMetrics
     let metric: WorkDisplayMetric
+    var onShowDetail: (@MainActor @Sendable () -> Void)? = nil
+    private let selectedYearBinding: Binding<Int?>?
 
-    @State private var selectedYear: Int?
+    @State private var localSelectedYear: Int?
+
+    init(
+        selectedDate: Binding<Date>,
+        workMetrics: WorkMetrics,
+        metric: WorkDisplayMetric,
+        selectedYear: Binding<Int?>? = nil,
+        onShowDetail: (@MainActor @Sendable () -> Void)? = nil
+    ) {
+        self._selectedDate = selectedDate
+        self.workMetrics = workMetrics
+        self.metric = metric
+        self.selectedYearBinding = selectedYear
+        self.onShowDetail = onShowDetail
+    }
 
     var body: some View {
         let data = heatmapData
@@ -347,21 +360,21 @@ struct ActivityHeatmapView: View {
                         .kit941Font(.label, weight: .semibold)
                     Text(subtitle(for: data))
                         .kit941Font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppSurface.secondaryText)
                 }
 
                 Spacer(minLength: Kit941.Spacing.md)
 
                 Menu {
                     Button("Last 52 weeks") {
-                        selectedYear = nil
+                        setSelectedYear(nil)
                     }
 
                     Divider()
 
                     ForEach(availableYears, id: \.self) { year in
                         Button("\(year)") {
-                            selectedYear = year
+                            setSelectedYear(year)
                         }
                     }
                 } label: {
@@ -371,10 +384,10 @@ struct ActivityHeatmapView: View {
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .semibold))
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(AppSurface.primaryText)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .background(Color.primary.opacity(0.06), in: Capsule())
+                    .background(AppSurface.mutedFill(opacity: 1), in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -386,7 +399,7 @@ struct ActivityHeatmapView: View {
                             VStack(spacing: 4) {
                                 Text(monthMarker(for: week) ?? "")
                                     .kit941Font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(AppSurface.secondaryText)
                                     .frame(width: 16, height: 14, alignment: .leading)
 
                                 ForEach(week, id: \.self) { day in
@@ -402,7 +415,7 @@ struct ActivityHeatmapView: View {
                                             .overlay {
                                                 if Calendar.current.isDate(day, inSameDayAs: selectedDate) {
                                                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                                        .stroke(Color.primary.opacity(0.72), lineWidth: 1.5)
+                                                        .stroke(AppSurface.selectedStroke, lineWidth: 1.5)
                                                 }
                                         }
                                     }
@@ -413,8 +426,10 @@ struct ActivityHeatmapView: View {
                             .id(week)
                         }
                     }
+                    .padding(.horizontal, Kit941.Spacing.md)
                     .padding(.vertical, 2)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
                 .scrollIndicators(.hidden)
                 .onAppear {
                     scrollToLatestWeek(proxy, weeks: data.weeks)
@@ -427,6 +442,13 @@ struct ActivityHeatmapView: View {
                 }
             }
         }
+        .padding(Kit941.Spacing.md)
+        .appPanel(highlighted: true)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onShowDetail?()
+        }
+        .accessibilityAddTraits(onShowDetail == nil ? [] : .isButton)
     }
 
     private var heatmapData: ActivityHeatmapData {
@@ -475,6 +497,18 @@ struct ActivityHeatmapView: View {
         return CalendarMath.contributionWeeks(ending: Date(), weekCount: 52)
     }
 
+    private var selectedYear: Int? {
+        selectedYearBinding?.wrappedValue ?? localSelectedYear
+    }
+
+    private func setSelectedYear(_ year: Int?) {
+        if let selectedYearBinding {
+            selectedYearBinding.wrappedValue = year
+        } else {
+            localSelectedYear = year
+        }
+    }
+
     private var activeInterval: DateInterval? {
         guard let selectedYear else {
             return nil
@@ -487,10 +521,7 @@ struct ActivityHeatmapView: View {
     }
 
     private var rangeTitle: String {
-        if let selectedYear {
-            return "\(selectedYear)"
-        }
-        return "Last 52 weeks"
+        "Work Map"
     }
 
     private var rangePickerTitle: String {
@@ -511,10 +542,14 @@ struct ActivityHeatmapView: View {
         switch metric {
         case .changes:
             let coverage = data.coverage.formatted(.percent.precision(.fractionLength(0)))
-            return "\(data.totalValue.formatted()) known lines. \(coverage) stats coverage"
+            return "\(rangeLabel). \(data.totalValue.formatted()) known lines. \(coverage) stats coverage"
         case .commits:
-            return "\(data.totalValue.formatted()) commits"
+            return "\(rangeLabel). \(data.totalValue.formatted()) commits"
         }
+    }
+
+    private var rangeLabel: String {
+        selectedYear.map(String.init) ?? "Last 52 weeks"
     }
 
     private func monthMarker(for week: [Date]) -> String? {

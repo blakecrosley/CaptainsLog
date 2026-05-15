@@ -120,6 +120,18 @@ enum WorkDisplayMetric: String, CaseIterable, Identifiable {
         }
     }
 
+    func trendValue(for summary: WorkRangeSummary) -> Int? {
+        switch self {
+        case .changes:
+            guard summary.isDiffStatsComplete else {
+                return nil
+            }
+            return summary.totalChanges
+        case .commits:
+            return summary.commitCount
+        }
+    }
+
     func value(for snapshot: DayWorkSnapshot) -> Int {
         switch self {
         case .changes:
@@ -147,7 +159,7 @@ enum WorkDisplayMetric: String, CaseIterable, Identifiable {
             guard summary.statsBackedCommitCount > 0 else {
                 return "changed lines"
             }
-            return summary.mode == .diffBacked ? "changed lines" : "known changed lines"
+            return summary.isDiffStatsComplete ? "changed lines" : "known changed lines"
         case .commits:
             return summary.commitCount == 1 ? "commit" : "commits"
         }
@@ -163,7 +175,7 @@ enum WorkDisplayMetric: String, CaseIterable, Identifiable {
     func canCompare(_ current: WorkRangeSummary, _ baseline: WorkRangeSummary) -> Bool {
         switch self {
         case .changes:
-            return current.statsBackedCommitCount > 0 && baseline.statsBackedCommitCount > 0
+            return current.isDiffStatsComplete && baseline.isDiffStatsComplete
         case .commits:
             return true
         }
@@ -223,7 +235,7 @@ struct DayWorkSnapshot {
     }
 
     var mode: WorkMetricMode {
-        coverage >= WorkMetrics.diffCoverageThreshold ? .diffBacked : .commitEstimate
+        isDiffStatsComplete ? .diffBacked : .commitEstimate
     }
 
     var displayValue: Int {
@@ -234,7 +246,11 @@ struct DayWorkSnapshot {
         if !hasDiffStats {
             return "commits"
         }
-        return mode == .diffBacked ? "changed lines" : "known changed lines"
+        return isDiffStatsComplete ? "changed lines" : "known changed lines"
+    }
+
+    var isDiffStatsComplete: Bool {
+        missingDiffStatsCount == 0
     }
 }
 
@@ -267,7 +283,7 @@ struct WorkRangeSummary {
     }
 
     var mode: WorkMetricMode {
-        coverage >= WorkMetrics.diffCoverageThreshold ? .diffBacked : .commitEstimate
+        isDiffStatsComplete ? .diffBacked : .commitEstimate
     }
 
     var displayValue: Int {
@@ -278,12 +294,16 @@ struct WorkRangeSummary {
         if !hasDiffStats {
             return "commits"
         }
-        return mode == .diffBacked ? "changed lines" : "known changed lines"
+        return isDiffStatsComplete ? "changed lines" : "known changed lines"
     }
 
     var averagePerDay: Double {
         guard dayCount > 0 else { return 0 }
         return Double(displayValue) / Double(dayCount)
+    }
+
+    var isDiffStatsComplete: Bool {
+        missingDiffStatsCount == 0
     }
 }
 
@@ -313,8 +333,100 @@ struct WorkTrendSummary {
     }
 }
 
+struct WorkMapDayInsight {
+    let snapshot: DayWorkSnapshot
+
+    var commitCount: Int {
+        snapshot.commitCount
+    }
+
+    var repositoryCount: Int {
+        Set(snapshot.commits.map(\.repositoryFullName)).count
+    }
+
+    var topRepository: String? {
+        snapshot.repositoryWeights.max { lhs, rhs in lhs.value < rhs.value }?.key
+    }
+
+    var topCategory: WorkCategory? {
+        snapshot.categoryWeights.max { lhs, rhs in lhs.value < rhs.value }?.key
+    }
+
+    var topLanguage: String? {
+        snapshot.languageWeights.max { lhs, rhs in lhs.value < rhs.value }?.key
+    }
+
+    var activeSpanMinutes: Int? {
+        guard snapshot.commits.count > 1 else {
+            return nil
+        }
+        let dates = snapshot.commits.map(\.authoredAt)
+        guard let first = dates.min(), let last = dates.max() else {
+            return nil
+        }
+        let minutes = Int(last.timeIntervalSince(first) / 60)
+        return minutes > 0 ? minutes : nil
+    }
+
+    var commitSample: [GitCommitRecord] {
+        Array(snapshot.commits.prefix(3))
+    }
+}
+
+struct WorkMapPeriodInsights {
+    let scope: WorkRangeScope
+    let metric: WorkDisplayMetric
+    let summary: WorkRangeSummary
+    let snapshots: [DayWorkSnapshot]
+    let selectedDate: Date
+    let activeDayCount: Int
+    let currentStreak: Int
+    let longestStreak: Int
+    let busiestDay: DayWorkSnapshot?
+    let medianActiveDayValue: Int
+    let topDayShare: Double
+    let mostActiveWeekday: Int?
+    let firstActiveDate: Date?
+    let lastActiveDate: Date?
+
+    var repositoryCount: Int {
+        summary.repositoryWeights.count
+    }
+
+    var topRepository: (name: String, value: Int, share: Double)? {
+        topItem(in: summary.repositoryWeights)
+    }
+
+    var topCategory: (category: WorkCategory, value: Int, share: Double)? {
+        topItem(in: summary.categoryWeights).map { (category: $0.name, value: $0.value, share: $0.share) }
+    }
+
+    var topLanguage: (name: String, value: Int, share: Double)? {
+        topItem(in: summary.languageWeights)
+    }
+
+    var languageBasisLabel: String {
+        "files touched"
+    }
+
+    var hasWork: Bool {
+        summary.commitCount > 0
+    }
+
+    func value(for snapshot: DayWorkSnapshot) -> Int {
+        metric.value(for: snapshot)
+    }
+
+    private func topItem<Key: Hashable>(in weights: [Key: Int]) -> (name: Key, value: Int, share: Double)? {
+        guard let item = weights.max(by: { $0.value < $1.value }), item.value > 0 else {
+            return nil
+        }
+        let total = max(weights.reduce(0) { $0 + $1.value }, 1)
+        return (item.key, item.value, Double(item.value) / Double(total))
+    }
+}
+
 struct WorkMetrics {
-    static let diffCoverageThreshold = 0.60
     private static let maxWorkUnitsPerCommit = 2_000
 
     let commitsByDay: [String: [GitCommitRecord]]
@@ -362,14 +474,70 @@ struct WorkMetrics {
         return WorkTrendSummary(scope: scope, current: current, baseline: baseline)
     }
 
+    func workMapDayInsight(on date: Date, calendar: Calendar = .current) -> WorkMapDayInsight {
+        WorkMapDayInsight(snapshot: snapshot(on: date, calendar: calendar))
+    }
+
+    func workMapPeriodInsights(
+        scope: WorkRangeScope,
+        containing date: Date,
+        metric: WorkDisplayMetric,
+        calendar: Calendar = .current
+    ) -> WorkMapPeriodInsights {
+        let interval = scope.interval(containing: date, calendar: calendar)
+        return workMapPeriodInsights(
+            interval: interval,
+            selectedDate: date,
+            metric: metric,
+            scope: scope,
+            calendar: calendar
+        )
+    }
+
+    func workMapPeriodInsights(
+        interval: DateInterval,
+        selectedDate: Date,
+        metric: WorkDisplayMetric,
+        scope: WorkRangeScope = .year,
+        calendar: Calendar = .current
+    ) -> WorkMapPeriodInsights {
+        let snapshots = dailySnapshots(in: interval, calendar: calendar)
+        let activeSnapshots = snapshots.filter { metric.value(for: $0) > 0 || $0.commitCount > 0 }
+        let metricValues = activeSnapshots
+            .map { metric.value(for: $0) }
+            .filter { $0 > 0 }
+            .sorted()
+        let busiestDay = activeSnapshots.max { lhs, rhs in
+            metric.heatmapValue(for: lhs) < metric.heatmapValue(for: rhs)
+        }
+        let totalMetricValue = max(activeSnapshots.reduce(0) { $0 + max(metric.value(for: $1), 0) }, 0)
+        let busiestValue = busiestDay.map { max(metric.value(for: $0), 0) } ?? 0
+
+        return WorkMapPeriodInsights(
+            scope: scope,
+            metric: metric,
+            summary: rangeSummary(interval: interval, calendar: calendar),
+            snapshots: snapshots,
+            selectedDate: calendar.startOfDay(for: selectedDate),
+            activeDayCount: activeSnapshots.count,
+            currentStreak: currentStreak(in: snapshots, selectedDate: selectedDate, calendar: calendar),
+            longestStreak: longestStreak(in: snapshots),
+            busiestDay: busiestDay,
+            medianActiveDayValue: medianValue(in: metricValues),
+            topDayShare: totalMetricValue > 0 ? Double(busiestValue) / Double(totalMetricValue) : 0,
+            mostActiveWeekday: mostActiveWeekday(in: activeSnapshots, metric: metric, calendar: calendar),
+            firstActiveDate: activeSnapshots.map(\.date).min(),
+            lastActiveDate: activeSnapshots.map(\.date).max()
+        )
+    }
+
     func rangeSummary(interval: DateInterval, calendar: Calendar = .current) -> WorkRangeSummary {
-        let days = days(in: interval, calendar: calendar)
-        let snapshots = days.map { snapshot(on: $0, calendar: calendar) }
+        let snapshots = dailySnapshots(in: interval, calendar: calendar)
 
         return WorkRangeSummary(
             start: interval.start,
             end: interval.end,
-            dayCount: max(days.count, 1),
+            dayCount: max(snapshots.count, 1),
             commitCount: snapshots.reduce(0) { $0 + $1.commitCount },
             statsBackedCommitCount: snapshots.reduce(0) { $0 + $1.statsBackedCommitCount },
             additions: snapshots.reduce(0) { $0 + $1.additions },
@@ -381,6 +549,10 @@ struct WorkMetrics {
             languageWeights: mergedWeights(snapshots.map(\.languageWeights)),
             repositoryWeights: mergedWeights(snapshots.map(\.repositoryWeights))
         )
+    }
+
+    func dailySnapshots(in interval: DateInterval, calendar: Calendar = .current) -> [DayWorkSnapshot] {
+        days(in: interval, calendar: calendar).map { snapshot(on: $0, calendar: calendar) }
     }
 
     private static func snapshot(date: Date, commits: [GitCommitRecord]) -> DayWorkSnapshot {
@@ -452,6 +624,64 @@ struct WorkMetrics {
         }
         let total = commit.totalChanges ?? ((commit.additions ?? 0) + (commit.deletions ?? 0))
         return max(1, min(total, maxWorkUnitsPerCommit))
+    }
+
+    private func currentStreak(in snapshots: [DayWorkSnapshot], selectedDate: Date, calendar: Calendar) -> Int {
+        let selectedDay = calendar.startOfDay(for: selectedDate)
+        let eligibleSnapshots = snapshots
+            .filter { $0.date <= selectedDay }
+            .sorted { $0.date > $1.date }
+        var streak = 0
+
+        for snapshot in eligibleSnapshots {
+            guard snapshot.commitCount > 0 else {
+                break
+            }
+            streak += 1
+        }
+        return streak
+    }
+
+    private func longestStreak(in snapshots: [DayWorkSnapshot]) -> Int {
+        var longest = 0
+        var current = 0
+
+        for snapshot in snapshots.sorted(by: { $0.date < $1.date }) {
+            if snapshot.commitCount > 0 {
+                current += 1
+                longest = max(longest, current)
+            } else {
+                current = 0
+            }
+        }
+
+        return longest
+    }
+
+    private func medianValue(in sortedValues: [Int]) -> Int {
+        guard !sortedValues.isEmpty else {
+            return 0
+        }
+        let middle = sortedValues.count / 2
+        if sortedValues.count.isMultiple(of: 2) {
+            return (sortedValues[middle - 1] + sortedValues[middle]) / 2
+        }
+        return sortedValues[middle]
+    }
+
+    private func mostActiveWeekday(
+        in snapshots: [DayWorkSnapshot],
+        metric: WorkDisplayMetric,
+        calendar: Calendar
+    ) -> Int? {
+        var values: [Int: Int] = [:]
+
+        for snapshot in snapshots {
+            let weekday = calendar.component(.weekday, from: snapshot.date)
+            values[weekday, default: 0] += max(metric.heatmapValue(for: snapshot), 0)
+        }
+
+        return values.max { lhs, rhs in lhs.value < rhs.value }?.key
     }
 
     private func days(in interval: DateInterval, calendar: Calendar) -> [Date] {
