@@ -23,6 +23,7 @@ struct RootView: View {
     @State private var isShowingAISettings = false
     @State private var isShowingDayDetail = false
     @State private var aiCredentialRevision = 0
+    @State private var didStartPerformanceHeartbeat = false
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
     @State private var identityAliasesText = ""
@@ -139,17 +140,14 @@ struct RootView: View {
         return AIProviderCredentialStore.shared.hasKey(for: .openai)
     }
 
-    private var lastRepositorySyncDate: Date? {
-        githubRepositories
-            .filter(\.isSelected)
-            .compactMap(\.lastSyncedAt)
-            .max()
-    }
-
     private var selectedRepositoryFingerprint: String {
         githubRepositories
             .map { "\($0.id):\($0.isSelected)" }
             .joined(separator: "|")
+    }
+
+    private var repositoryOverviewSnapshot: GitRepositoryOverviewSnapshot {
+        GitRepositoryOverviewSnapshot(repositories: githubRepositories)
     }
 
     private var preferredJournalProvider: JournalSummaryProvider? {
@@ -203,12 +201,14 @@ struct RootView: View {
             .onAppear {
                 appModel.configure(modelContext: modelContext)
                 loadIdentityAliases()
+                startPerformanceHeartbeatIfNeeded()
                 reloadCommitSnapshot()
                 selectLatestCommitDateIfUseful()
             }
             .task {
                 appModel.configure(modelContext: modelContext)
                 loadIdentityAliases()
+                startPerformanceHeartbeatIfNeeded()
                 reloadCommitSnapshot()
                 await appModel.loadSession()
                 startForegroundLatestSync()
@@ -269,6 +269,7 @@ struct RootView: View {
 
     private var signedInOverview: some View {
         let data = workData
+        let repositorySnapshot = repositoryOverviewSnapshot
 
         return VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
             WorkOverviewView(
@@ -276,7 +277,7 @@ struct RootView: View {
                 workMetrics: data.metrics,
                 selectedWorkSnapshot: data.selectedWorkSnapshot,
                 selectedSummary: data.selectedSummary,
-                repositories: githubRepositories,
+                repositorySnapshot: repositorySnapshot,
                 githubLogin: activeLogin,
                 githubAvatarURL: activeAvatarURL,
                 isGitHubSignedIn: appModel.isSignedIn,
@@ -284,7 +285,6 @@ struct RootView: View {
                 syncMessage: appModel.syncMessage,
                 importedCommitCount: appModel.importedCommitCount,
                 updatedDiffStatCount: appModel.updatedDiffStatCount,
-                lastSyncedAt: lastRepositorySyncDate,
                 hasOpenAIKey: hasOpenAIKey,
                 workIdentityScope: workIdentityScope,
                 identityAliasCount: identityAliases.count,
@@ -295,7 +295,7 @@ struct RootView: View {
                 },
                 onFillLineStats: { scope, interval in
                     rootViewLogger.info("Period line stats tapped: \(scope.rawValue)")
-                    Task {
+                    Task(priority: .utility) {
                         await appModel.backfillSelectedPeriodLineStats(scope: scope, interval: interval)
                         reloadCommitSnapshot()
                         scheduleHistoricalBackfillIfNeeded()
@@ -604,7 +604,7 @@ struct RootView: View {
             appInstallURL: appModel.githubRepositoryApprovalURL,
             onRefreshRepos: {
                 rootViewLogger.info("Repository panel refresh tapped")
-                Task {
+                Task(priority: .utility) {
                     await appModel.refreshRepositories()
                     scheduleHistoricalBackfillIfNeeded()
                 }
@@ -615,7 +615,7 @@ struct RootView: View {
             },
             onFullSync: {
                 rootViewLogger.info("Repository panel index history tapped")
-                Task {
+                Task(priority: .utility) {
                     await appModel.fullSyncSelectedRepositories()
                     reloadCommitSnapshot()
                     scheduleHistoricalBackfillIfNeeded()
@@ -628,13 +628,13 @@ struct RootView: View {
     }
 
     private func startForegroundLatestSync() {
-        Task {
+        Task(priority: .utility) {
             await syncLatestForForegroundIfNeeded()
         }
     }
 
     private func startForcedLatestSync() {
-        Task {
+        Task(priority: .utility) {
             await refreshCurrentAccount()
         }
     }
@@ -646,8 +646,10 @@ struct RootView: View {
         if githubRepositories.isEmpty {
             await appModel.refreshRepositories()
         }
-        await appModel.syncLatestIfStale(minimumInterval: 0)
-        reloadCommitSnapshot()
+        let didChange = await appModel.syncLatestIfStale(minimumInterval: 0)
+        if didChange {
+            reloadCommitSnapshot()
+        }
         scheduleHistoricalBackfillIfNeeded()
     }
 
@@ -658,12 +660,15 @@ struct RootView: View {
         if githubRepositories.isEmpty {
             await appModel.refreshRepositories()
         }
-        await appModel.syncLatestIfStale()
-        reloadCommitSnapshot()
+        let didChange = await appModel.syncLatestIfStale()
+        if didChange {
+            reloadCommitSnapshot()
+        }
         scheduleHistoricalBackfillIfNeeded()
     }
 
     private func reloadCommitSnapshot() {
+        let start = Date()
         do {
             let descriptor = FetchDescriptor<GitCommitRecord>(
                 sortBy: [SortDescriptor(\.authoredAt, order: .reverse)]
@@ -671,13 +676,60 @@ struct RootView: View {
             commits = try modelContext.fetch(descriptor)
             rebuildWorkMetrics()
             selectLatestCommitDateIfUseful()
+            logSlowUIOperation(
+                "reloadCommitSnapshot fetched \(commits.count.formatted()) commits",
+                startedAt: start,
+                threshold: 0.08
+            )
         } catch {
             rootViewLogger.error("Failed to reload commit snapshot: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     private func rebuildWorkMetrics() {
-        workMetrics = WorkMetrics(commits: visibleCommits)
+        let start = Date()
+        let filteredCommits = visibleCommits
+        workMetrics = WorkMetrics(commits: filteredCommits)
+        logSlowUIOperation(
+            "rebuildWorkMetrics used \(filteredCommits.count.formatted()) visible commits",
+            startedAt: start,
+            threshold: 0.05
+        )
+    }
+
+    private func startPerformanceHeartbeatIfNeeded() {
+        guard !didStartPerformanceHeartbeat else {
+            return
+        }
+        didStartPerformanceHeartbeat = true
+
+        Task { @MainActor in
+            var lastTick = Date()
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                let now = Date()
+                let delay = now.timeIntervalSince(lastTick)
+                if delay > 0.55 {
+                    rootViewLogger.warning("UI main actor heartbeat delayed \(Self.formattedMilliseconds(delay), privacy: .public)")
+                }
+                lastTick = now
+            }
+        }
+    }
+
+    private func logSlowUIOperation(
+        _ operation: String,
+        startedAt start: Date,
+        threshold: TimeInterval
+    ) {
+        let elapsed = Date().timeIntervalSince(start)
+        if elapsed >= threshold {
+            rootViewLogger.warning("\(operation, privacy: .public) took \(Self.formattedMilliseconds(elapsed), privacy: .public)")
+        }
+    }
+
+    private static func formattedMilliseconds(_ interval: TimeInterval) -> String {
+        String(format: "%.1f ms", interval * 1_000)
     }
 
     private func scheduleHistoricalBackfillIfNeeded() {

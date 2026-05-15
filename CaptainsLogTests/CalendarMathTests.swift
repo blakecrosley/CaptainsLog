@@ -123,6 +123,95 @@ final class CalendarMathTests: XCTestCase {
         )
     }
 
+    func testActivityDataTrustMarksFutureDays() throws {
+        let calendar = utcCalendar()
+        let today = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15)))
+        let tomorrow = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 16)))
+        let repository = makeRepository(fullName: "blakecrosley/captains-log", isSelected: true)
+        repository.lastSyncedAt = today
+
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: tomorrow, repositories: [repository], now: today, calendar: calendar),
+            .future
+        )
+    }
+
+    func testActivityDataTrustUsesRecentHotSyncWindow() throws {
+        let calendar = utcCalendar()
+        let today = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15)))
+        let coveredDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 4)))
+        let uncoveredDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 30)))
+        let repository = makeRepository(fullName: "blakecrosley/captains-log", isSelected: true)
+        repository.lastSyncedAt = today
+
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: coveredDay, repositories: [repository], now: today, calendar: calendar),
+            .verified
+        )
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: uncoveredDay, repositories: [repository], now: today, calendar: calendar),
+            .unknown
+        )
+    }
+
+    func testActivityDataTrustUsesHistoryCursor() throws {
+        let calendar = utcCalendar()
+        let today = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15)))
+        let coveredDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 3, day: 1)))
+        let uncoveredDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 2, day: 28)))
+        let repository = makeRepository(fullName: "blakecrosley/reps", isSelected: true)
+        repository.historyBackfillCursorDate = coveredDay
+
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: coveredDay, repositories: [repository], now: today, calendar: calendar),
+            .verified
+        )
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: uncoveredDay, repositories: [repository], now: today, calendar: calendar),
+            .unknown
+        )
+    }
+
+    func testActivityDataTrustTreatsActiveHistoryMonthAsUnverified() throws {
+        let calendar = utcCalendar()
+        let today = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15)))
+        let activeMonthStart = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 3, day: 1)))
+        let activeMonthEnd = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 1)))
+        let coveredLaterDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 4, day: 10)))
+        let activeMonthDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 3, day: 15)))
+        let repository = makeRepository(fullName: "blakecrosley/reps", isSelected: true)
+        repository.markHistoryBackfillMonth(DateInterval(start: activeMonthStart, end: activeMonthEnd))
+
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: coveredLaterDay, repositories: [repository], now: today, calendar: calendar),
+            .verified
+        )
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: activeMonthDay, repositories: [repository], now: today, calendar: calendar),
+            .unknown
+        )
+    }
+
+    func testActivityDataTrustUsesCompletedHistoryLowerBound() throws {
+        let calendar = utcCalendar()
+        let today = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15)))
+        let lowerBound = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))
+        let coveredDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 5)))
+        let uncoveredDay = try XCTUnwrap(calendar.date(from: DateComponents(year: 2025, month: 12, day: 31)))
+        let repository = makeRepository(fullName: "blakecrosley/reps", isSelected: true)
+        repository.prepareHistoryBackfill(lowerBound: lowerBound)
+        repository.advanceHistoryBackfillCursor(to: lowerBound, completedAt: today)
+
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: coveredDay, repositories: [repository], now: today, calendar: calendar),
+            .verified
+        )
+        XCTAssertEqual(
+            ActivityDataTrust.state(for: uncoveredDay, repositories: [repository], now: today, calendar: calendar),
+            .unknown
+        )
+    }
+
     func testWorkRangeScopeUsesDateAnchoredLabels() {
         XCTAssertEqual(WorkRangeScope.allCases.map(\.title), ["Day", "Week", "Month", "Year"])
     }

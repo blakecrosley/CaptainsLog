@@ -120,6 +120,113 @@ enum CalendarMath {
     }
 }
 
+enum ActivityDayTrustState: Equatable {
+    case verified
+    case unknown
+    case future
+    case outsideRange
+}
+
+struct ActivityRepositoryCoverage: Identifiable {
+    let id: Int64
+    let isSelected: Bool
+    let isGitHubBacked: Bool
+    let recentSyncLowerBoundDay: Date?
+    let recentSyncUpperBoundDay: Date?
+    let historicalLowerBoundDay: Date?
+
+    init(repository: GitRepositoryRecord, calendar: Calendar = .current) {
+        id = repository.id
+        isSelected = repository.isSelected
+        isGitHubBacked = repository.isGitHubBacked
+
+        if let lastSyncedAt = repository.lastSyncedAt {
+            let lastSyncedDay = calendar.startOfDay(for: lastSyncedAt)
+            recentSyncUpperBoundDay = lastSyncedDay
+            recentSyncLowerBoundDay = calendar.date(
+                byAdding: .day,
+                value: -ActivityDataTrust.recentSyncLookbackDays,
+                to: lastSyncedDay
+            ).map { calendar.startOfDay(for: $0) } ?? lastSyncedDay
+        } else {
+            recentSyncLowerBoundDay = nil
+            recentSyncUpperBoundDay = nil
+        }
+
+        if repository.isHistoryBackfillComplete,
+           let lowerBound = repository.historyBackfillLowerBound {
+            historicalLowerBoundDay = calendar.startOfDay(for: lowerBound)
+        } else if let cursorDate = repository.historyBackfillCursorDate {
+            historicalLowerBoundDay = calendar.startOfDay(for: cursorDate)
+        } else if let activeMonthEnd = repository.historyBackfillMonthEnd {
+            historicalLowerBoundDay = calendar.startOfDay(for: activeMonthEnd)
+        } else {
+            historicalLowerBoundDay = nil
+        }
+    }
+
+    func covers(dayStart: Date) -> Bool {
+        if let recentSyncLowerBoundDay,
+           let recentSyncUpperBoundDay,
+           dayStart >= recentSyncLowerBoundDay,
+           dayStart <= recentSyncUpperBoundDay {
+            return true
+        }
+
+        if let historicalLowerBoundDay,
+           dayStart >= historicalLowerBoundDay {
+            return true
+        }
+
+        return false
+    }
+}
+
+enum ActivityDataTrust {
+    static let recentSyncLookbackDays = 14
+
+    static func state(
+        for day: Date,
+        repositories: [GitRepositoryRecord],
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> ActivityDayTrustState {
+        let coverage = repositories.map { ActivityRepositoryCoverage(repository: $0, calendar: calendar) }
+        return state(for: day, repositoryCoverage: coverage, now: now, calendar: calendar)
+    }
+
+    static func state(
+        for day: Date,
+        repositoryCoverage: [ActivityRepositoryCoverage],
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> ActivityDayTrustState {
+        let selectedCoverage = repositoryCoverage.filter { $0.isSelected && $0.isGitHubBacked }
+        return state(for: day, selectedRepositoryCoverage: selectedCoverage, now: now, calendar: calendar)
+    }
+
+    static func state(
+        for day: Date,
+        selectedRepositoryCoverage: [ActivityRepositoryCoverage],
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> ActivityDayTrustState {
+        let dayStart = calendar.startOfDay(for: day)
+        let todayStart = calendar.startOfDay(for: now)
+        if dayStart > todayStart {
+            return .future
+        }
+
+        guard !selectedRepositoryCoverage.isEmpty else {
+            return .verified
+        }
+
+        return selectedRepositoryCoverage.allSatisfy { $0.covers(dayStart: dayStart) }
+            ? .verified
+            : .unknown
+    }
+}
+
 enum HistoryBackfillPlanner {
     static func monthInterval(
         cursorDate: Date?,

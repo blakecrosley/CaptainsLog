@@ -329,6 +329,7 @@ private struct MonthDayCell: View {
 struct ActivityHeatmapView: View {
     @Binding var selectedDate: Date
     let workMetrics: WorkMetrics
+    let repositoryCoverage: [ActivityRepositoryCoverage]
     let metric: WorkDisplayMetric
     var onShowDetail: (@MainActor @Sendable () -> Void)? = nil
     private let selectedYearBinding: Binding<Int?>?
@@ -338,12 +339,14 @@ struct ActivityHeatmapView: View {
     init(
         selectedDate: Binding<Date>,
         workMetrics: WorkMetrics,
+        repositoryCoverage: [ActivityRepositoryCoverage] = [],
         metric: WorkDisplayMetric,
         selectedYear: Binding<Int?>? = nil,
         onShowDetail: (@MainActor @Sendable () -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.workMetrics = workMetrics
+        self.repositoryCoverage = repositoryCoverage
         self.metric = metric
         self.selectedYearBinding = selectedYear
         self.onShowDetail = onShowDetail
@@ -406,20 +409,18 @@ struct ActivityHeatmapView: View {
                                     let dayKey = GitCommitRecord.dayKey(for: day)
                                     let activityValue = data.activityValuesByDay[dayKey] ?? 0
                                     let densityLevel = densityScale.level(for: activityValue)
+                                    let trustState = data.trustStatesByDay[dayKey] ?? .verified
                                     Button {
                                         selectedDate = Calendar.current.startOfDay(for: day)
                                     } label: {
-                                        RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                            .fill(AppSurface.densityColor(level: densityLevel))
-                                            .frame(width: 13, height: 13)
-                                            .overlay {
-                                                if Calendar.current.isDate(day, inSameDayAs: selectedDate) {
-                                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                                        .stroke(AppSurface.selectedStroke, lineWidth: 1.5)
-                                                }
-                                        }
+                                        ActivityHeatmapCell(
+                                            densityLevel: densityLevel,
+                                            trustState: trustState,
+                                            isSelected: Calendar.current.isDate(day, inSameDayAs: selectedDate)
+                                        )
                                     }
                                     .buttonStyle(.plain)
+                                    .disabled(trustState == .future || trustState == .outsideRange)
                                     .accessibilityLabel(accessibilityLabel(for: day, data: data))
                                 }
                             }
@@ -441,6 +442,18 @@ struct ActivityHeatmapView: View {
                     scrollToLatestWeek(proxy, weeks: data.weeks)
                 }
             }
+
+            if data.unknownDayCount > 0 {
+                HStack(spacing: 7) {
+                    ActivityHeatmapCell(densityLevel: 0, trustState: .unknown, isSelected: false)
+                        .frame(width: 13, height: 13)
+                    Text("Diagonal days are still indexing")
+                        .kit941Font(.caption)
+                        .foregroundStyle(AppSurface.secondaryText)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 2)
+            }
         }
         .padding(Kit941.Spacing.md)
         .appPanel(highlighted: true)
@@ -456,9 +469,14 @@ struct ActivityHeatmapView: View {
         var activityValuesByDay: [String: Int] = [:]
         var knownLineValuesByDay: [String: Int] = [:]
         var commitCountsByDay: [String: Int] = [:]
+        var trustStatesByDay: [String: ActivityDayTrustState] = [:]
         var totalValue = 0
         var commitCount = 0
         var statsBackedCommitCount = 0
+        var unknownDayCount = 0
+        let selectedCoverage = repositoryCoverage.filter { $0.isSelected && $0.isGitHubBacked }
+        let now = Date()
+        let calendar = Calendar.current
 
         for day in weeks.flatMap({ $0 }) {
             let dayKey = GitCommitRecord.dayKey(for: day)
@@ -466,13 +484,24 @@ struct ActivityHeatmapView: View {
                 activityValuesByDay[dayKey] = 0
                 knownLineValuesByDay[dayKey] = 0
                 commitCountsByDay[dayKey] = 0
+                trustStatesByDay[dayKey] = .outsideRange
                 continue
             }
 
             let snapshot = workMetrics.snapshot(on: day)
+            let trustState = ActivityDataTrust.state(
+                for: day,
+                selectedRepositoryCoverage: selectedCoverage,
+                now: now,
+                calendar: calendar
+            )
             activityValuesByDay[dayKey] = metric.heatmapValue(for: snapshot)
             knownLineValuesByDay[dayKey] = snapshot.totalChanges
             commitCountsByDay[dayKey] = snapshot.commitCount
+            trustStatesByDay[dayKey] = trustState
+            if trustState == .unknown {
+                unknownDayCount += 1
+            }
             let value = metric.value(for: snapshot)
             totalValue += value
             commitCount += snapshot.commitCount
@@ -484,9 +513,11 @@ struct ActivityHeatmapView: View {
             activityValuesByDay: activityValuesByDay,
             knownLineValuesByDay: knownLineValuesByDay,
             commitCountsByDay: commitCountsByDay,
+            trustStatesByDay: trustStatesByDay,
             totalValue: totalValue,
             commitCount: commitCount,
-            statsBackedCommitCount: statsBackedCommitCount
+            statsBackedCommitCount: statsBackedCommitCount,
+            unknownDayCount: unknownDayCount
         )
     }
 
@@ -539,12 +570,15 @@ struct ActivityHeatmapView: View {
     }
 
     private func subtitle(for data: ActivityHeatmapData) -> String {
+        let indexingSuffix = data.unknownDayCount > 0
+            ? ". \(data.unknownDayCount.formatted()) days not indexed"
+            : ""
         switch metric {
         case .changes:
             let coverage = data.coverage.formatted(.percent.precision(.fractionLength(0)))
-            return "\(rangeLabel). \(data.totalValue.formatted()) known lines. \(coverage) stats coverage"
+            return "\(rangeLabel). \(data.totalValue.formatted()) known lines. \(coverage) stats coverage\(indexingSuffix)"
         case .commits:
-            return "\(rangeLabel). \(data.totalValue.formatted()) commits"
+            return "\(rangeLabel). \(data.totalValue.formatted()) commits\(indexingSuffix)"
         }
     }
 
@@ -566,19 +600,27 @@ struct ActivityHeatmapView: View {
         let dayKey = GitCommitRecord.dayKey(for: day)
         let commitCount = data.commitCountsByDay[dayKey] ?? 0
         let knownLines = data.knownLineValuesByDay[dayKey] ?? 0
+        let trustState = data.trustStatesByDay[dayKey] ?? .verified
         let date = day.formatted(date: .complete, time: .omitted)
+        if trustState == .outsideRange {
+            return "\(date), outside this map range"
+        }
+        if trustState == .future {
+            return "\(date), future"
+        }
+        let trustSuffix = trustState == .unknown ? ", history still indexing" : ""
 
         switch metric {
         case .changes:
             if knownLines > 0 {
-                return "\(date), \(knownLines) changed lines"
+                return "\(date), \(knownLines) changed lines\(trustSuffix)"
             }
             if commitCount > 0 {
-                return "\(date), \(commitCount) commits, line stats pending"
+                return "\(date), \(commitCount) commits, line stats pending\(trustSuffix)"
             }
-            return "\(date), no work"
+            return trustState == .unknown ? "\(date), not fully indexed" : "\(date), no work"
         case .commits:
-            return "\(date), \(commitCount) commits"
+            return "\(date), \(commitCount) commits\(trustSuffix)"
         }
     }
 
@@ -592,14 +634,64 @@ struct ActivityHeatmapView: View {
     }
 }
 
+private struct ActivityHeatmapCell: View {
+    let densityLevel: Int
+    let trustState: ActivityDayTrustState
+    let isSelected: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .fill(fillColor)
+            .frame(width: 13, height: 13)
+            .overlay {
+                if trustState == .unknown {
+                    diagonalMark
+                }
+            }
+            .overlay {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .stroke(AppSurface.selectedStroke, lineWidth: 1.5)
+                }
+            }
+            .opacity(trustState == .outsideRange ? 0.28 : 1)
+    }
+
+    private var fillColor: Color {
+        switch trustState {
+        case .verified:
+            return AppSurface.densityColor(level: densityLevel)
+        case .unknown:
+            return densityLevel > 0
+                ? AppSurface.densityColor(level: densityLevel).opacity(0.78)
+                : AppSurface.track.opacity(0.72)
+        case .future, .outsideRange:
+            return AppSurface.track.opacity(0.45)
+        }
+    }
+
+    private var diagonalMark: some View {
+        GeometryReader { proxy in
+            Path { path in
+                path.move(to: CGPoint(x: 2, y: proxy.size.height - 2))
+                path.addLine(to: CGPoint(x: proxy.size.width - 2, y: 2))
+            }
+            .stroke(AppSurface.tertiaryText.opacity(0.85), lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+    }
+}
+
 private struct ActivityHeatmapData {
     let weeks: [[Date]]
     let activityValuesByDay: [String: Int]
     let knownLineValuesByDay: [String: Int]
     let commitCountsByDay: [String: Int]
+    let trustStatesByDay: [String: ActivityDayTrustState]
     let totalValue: Int
     let commitCount: Int
     let statsBackedCommitCount: Int
+    let unknownDayCount: Int
 
     var coverage: Double {
         guard commitCount > 0 else {

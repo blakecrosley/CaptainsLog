@@ -1,13 +1,80 @@
 import SwiftUI
 import Kit941
 
+struct GitRepositoryOverviewSnapshot {
+    let repositoryCount: Int
+    let selectedRepositoryCount: Int
+    let coverage: [ActivityRepositoryCoverage]
+    let historyIndexDetail: String?
+    let lastSyncedAt: Date?
+
+    init(repositories: [GitRepositoryRecord], now: Date = Date(), calendar: Calendar = .current) {
+        repositoryCount = repositories.count
+        selectedRepositoryCount = repositories.reduce(into: 0) { count, repository in
+            if repository.isSelected {
+                count += 1
+            }
+        }
+        coverage = repositories.map { ActivityRepositoryCoverage(repository: $0, calendar: calendar) }
+
+        let selectedRepositories = repositories.filter { $0.isSelected && $0.isGitHubBacked }
+        lastSyncedAt = selectedRepositories.compactMap(\.lastSyncedAt).max()
+        historyIndexDetail = Self.historyIndexDetail(
+            for: selectedRepositories,
+            coverage: coverage.filter { $0.isSelected && $0.isGitHubBacked },
+            now: now,
+            calendar: calendar
+        )
+    }
+
+    private static func historyIndexDetail(
+        for selectedRepositories: [GitRepositoryRecord],
+        coverage selectedCoverage: [ActivityRepositoryCoverage],
+        now: Date,
+        calendar: Calendar
+    ) -> String? {
+        guard !selectedRepositories.isEmpty else {
+            return nil
+        }
+
+        if ActivityDataTrust.state(
+            for: now,
+            selectedRepositoryCoverage: selectedCoverage,
+            now: now,
+            calendar: calendar
+        ) == .unknown {
+            return "Today needs sync"
+        }
+
+        if let activeRepository = selectedRepositories.first(where: { $0.historyBackfillMonthStart != nil }) {
+            if let monthStart = activeRepository.historyBackfillMonthStart {
+                let month = monthStart.formatted(.dateTime.month(.abbreviated).year())
+                return "Indexing history: \(activeRepository.name) \(month)"
+            }
+            return "Indexing history: \(activeRepository.name)"
+        }
+
+        let failedCount = selectedRepositories.filter { $0.historyBackfillLastError != nil }.count
+        if failedCount > 0 {
+            let unit = failedCount == 1 ? "repo" : "repos"
+            return "History index paused on \(failedCount.formatted()) \(unit)"
+        }
+
+        let completedCount = selectedRepositories.filter(\.isHistoryBackfillComplete).count
+        guard completedCount > 0, completedCount < selectedRepositories.count else {
+            return nil
+        }
+        return "History index \(completedCount.formatted()) of \(selectedRepositories.count.formatted()) repositories complete"
+    }
+}
+
 struct WorkOverviewView: View {
     @Binding var selectedDate: Date
 
     let workMetrics: WorkMetrics
     let selectedWorkSnapshot: DayWorkSnapshot
     let selectedSummary: DailyJournalSummaryRecord?
-    let repositories: [GitRepositoryRecord]
+    let repositorySnapshot: GitRepositoryOverviewSnapshot
     let githubLogin: String?
     let githubAvatarURL: URL?
     let isGitHubSignedIn: Bool
@@ -15,7 +82,6 @@ struct WorkOverviewView: View {
     let syncMessage: String
     let importedCommitCount: Int
     let updatedDiffStatCount: Int
-    let lastSyncedAt: Date?
     let hasOpenAIKey: Bool
     let workIdentityScope: WorkIdentityScope
     let identityAliasCount: Int
@@ -43,6 +109,7 @@ struct WorkOverviewView: View {
             ActivityHeatmapView(
                 selectedDate: $selectedDate,
                 workMetrics: workMetrics,
+                repositoryCoverage: repositorySnapshot.coverage,
                 metric: displayMetric,
                 onShowDetail: { isShowingActivityMap = true }
             )
@@ -76,6 +143,7 @@ struct WorkOverviewView: View {
             WorkMapDetailSheet(
                 selectedDate: $selectedDate,
                 workMetrics: workMetrics,
+                repositoryCoverage: repositorySnapshot.coverage,
                 metric: $displayMetric
             )
             .presentationDetents([.large])
@@ -134,15 +202,15 @@ struct WorkOverviewView: View {
             }
 
             SyncStatusStrip(
-                repositoryCount: repositories.count,
-                selectedRepositoryCount: repositories.filter(\.isSelected).count,
+                repositoryCount: repositorySnapshot.repositoryCount,
+                selectedRepositoryCount: repositorySnapshot.selectedRepositoryCount,
                 isGitHubSignedIn: isGitHubSignedIn,
                 isSyncing: isSyncing,
                 syncMessage: syncMessage,
                 importedCommitCount: importedCommitCount,
                 updatedDiffStatCount: updatedDiffStatCount,
-                lastSyncedAt: lastSyncedAt,
-                historyIndexDetail: historyIndexDetail,
+                lastSyncedAt: repositorySnapshot.lastSyncedAt,
+                historyIndexDetail: repositorySnapshot.historyIndexDetail,
                 workIdentityScope: workIdentityScope,
                 identityAliasCount: identityAliasCount
             )
@@ -154,27 +222,6 @@ struct WorkOverviewView: View {
             return githubLogin
         }
         return "GitHub"
-    }
-
-    private var historyIndexDetail: String? {
-        let selectedRepositories = repositories.filter(\.isSelected)
-        guard !selectedRepositories.isEmpty else {
-            return nil
-        }
-
-        if let activeRepository = selectedRepositories.first(where: { $0.historyBackfillMonthStart != nil }) {
-            if let monthStart = activeRepository.historyBackfillMonthStart {
-                let month = monthStart.formatted(.dateTime.month(.abbreviated).year())
-                return "Indexing \(activeRepository.fullName) \(month)"
-            }
-            return "Indexing \(activeRepository.fullName)"
-        }
-
-        let completedCount = selectedRepositories.filter(\.isHistoryBackfillComplete).count
-        guard completedCount > 0 else {
-            return nil
-        }
-        return "History index \(completedCount.formatted()) of \(selectedRepositories.count.formatted()) repositories complete"
     }
 
     private func iconButton(
@@ -254,13 +301,16 @@ private struct SyncStatusStrip: View {
         if !isGitHubSignedIn {
             return "GitHub signed out"
         }
+        if selectedRepositoryCount == 0 {
+            return "No repositories selected"
+        }
         if let historyIndexDetail {
             return historyIndexDetail
         }
         if let lastSyncedAt {
-            return "\(selectedRepositoryCount.formatted()) repos selected. Synced \(lastSyncedAt.formatted(date: .omitted, time: .shortened))"
+            return "Today current. \(selectedRepositoryCount.formatted()) repos. Synced \(lastSyncedAt.formatted(date: .omitted, time: .shortened))"
         }
-        return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) repositories selected"
+        return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) repos selected. Sync needed"
     }
 
     private var detail: String {
@@ -1027,6 +1077,7 @@ private struct WorkMapDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedDate: Date
     let workMetrics: WorkMetrics
+    let repositoryCoverage: [ActivityRepositoryCoverage]
     @Binding var metric: WorkDisplayMetric
     @State private var selectedMapYear: Int?
 
@@ -1038,6 +1089,7 @@ private struct WorkMapDetailSheet: View {
                     ActivityHeatmapView(
                         selectedDate: $selectedDate,
                         workMetrics: workMetrics,
+                        repositoryCoverage: repositoryCoverage,
                         metric: metric,
                         selectedYear: $selectedMapYear
                     )
