@@ -24,6 +24,7 @@ struct RootView: View {
     @State private var isShowingDayDetail = false
     @State private var aiCredentialRevision = 0
     @State private var didStartPerformanceHeartbeat = false
+    @State private var lastHistoryBackfillScheduleAttempt: Date?
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
     @State private var identityAliasesText = ""
@@ -734,20 +735,22 @@ struct RootView: View {
 
     private func scheduleHistoricalBackfillIfNeeded() {
         guard appModel.isSignedIn else {
+            lastHistoryBackfillScheduleAttempt = nil
             BackgroundHistoryIndexer.cancelPending()
             return
         }
 
-        do {
-            if try appModel.hasHistoricalAnalyticsBackfillWork(lookbackDays: BackgroundHistoryIndexer.lookbackDays) {
-                BackgroundHistoryIndexer.schedule()
-            } else {
-                BackgroundHistoryIndexer.cancelPending()
-            }
-        } catch {
-            rootViewLogger.error("Failed to inspect history backfill backlog: \(error.localizedDescription, privacy: .public)")
+        let now = Date()
+        if let lastAttempt = lastHistoryBackfillScheduleAttempt,
+           now.timeIntervalSince(lastAttempt) < Self.historyBackfillScheduleAttemptInterval {
+            return
         }
+
+        lastHistoryBackfillScheduleAttempt = now
+        BackgroundHistoryIndexer.schedule()
     }
+
+    private static let historyBackfillScheduleAttemptInterval: TimeInterval = 15 * 60
 
     private func loadIdentityAliases() {
         identityAliasesText = WorkIdentityPreferences.loadAliasesText(for: activeLogin)
