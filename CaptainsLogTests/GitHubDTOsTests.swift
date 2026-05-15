@@ -55,6 +55,39 @@ final class GitHubDTOsTests: XCTestCase {
         XCTAssertEqual(updateSince, fallbackSince)
     }
 
+    func testLatestSyncCanForceRollingLookbackWindow() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let fallbackSince = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 1)))
+        let lastSyncedAt = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15, hour: 12)))
+        let newestCommitDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 14, hour: 18)))
+
+        let updateSince = RepositorySyncWindow.updateSince(
+            fallbackSince: fallbackSince,
+            lastSyncedAt: lastSyncedAt,
+            newestCommitDate: newestCommitDate,
+            overlap: 300,
+            minimumRescanSince: fallbackSince
+        )
+
+        XCTAssertEqual(updateSince, fallbackSince)
+    }
+
+    func testIncrementalSyncStillUsesNewestSafeWindowWithoutForcedLookback() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let fallbackSince = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))
+        let lastSyncedAt = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 15, hour: 12)))
+        let newestCommitDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 5, day: 14, hour: 18)))
+
+        let updateSince = RepositorySyncWindow.updateSince(
+            fallbackSince: fallbackSince,
+            lastSyncedAt: lastSyncedAt,
+            newestCommitDate: newestCommitDate,
+            overlap: 300
+        )
+
+        XCTAssertEqual(updateSince, lastSyncedAt.addingTimeInterval(-300))
+    }
+
     func testDemoRepositoryIsNotGitHubBacked() {
         let demo = GitRepositoryRecord(
             id: -941,

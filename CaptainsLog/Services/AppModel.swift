@@ -8,19 +8,26 @@ enum RepositorySyncWindow {
         fallbackSince: Date,
         lastSyncedAt: Date?,
         newestCommitDate: Date?,
-        overlap: TimeInterval
+        overlap: TimeInterval,
+        minimumRescanSince: Date? = nil
     ) -> Date {
         guard newestCommitDate != nil else {
             return fallbackSince
         }
 
-        return [
+        let incrementalSince = [
             fallbackSince,
             lastSyncedAt?.addingTimeInterval(-overlap),
             newestCommitDate?.addingTimeInterval(-overlap)
         ]
         .compactMap { $0 }
         .max() ?? fallbackSince
+
+        guard let minimumRescanSince else {
+            return incrementalSince
+        }
+
+        return min(incrementalSince, max(fallbackSince, minimumRescanSince))
     }
 }
 
@@ -359,10 +366,7 @@ final class AppModel: ObservableObject {
 
         do {
             let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
-            let access = try await api.repositoryAccess()
-            repositoryApprovalURL = access.approvalURL ?? githubAppInstallURL
-            try deleteDemoData(modelContext: modelContext)
-            try upsertRepositories(access.repositories, accountLogin: viewer?.login, modelContext: modelContext)
+            let access = try await updateRepositoryAccess(api: api, modelContext: modelContext)
             if !access.canReadContents {
                 syncMessage = "Set Contents to read-only in the GitHub App permissions, then approve repository access."
             } else if access.repositories.isEmpty {
@@ -381,7 +385,8 @@ final class AppModel: ObservableObject {
     @discardableResult
     func syncSelectedRepositories(
         lookbackDays: Int = 370,
-        repositoryIDs: Set<Int64>? = nil
+        repositoryIDs: Set<Int64>? = nil,
+        forceLookbackWindow: Bool = false
     ) async -> Bool {
         syncLogger.info("Sync updates requested")
         guard !isSyncing else {
@@ -415,13 +420,15 @@ final class AppModel: ObservableObject {
         var failedRepositories: [(name: String, message: String)] = []
 
         do {
-            let selected = try selectedRepositories(modelContext: modelContext)
-                .filter { repository in
-                    guard let repositoryIDs else {
-                        return true
+            let selected = recentSyncPriority(
+                try selectedRepositories(modelContext: modelContext)
+                    .filter { repository in
+                        guard let repositoryIDs else {
+                            return true
+                        }
+                        return repositoryIDs.contains(repository.id)
                     }
-                    return repositoryIDs.contains(repository.id)
-                }
+            )
             guard !selected.isEmpty else {
                 syncMessage = "Select at least one repository"
                 return false
@@ -434,6 +441,7 @@ final class AppModel: ObservableObject {
                         repository,
                         api: api,
                         fallbackSince: fallbackSince,
+                        minimumRescanSince: forceLookbackWindow ? fallbackSince : nil,
                         phase: "Syncing updates",
                         backfillHistoricalGaps: false,
                         modelContext: modelContext
@@ -495,8 +503,28 @@ final class AppModel: ObservableObject {
             syncLogger.error("Latest commit sync failed: missing model context")
             return false
         }
+        guard await restoreSessionForSyncIfNeeded() else {
+            syncLogger.error("Latest commit sync failed: no GitHub session")
+            return false
+        }
+        guard let token else {
+            syncMessage = "Sign in to GitHub again"
+            authState = .signedOut
+            syncLogger.error("Latest commit sync failed: token nil after restore")
+            return false
+        }
 
         do {
+            let api = GitHubAPIClient(token: token, appSlug: githubAppSlug)
+            do {
+                _ = try await updateRepositoryAccess(api: api, modelContext: modelContext)
+            } catch {
+                if handleUnauthorizedGitHubError(error, operation: "Latest commit repository refresh") {
+                    return false
+                }
+                syncLogger.warning("Latest commit sync continued without fresh repository metadata: \(error.localizedDescription, privacy: .public)")
+            }
+
             let selected = try selectedRepositories(modelContext: modelContext)
                 .filter(\.isGitHubBacked)
             guard !selected.isEmpty else {
@@ -509,6 +537,10 @@ final class AppModel: ObservableObject {
                 guard let lastSyncedAt = repository.lastSyncedAt else {
                     return true
                 }
+                if let pushedAt = repository.pushedAt,
+                   pushedAt > lastSyncedAt.addingTimeInterval(-commitSyncOverlap) {
+                    return true
+                }
                 return now.timeIntervalSince(lastSyncedAt) >= minimumInterval
             }
 
@@ -519,7 +551,8 @@ final class AppModel: ObservableObject {
             syncLogger.info("Latest commit sync will scan \(staleRepositories.count) stale repositories")
             return await syncSelectedRepositories(
                 lookbackDays: lookbackDays,
-                repositoryIDs: Set(staleRepositories.map(\.id))
+                repositoryIDs: Set(staleRepositories.map(\.id)),
+                forceLookbackWindow: true
             )
         } catch {
             syncLogger.error("Latest commit sync failed while checking selected repositories: \(error.localizedDescription, privacy: .public)")
@@ -901,6 +934,7 @@ final class AppModel: ObservableObject {
                         repository,
                         api: api,
                         fallbackSince: startOfToday,
+                        minimumRescanSince: startOfToday,
                         phase: "Refreshing today",
                         backfillHistoricalGaps: false,
                         modelContext: modelContext
@@ -1022,6 +1056,17 @@ final class AppModel: ObservableObject {
         }
 
         try modelContext.save()
+    }
+
+    private func updateRepositoryAccess(
+        api: GitHubAPIClient,
+        modelContext: ModelContext
+    ) async throws -> GitHubRepositoryAccess {
+        let access = try await api.repositoryAccess()
+        repositoryApprovalURL = access.approvalURL ?? githubAppInstallURL
+        try deleteDemoData(modelContext: modelContext)
+        try upsertRepositories(access.repositories, accountLogin: viewer?.login, modelContext: modelContext)
+        return access
     }
 
     private func upsertRepositories(
@@ -1397,6 +1442,18 @@ final class AppModel: ObservableObject {
         }
     }
 
+    private func recentSyncPriority(_ repositories: [GitRepositoryRecord]) -> [GitRepositoryRecord] {
+        repositories.sorted { lhs, rhs in
+            let lhsActivityDate = lhs.pushedAt ?? lhs.lastSyncedAt ?? lhs.createdAt
+            let rhsActivityDate = rhs.pushedAt ?? rhs.lastSyncedAt ?? rhs.createdAt
+            if lhsActivityDate != rhsActivityDate {
+                return lhsActivityDate > rhsActivityDate
+            }
+
+            return lhs.fullName.localizedStandardCompare(rhs.fullName) == .orderedAscending
+        }
+    }
+
     private func missingDiffStatsPriority(
         _ repositories: [GitRepositoryRecord],
         since: Date,
@@ -1527,6 +1584,7 @@ final class AppModel: ObservableObject {
         _ repository: GitRepositoryRecord,
         api: GitHubAPIClient,
         fallbackSince: Date,
+        minimumRescanSince: Date? = nil,
         phase: String = "Syncing",
         backfillHistoricalGaps: Bool = true,
         modelContext: ModelContext
@@ -1539,7 +1597,8 @@ final class AppModel: ObservableObject {
             fallbackSince: fallbackSince,
             lastSyncedAt: repository.lastSyncedAt,
             newestCommitDate: newestCommitDate,
-            overlap: commitSyncOverlap
+            overlap: commitSyncOverlap,
+            minimumRescanSince: minimumRescanSince
         )
         var existingCommitIDs: Set<String>?
         let usedHistoryStats = try await syncCommitHistoryPagesIfAvailable(
