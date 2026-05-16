@@ -644,11 +644,6 @@ private struct ActivityHeatmapCell: View {
             .fill(fillColor)
             .frame(width: 13, height: 13)
             .overlay {
-                if trustState == .unknown {
-                    diagonalMark
-                }
-            }
-            .overlay {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .stroke(AppSurface.selectedStroke, lineWidth: 1.5)
@@ -668,17 +663,6 @@ private struct ActivityHeatmapCell: View {
         case .future, .outsideRange:
             return AppSurface.track.opacity(0.45)
         }
-    }
-
-    private var diagonalMark: some View {
-        GeometryReader { proxy in
-            Path { path in
-                path.move(to: CGPoint(x: 2, y: proxy.size.height - 2))
-                path.addLine(to: CGPoint(x: proxy.size.width - 2, y: 2))
-            }
-            .stroke(AppSurface.tertiaryText.opacity(0.85), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
     }
 }
 
