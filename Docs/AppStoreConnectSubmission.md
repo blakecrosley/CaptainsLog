@@ -6,7 +6,8 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Exported app commit: `dead7833759fb33a8e40f61f00274a8766ac8bd8`
+- Exported app commit: `6846aaa9a4bb079b1d4ec92f478fc841dd9300ea`
+- Exported Kit941 commit: `9330d58ca0e14d8133250a9051599fecafea03b2`
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
 - Team ID used by export scripts: `M4WTLM6RAQ`
@@ -21,18 +22,18 @@ Last local audit: May 17, 2026.
 
 - `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed: metadata limits, policy/support URL reachability, privacy manifest, export-compliance flag, bundle/build settings, marketing icon, and all iPhone/iPad screenshot dimensions.
 - `Scripts/privacy_required_reason_audit.sh` is included in preflight and passed for the app target plus local `Kit941` package source.
-- `Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` exported the current IPA from commit `dead7833759fb33a8e40f61f00274a8766ac8bd8` with `Git dirty at export: false`.
-- `Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passed: bundle `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `ITSAppUsesNonExemptEncryption=false`, and `get-task-allow=false`.
+- `Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` exported the current IPA from CaptainsLog commit `6846aaa9a4bb079b1d4ec92f478fc841dd9300ea` and Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2`, with both source trees clean at export.
+- `Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passed: bundle `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `ITSAppUsesNonExemptEncryption=false`, `get-task-allow=false`, Kit941 commit recorded, and Kit941 dirty state `false`.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
 - Current Git status after the local audit: clean against `origin/main`.
-- The commits after `dead7833759fb33a8e40f61f00274a8766ac8bd8` are documentation-only handoff updates. Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
-- New exports also record the local `Kit941` package commit and dirty state because the app links `../941Kit` directly.
+- The commits after `6846aaa9a4bb079b1d4ec92f478fc841dd9300ea` are documentation-only handoff updates. Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
+- The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. At export, Kit941 was clean but ahead of its remote by one commit.
 
 ## Prompt-To-Artifact Checklist
 
 | Requirement | Artifact | Current Evidence | Status |
 | --- | --- | --- | --- |
-| Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet | Preflight, archive/export, screenshots, metadata, privacy notes, and upload helper exist; current IPA local check passes from clean commit `dead7833759fb33a8e40f61f00274a8766ac8bd8` | Locally ready |
+| Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet | Preflight, archive/export, screenshots, metadata, privacy notes, and upload helper exist; current IPA local check passes from clean CaptainsLog commit `6846aaa9a4bb079b1d4ec92f478fc841dd9300ea` and clean Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2` | Locally ready |
 | Clean up UI | Fixture screenshot routes and latest PNG audit | Dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data screenshots generated for iPhone and iPad; iPad dashboard uses the adaptive tablet layout; no dashboard sync bar or repository toggle clipping was visible in the checked PNGs | Locally reviewed |
 | Make design feel coherent | `.impeccable.md`, fixture screenshots | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity | Locally reviewed |
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft | Locally ready, legal review open |
