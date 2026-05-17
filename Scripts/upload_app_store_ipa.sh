@@ -64,6 +64,8 @@ local_check() {
 
     local info_plist="$app_path/Info.plist"
     local privacy_manifest="$app_path/PrivacyInfo.xcprivacy"
+    local export_manifest
+    export_manifest="$(dirname "$ipa_path")/ExportManifest.txt"
     [[ -f "$info_plist" ]] || fail "Info.plist missing from IPA app"
     [[ -f "$privacy_manifest" ]] || fail "PrivacyInfo.xcprivacy missing from IPA app"
 
@@ -78,8 +80,24 @@ local_check() {
     [[ "$encryption" == "false" ]] || fail "Unexpected ITSAppUsesNonExemptEncryption=$encryption"
     [[ "$get_task_allow" == "false" ]] || fail "Expected get-task-allow=false, got ${get_task_allow:-missing}"
 
+    local exported_commit git_dirty
+    if [[ -f "$export_manifest" ]]; then
+        exported_commit="$(awk -F ': ' '/^Exported app commit:/ { print $2; exit }' "$export_manifest")"
+        git_dirty="$(awk -F ': ' '/^Git dirty at export:/ { print $2; exit }' "$export_manifest")"
+    else
+        exported_commit=""
+        git_dirty=""
+    fi
+
     printf 'IPA local check passed\n'
     printf 'IPA: %s\n' "$ipa_path"
+    if [[ -f "$export_manifest" ]]; then
+        printf 'Export manifest: present\n'
+        [[ -n "$exported_commit" ]] && printf 'Exported app commit: %s\n' "$exported_commit"
+        [[ -n "$git_dirty" ]] && printf 'Git dirty at export: %s\n' "$git_dirty"
+    else
+        printf 'Export manifest: missing\n'
+    fi
     printf 'Bundle: %s\n' "$bundle_id"
     printf 'Version: %s (%s)\n' "$version" "$build"
     printf 'Privacy manifest: present\n'

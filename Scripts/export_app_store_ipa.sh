@@ -9,6 +9,20 @@ BUNDLE_ID="com.blakecrosley.captainslog"
 OUTPUT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreExport}"
 ARCHIVE_PATH="${ARCHIVE_PATH:-$OUTPUT_DIR/CaptainsLog.xcarchive}"
 EXPORT_PATH="${EXPORT_PATH:-$OUTPUT_DIR/Export}"
+EXPORT_MANIFEST="$EXPORT_PATH/ExportManifest.txt"
+
+git_commit="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf 'unknown')"
+git_status="$(git -C "$ROOT_DIR" status --short 2>/dev/null || true)"
+git_dirty="false"
+if [[ -n "$git_status" ]]; then
+    git_dirty="true"
+fi
+
+if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$git_dirty" == "true" ]]; then
+    printf 'Refusing to export from a dirty git tree. Commit or stash changes, or unset CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT.\n' >&2
+    printf '%s\n' "$git_status" >&2
+    exit 1
+fi
 
 mkdir -p "$OUTPUT_DIR"
 rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
@@ -76,6 +90,7 @@ archived_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$i
 archived_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")"
 archived_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$info_plist")"
 uses_non_exempt_encryption="$(/usr/libexec/PlistBuddy -c 'Print :ITSAppUsesNonExemptEncryption' "$info_plist")"
+created_utc="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 if [[ "$archived_bundle_id" != "$BUNDLE_ID" ]]; then
     printf 'Unexpected bundle id: %s\n' "$archived_bundle_id" >&2
@@ -87,8 +102,29 @@ if [[ "$uses_non_exempt_encryption" != "false" ]]; then
     exit 1
 fi
 
+{
+    printf "Captain's Log App Store Export\n"
+    printf 'Created UTC: %s\n' "$created_utc"
+    printf 'Exported app commit: %s\n' "$git_commit"
+    printf 'Git dirty at export: %s\n' "$git_dirty"
+    printf 'Archive: %s\n' "$ARCHIVE_PATH"
+    printf 'IPA: %s\n' "$ipa_path"
+    printf 'Bundle: %s\n' "$archived_bundle_id"
+    printf 'Version: %s (%s)\n' "$archived_version" "$archived_build"
+    printf 'Privacy manifest: present\n'
+    printf 'Non-exempt encryption: %s\n' "$uses_non_exempt_encryption"
+    if [[ -n "$git_status" ]]; then
+        printf 'Git status at export:\n%s\n' "$git_status"
+    else
+        printf 'Git status at export: clean\n'
+    fi
+} > "$EXPORT_MANIFEST"
+
 printf 'Archive: %s\n' "$ARCHIVE_PATH"
 printf 'IPA: %s\n' "$ipa_path"
+printf 'Export manifest: %s\n' "$EXPORT_MANIFEST"
+printf 'Exported app commit: %s\n' "$git_commit"
+printf 'Git dirty at export: %s\n' "$git_dirty"
 printf 'Bundle: %s\n' "$archived_bundle_id"
 printf 'Version: %s (%s)\n' "$archived_version" "$archived_build"
 printf 'Privacy manifest: present\n'
