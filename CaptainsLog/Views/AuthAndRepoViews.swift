@@ -22,7 +22,7 @@ struct GitHubAuthCard: View {
                         .kit941Font(.title, weight: .semibold)
                 }
 
-                Text("Captain's Log uses GitHub Device Flow, stores the token in Keychain, and only sees repositories where the GitHub App is installed.")
+                Text("Choose the repositories Captain's Log can read. Tokens stay in Keychain, and imported history stays on this device.")
                     .kit941Font(.body)
                     .foregroundStyle(AppSurface.secondaryText)
 
@@ -72,7 +72,7 @@ struct GitHubAuthCard: View {
         case .signedOut, .failed:
             AppActionRow(
                 title: "Sign in with GitHub",
-                description: "Connect your account and choose which repositories Captain's Log can read.",
+                description: "Authorize GitHub, then select repositories.",
                 systemImage: "person.crop.circle.badge.checkmark",
                 isProminent: true,
                 isDisabled: clientID.isEmpty,
@@ -81,7 +81,7 @@ struct GitHubAuthCard: View {
 
             AppActionRow(
                 title: "Use Demo Data",
-                description: "Open a local fixture with sample commits, line stats, and a journal entry.",
+                description: "Preview sample commits, stats, and a journal.",
                 systemImage: "square.grid.3x3",
                 action: onSeedDemo
             )

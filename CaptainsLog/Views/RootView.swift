@@ -537,7 +537,7 @@ struct RootView: View {
             HStack(spacing: Kit941.Spacing.sm) {
                 Image(systemName: preferredAIProvider.symbolName)
                     .foregroundStyle(AppSurface.accent)
-                Text("\(preferredAIProvider.displayName) key attached")
+                Text("\(preferredAIProvider.displayName) summaries ready")
                     .kit941Font(.label)
                     .foregroundStyle(AppSurface.primaryText)
             }
@@ -551,7 +551,7 @@ struct RootView: View {
                 HStack(spacing: Kit941.Spacing.sm) {
                     Image(systemName: "apple.intelligence")
                         .foregroundStyle(AppSurface.accent)
-                    Text("Apple Foundation Models available")
+                    Text("On-device summaries ready")
                         .kit941Font(.label)
                         .foregroundStyle(AppSurface.primaryText)
                 }
