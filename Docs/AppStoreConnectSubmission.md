@@ -26,6 +26,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 | Binary export ready | `Scripts/export_app_store_ipa.sh` | Current export produced an IPA with bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `get-task-allow=false`, encryption flag `false`, and a sibling export manifest with the exact git commit | Locally ready |
 | Upload path ready | `Scripts/upload_app_store_ipa.sh` | Local IPA check passes and reports the export manifest when present; validate/upload/status require App Store Connect credentials | Script ready, external credentials open |
 | Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders | Locally ready, human marketing acceptance open |
+| Physical device smoke | `xcodebuild`, `xcrun devicectl` | Current Debug build installed on the connected iPhone 17 Pro Max; launch was denied because the device was locked | Build/install verified, unlocked launch open |
 | Real data confidence | App runtime with a large GitHub account | Not rerun after latest App Store prep | Open |
 
 ## Local Commands Before Upload
@@ -112,6 +113,18 @@ Use both folders:
 - `/tmp/captainslog-key-state-packaged/ipad-13`
 
 Do a human pass before submission. The local checks verify size and obvious UI regressions, not marketing quality.
+
+## Physical Device Smoke
+
+The May 17, 2026 local smoke pass used the connected iPhone 17 Pro Max (`00008150-00166D690EF0401C`):
+
+```sh
+xcodebuild -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -configuration Debug -destination 'id=00008150-00166D690EF0401C' -derivedDataPath /tmp/captainslog-device-derived build
+xcrun devicectl device install app --device 2F9ADEAE-BF3B-5E99-BB42-25B09F86C1AC "/tmp/captainslog-device-derived/Build/Products/Debug-iphoneos/Captain's Log.app"
+xcrun devicectl device process launch --device 2F9ADEAE-BF3B-5E99-BB42-25B09F86C1AC com.blakecrosley.captainslog
+```
+
+Build and install succeeded. Launch still needs to be rerun while the device is unlocked; the last launch attempt was denied by SpringBoard because the device was locked.
 
 ## App Privacy Draft
 
