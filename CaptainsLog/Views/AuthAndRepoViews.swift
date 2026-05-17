@@ -1,6 +1,120 @@
 import SwiftUI
 import Kit941
 
+struct SetupWelcomeCard: View {
+    let foundationAvailability: FoundationModelAvailability
+    let preferredProvider: AIProvider
+    let hasPreferredAIKey: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+                Text("Captain's Log")
+                    .kit941Font(.display, weight: .semibold)
+                    .foregroundStyle(AppSurface.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text("A private work journal built from the GitHub repositories you choose.")
+                    .kit941Font(.body)
+                    .foregroundStyle(AppSurface.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            SetupHeatmapPreview()
+
+            HStack(spacing: Kit941.Spacing.sm) {
+                SetupCapabilityPill(title: "Selected repos", systemImage: "checklist")
+                SetupCapabilityPill(title: "On device first", systemImage: "lock")
+                SetupCapabilityPill(title: aiReadinessTitle, systemImage: aiReadinessSymbol)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(Kit941.Spacing.lg)
+        .appPanel(highlighted: true)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var aiReadinessTitle: String {
+        if hasPreferredAIKey {
+            return "\(preferredProvider.displayName) ready"
+        }
+
+        switch foundationAvailability {
+        case .available:
+            return "Apple summaries"
+        case .unavailable:
+            return "AI optional"
+        }
+    }
+
+    private var aiReadinessSymbol: String {
+        if hasPreferredAIKey {
+            return preferredProvider.symbolName
+        }
+
+        switch foundationAvailability {
+        case .available:
+            return "apple.intelligence"
+        case .unavailable:
+            return "sparkles"
+        }
+    }
+}
+
+private struct SetupHeatmapPreview: View {
+    private let levels: [Int] = [
+        0, 1, 0, 0, 2, 3, 0, 0, 1, 4, 0, 2, 1,
+        2, 0, 3, 1, 0, 2, 4, 0, 0, 1, 3, 0, 2,
+        0, 2, 4, 3, 1, 0, 2, 1, 3, 4, 2, 0, 1
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+            HStack {
+                Text("Work map preview")
+                    .kit941Font(.caption, weight: .semibold)
+                    .foregroundStyle(AppSurface.secondaryText)
+                Spacer(minLength: Kit941.Spacing.sm)
+                Text("Commits + changes")
+                    .kit941Font(.caption)
+                    .foregroundStyle(AppSurface.tertiaryText)
+            }
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 13),
+                alignment: .leading,
+                spacing: 5
+            ) {
+                ForEach(levels.indices, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(AppSurface.densityColor(level: levels[index]))
+                        .aspectRatio(1, contentMode: .fit)
+                }
+            }
+        }
+        .padding(Kit941.Spacing.md)
+        .background(AppSurface.mutedFill(opacity: 0.62), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
+    }
+}
+
+private struct SetupCapabilityPill: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .kit941Font(.caption, weight: .semibold)
+            .foregroundStyle(AppSurface.primaryText)
+            .lineLimit(1)
+            .minimumScaleFactor(0.74)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(AppSurface.mutedFill(opacity: 0.86), in: Capsule())
+            .accessibilityElement(children: .combine)
+    }
+}
+
 struct GitHubAuthCard: View {
     @Environment(\.openURL) private var openURL
 
@@ -14,17 +128,14 @@ struct GitHubAuthCard: View {
     var body: some View {
         Kit941.Card {
             VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                HStack(spacing: Kit941.Spacing.sm) {
-                    Image(systemName: "person.crop.circle.badge.checkmark")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(AppSurface.accent)
-                    Text("Connect GitHub")
-                        .kit941Font(.title, weight: .semibold)
-                }
+                Text(headline)
+                    .kit941Font(.title, weight: .semibold)
+                    .foregroundStyle(AppSurface.primaryText)
 
-                Text("Choose the repositories Captain's Log can read. Tokens stay in Keychain, and imported history stays on this device.")
+                Text(description)
                     .kit941Font(.body)
                     .foregroundStyle(AppSurface.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 stateContent
 
@@ -32,6 +143,32 @@ struct GitHubAuthCard: View {
                     actions
                 }
             }
+        }
+    }
+
+    private var headline: String {
+        switch authState {
+        case .waitingForUser, .completingSignIn:
+            return "Finish GitHub sign-in"
+        case .requestingCode:
+            return "Getting a GitHub code"
+        case .failed:
+            return "Try GitHub again"
+        case .signedOut, .signedIn:
+            return "Choose your start"
+        }
+    }
+
+    private var description: String {
+        switch authState {
+        case .waitingForUser, .completingSignIn:
+            return "Use the code below to approve this device, then return here to continue."
+        case .requestingCode:
+            return "Captain's Log is asking GitHub for a short-lived device code."
+        case .failed:
+            return "GitHub did not finish connecting. You can try again or preview the app with demo data."
+        case .signedOut, .signedIn:
+            return "Connect GitHub to sync real work, or use demo data to inspect the app first."
         }
     }
 
@@ -72,7 +209,7 @@ struct GitHubAuthCard: View {
         case .signedOut, .failed:
             AppActionRow(
                 title: "Sign in with GitHub",
-                description: "Authorize GitHub, then select repositories.",
+                description: "Authorize this device, then choose repositories.",
                 systemImage: "person.crop.circle.badge.checkmark",
                 isProminent: true,
                 isDisabled: clientID.isEmpty,
@@ -81,7 +218,7 @@ struct GitHubAuthCard: View {
 
             AppActionRow(
                 title: "Use Demo Data",
-                description: "Preview sample commits, stats, and a journal.",
+                description: "Preview the dashboard, work map, and journal.",
                 systemImage: "square.grid.3x3",
                 action: onSeedDemo
             )

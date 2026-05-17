@@ -427,9 +427,12 @@ struct RootView: View {
 
     private var setupStack: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-            header
+            SetupWelcomeCard(
+                foundationAvailability: appModel.foundationAvailability,
+                preferredProvider: preferredAIProvider,
+                hasPreferredAIKey: hasPreferredAIKey
+            )
             authPanel
-            modelGate
         }
     }
 
@@ -513,69 +516,6 @@ struct RootView: View {
                         isShowingRepositorySettings = false
                     }
                 }
-            }
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-            HStack(spacing: Kit941.Spacing.sm) {
-                Image(systemName: "book.pages")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(AppSurface.accent)
-                    .frame(width: 34, height: 34)
-                    .background(AppSurface.accent.opacity(0.12), in: Circle())
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Captain's Log")
-                        .kit941Font(.title, weight: .semibold)
-                        .foregroundStyle(AppSurface.primaryText)
-                        .lineLimit(1)
-                    Text("GitHub work journal")
-                        .kit941Font(.caption)
-                        .foregroundStyle(AppSurface.secondaryText)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var modelGate: some View {
-        if hasPreferredAIKey {
-            HStack(spacing: Kit941.Spacing.sm) {
-                Image(systemName: preferredAIProvider.symbolName)
-                    .foregroundStyle(AppSurface.accent)
-                Text("\(preferredAIProvider.displayName) summaries ready")
-                    .kit941Font(.label)
-                    .foregroundStyle(AppSurface.primaryText)
-            }
-            .padding(.horizontal, Kit941.Spacing.md)
-            .padding(.vertical, Kit941.Spacing.sm)
-            .background(AppSurface.accent.opacity(0.10), in: Capsule())
-            .accessibilityElement(children: .combine)
-        } else {
-            switch appModel.foundationAvailability {
-            case .available:
-                HStack(spacing: Kit941.Spacing.sm) {
-                    Image(systemName: "apple.intelligence")
-                        .foregroundStyle(AppSurface.accent)
-                    Text("On-device summaries ready")
-                        .kit941Font(.label)
-                        .foregroundStyle(AppSurface.primaryText)
-                }
-                .padding(.horizontal, Kit941.Spacing.md)
-                .padding(.vertical, Kit941.Spacing.sm)
-                .background(AppSurface.accent.opacity(0.10), in: Capsule())
-                .accessibilityElement(children: .combine)
-            case .unavailable(let reason):
-                Kit941.StatusView(
-                    style: .failure,
-                    symbol: "apple.intelligence.badge.xmark",
-                    headline: "No journal model available",
-                    description: LocalizedStringKey(reason)
-                )
             }
         }
     }
