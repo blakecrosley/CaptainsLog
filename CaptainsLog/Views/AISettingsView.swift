@@ -71,7 +71,7 @@ struct AISettingsView: View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
             Text("AI providers")
                 .kit941Font(.display, weight: .bold)
-            Text("Attach your own cloud AI key for journal summaries. If the selected provider has no key, Captain's Log uses Apple Foundation Models when available.")
+            Text("Use Apple on-device by default. Attach OpenAI or Anthropic only when you want cloud-generated journals.")
                 .kit941Font(.body)
                 .foregroundStyle(AppSurface.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -84,7 +84,7 @@ struct AISettingsView: View {
                 VStack(alignment: .leading, spacing: Kit941.Spacing.xs) {
                     Text("Current provider")
                         .kit941Font(.title, weight: .semibold)
-                    Text("This controls which cloud model is used when you generate a Captain's Log.")
+                    Text("Choose the cloud model used for generated journals.")
                         .kit941Font(.caption)
                         .foregroundStyle(AppSurface.secondaryText)
                 }

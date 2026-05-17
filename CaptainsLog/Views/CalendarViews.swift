@@ -375,6 +375,7 @@ struct ActivityHeatmapView: View {
     let workMetrics: WorkMetrics
     let repositoryCoverage: [ActivityRepositoryCoverage]
     let metric: WorkDisplayMetric
+    var showsHeaderTitle = true
     var onShowDetail: (@MainActor @Sendable () -> Void)? = nil
     private let selectedYearBinding: Binding<Int?>?
 
@@ -386,12 +387,14 @@ struct ActivityHeatmapView: View {
         repositoryCoverage: [ActivityRepositoryCoverage] = [],
         metric: WorkDisplayMetric,
         selectedYear: Binding<Int?>? = nil,
+        showsHeaderTitle: Bool = true,
         onShowDetail: (@MainActor @Sendable () -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.workMetrics = workMetrics
         self.repositoryCoverage = repositoryCoverage
         self.metric = metric
+        self.showsHeaderTitle = showsHeaderTitle
         self.selectedYearBinding = selectedYear
         self.onShowDetail = onShowDetail
     }
@@ -402,12 +405,14 @@ struct ActivityHeatmapView: View {
 
         VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
             HStack(alignment: .center, spacing: Kit941.Spacing.md) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(rangeTitle)
-                        .kit941Font(.label, weight: .semibold)
-                    Text(subtitle(for: data))
-                        .kit941Font(.caption)
-                        .foregroundStyle(AppSurface.secondaryText)
+                if showsHeaderTitle {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(rangeTitle)
+                            .kit941Font(.label, weight: .semibold)
+                        Text(subtitle(for: data))
+                            .kit941Font(.caption)
+                            .foregroundStyle(AppSurface.secondaryText)
+                    }
                 }
 
                 Spacer(minLength: Kit941.Spacing.md)

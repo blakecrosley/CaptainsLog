@@ -1404,7 +1404,8 @@ private struct WorkMapDetailSheet: View {
                         workMetrics: workMetrics,
                         repositoryCoverage: repositoryCoverage,
                         metric: metric,
-                        selectedYear: $selectedMapYear
+                        selectedYear: $selectedMapYear,
+                        showsHeaderTitle: false
                     )
                     WorkMapDayInspector(selectedDate: selectedDate, insight: dayInsight, metric: metric)
                     WorkMapRhythmPanel(insights: periodInsights, metric: metric)
@@ -1440,10 +1441,7 @@ private struct WorkMapDetailSheet: View {
 
                 Spacer(minLength: Kit941.Spacing.sm)
 
-                HStack(spacing: Kit941.Spacing.xs) {
-                    WorkLensPill(metric: metric)
-                    DashboardFactPill(text: selectedMapYear.map(String.init) ?? "52W")
-                }
+                WorkLensPill(metric: metric)
             }
         }
     }
