@@ -22,6 +22,7 @@ Last local audit: May 17, 2026.
 
 - `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed: metadata limits, policy/support URL reachability, privacy manifest, export-compliance flag, bundle/build settings, marketing icon, and all iPhone/iPad screenshot dimensions.
 - Preflight now checks that the published Privacy Policy and Support pages contain expected Captain's Log, GitHub, Keychain, optional AI provider, and contact content, not just HTTP success.
+- Preflight now warns only when the published Privacy Policy or Support page includes active analytics script endpoints, not when the privacy copy says the app has no analytics SDKs. The current live pages still warn until the matching `blakecrosley.com` template change is deployed.
 - `Scripts/privacy_required_reason_audit.sh` is included in preflight and passed for the app target plus local `Kit941` package source.
 - `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` exported the current IPA from CaptainsLog commit `f2a4a166052b5cc1f676bfb1098dd8c5072180a7` and Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2`, with both source trees clean at export.
 - `Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passed: bundle `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `ITSAppUsesNonExemptEncryption=false`, `get-task-allow=false`, Kit941 commit recorded, Kit941 dirty state `false`, and release debug fixture strings absent.
@@ -182,5 +183,5 @@ If App Review needs a live account, create a purpose-built GitHub account with s
 - Verify TestFlight processing status.
 - Make the final screenshot marketing decision.
 - Complete legal/privacy review.
-- Confirm whether the published Privacy Policy and Support pages should keep the website-level self-hosted analytics script; this is not an app SDK, but it appears in the public page HTML that App Review can inspect.
+- Deploy the `blakecrosley.com` template change that removes active analytics scripts from the Captain's Log Privacy Policy and Support pages, then rerun preflight and confirm the live warning is gone.
 - Run one real large-account QA pass before submitting for review.

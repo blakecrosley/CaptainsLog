@@ -91,7 +91,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - A final pass on a real large GitHub account is still recommended before submission.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
-- The published Privacy Policy and Support pages include a website-level self-hosted analytics script in the page HTML. This is separate from the app binary, but legal/privacy review should decide whether that script belongs on the App Store policy/support pages.
+- Deploy the `blakecrosley.com` template change that removes active analytics scripts from the Captain's Log Privacy Policy and Support pages, then rerun preflight and confirm the live warning is gone.
 
 ## Official References
 

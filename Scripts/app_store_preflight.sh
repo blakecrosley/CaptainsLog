@@ -140,8 +140,8 @@ check_url_contains() {
         fi
     done
 
-    if printf '%s' "$page" | grep -Eiq 'analytics|track\.js|collect'; then
-        warn "$label page references analytics/tracking text or scripts; confirm this is acceptable for the published policy/support page"
+    if printf '%s' "$page" | grep -Eiq '941-analytics|track\.js|/collect|cloudflareinsights|beacon\.min\.js|data-cf-beacon'; then
+        warn "$label page includes active analytics scripts; remove or confirm this is acceptable for the published policy/support page"
     fi
 }
 
