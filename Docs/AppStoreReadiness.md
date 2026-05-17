@@ -10,6 +10,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
 - Tokens and cloud AI keys are stored on-device in Keychain.
 - The repo contains an app icon asset catalog. Final App Store screenshot exports still need to be captured.
+- A local generic iOS archive succeeds and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`. The latest archive was signed with an Apple Development profile, so App Store distribution export/upload is still unverified.
 
 ## App Store Connect Checklist
 
@@ -19,6 +20,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Confirm automatic signing uses team `M4WTLM6RAQ`.
 - Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
 - Archive the iOS target and confirm the privacy manifest is included in the archive.
+- Export or upload with App Store distribution signing. The local archive check used `Apple Development: Christopher Crosley (5U69CE2KAT)` and `get-task-allow=true`, which is not the final App Store signing state.
 
 ### Product Page
 
