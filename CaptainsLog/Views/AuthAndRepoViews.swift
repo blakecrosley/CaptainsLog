@@ -635,6 +635,7 @@ struct RepositorySelectionView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Kit941.Spacing.md) {
                 summaryCard
+                searchField
                 repositoryList
             }
             .padding(.horizontal, Kit941.Spacing.md)
@@ -647,7 +648,6 @@ struct RepositorySelectionView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-        .searchable(text: $searchText, prompt: "Find repository")
     }
 
     private var summaryCard: some View {
@@ -697,6 +697,39 @@ struct RepositorySelectionView: View {
                     action: onRefreshRepos
                 )
             }
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: Kit941.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AppSurface.secondaryText)
+
+            TextField("Find repository", text: $searchText)
+                .kit941Font(.body)
+                .foregroundStyle(AppSurface.primaryText)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(AppSurface.secondaryText)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear repository search")
+            }
+        }
+        .padding(.horizontal, Kit941.Spacing.md)
+        .frame(minHeight: 48)
+        .background(AppSurface.mutedFill(opacity: 0.9), in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous)
+                .strokeBorder(AppSurface.panelStroke(), lineWidth: 1)
         }
     }
 
