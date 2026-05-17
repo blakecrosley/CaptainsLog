@@ -20,6 +20,7 @@ final class CaptainsLogUITests: XCTestCase {
         defer { app.terminate() }
 
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts[fixtureShowcaseDayTitle].waitForExistence(timeout: 3))
 
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3))
@@ -55,6 +56,12 @@ final class CaptainsLogUITests: XCTestCase {
         }
         app.launch()
         return app
+    }
+
+    private var fixtureShowcaseDayTitle: String {
+        let calendar = Calendar.current
+        let showcaseDate = calendar.date(byAdding: .day, value: -2, to: Date()) ?? Date()
+        return showcaseDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }
 
     private func actionRow(_ title: String, in app: XCUIApplication) -> XCUIElement {

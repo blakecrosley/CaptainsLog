@@ -2515,10 +2515,10 @@ final class AppModel: ObservableObject {
         repo: GitRepositoryRecord,
         calendar: Calendar
     ) throws {
-        let today = calendar.startOfDay(for: Date())
-        let todayKey = GitCommitRecord.dayKey(for: today, calendar: calendar)
+        let featuredDate = demoFixtureFeaturedDate(calendar: calendar)
+        let featuredDayKey = GitCommitRecord.dayKey(for: featuredDate, calendar: calendar)
         let sourceIDs = try modelContext.fetch(FetchDescriptor<GitCommitRecord>())
-            .filter { $0.repositoryFullName == repo.fullName && $0.dayKey == todayKey }
+            .filter { $0.repositoryFullName == repo.fullName && $0.dayKey == featuredDayKey }
             .map(\.id)
 
         guard !sourceIDs.isEmpty else {
@@ -2535,27 +2535,35 @@ final class AppModel: ObservableObject {
             ],
             tags: ["fixture", "sync", "journal"]
         )
+        let generatedAt = calendar.date(byAdding: .hour, value: 15, to: featuredDate) ?? featuredDate
 
-        let dayKey = GitCommitRecord.dayKey(for: today, calendar: calendar)
+        let dayKey = GitCommitRecord.dayKey(for: featuredDate, calendar: calendar)
         var descriptor = FetchDescriptor<DailyJournalSummaryRecord>(
             predicate: #Predicate { $0.dayKey == dayKey }
         )
         descriptor.fetchLimit = 1
         if let existing = try modelContext.fetch(descriptor).first {
             _ = existing.update(from: draft, sourceCommitIDs: sourceIDs, modelName: "UI Fixture")
+            existing.generatedAt = generatedAt
         } else {
             modelContext.insert(
                 DailyJournalSummaryRecord(
-                    date: today,
+                    date: featuredDate,
                     title: draft.title,
                     narrative: draft.narrative,
                     bullets: draft.bullets,
                     tags: draft.tags,
                     sourceCommitIDs: sourceIDs,
+                    generatedAt: generatedAt,
                     modelName: "UI Fixture"
                 )
             )
         }
+    }
+
+    private func demoFixtureFeaturedDate(calendar: Calendar) -> Date {
+        let today = calendar.startOfDay(for: Date())
+        return calendar.date(byAdding: .day, value: -2, to: today) ?? today
     }
 
     private func deleteDemoData(modelContext: ModelContext) throws {

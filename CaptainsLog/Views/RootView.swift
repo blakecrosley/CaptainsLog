@@ -741,13 +741,35 @@ struct RootView: View {
         do {
             try appModel.seedDemoData(includeFixtureDetails: true)
             reloadCommitSnapshot()
-            selectLatestCommitDateIfUseful(force: true)
+            selectDebugFixtureShowcaseDate()
             generationError = nil
         } catch {
             generationError = error.localizedDescription
             rootViewLogger.error("Failed to prepare UI fixture: \(error.localizedDescription, privacy: .public)")
         }
         return true
+    }
+
+    private func selectDebugFixtureShowcaseDate() {
+        let calendar = Calendar.current
+        for offset in [2, 3, 5, 6, 0] {
+            guard let candidate = calendar.date(byAdding: .day, value: -offset, to: Date()) else {
+                continue
+            }
+
+            guard workMetrics.commitCount(on: candidate) > 0 else {
+                continue
+            }
+
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                selectedDate = calendar.startOfDay(for: candidate)
+            }
+            return
+        }
+
+        selectLatestCommitDateIfUseful(force: true)
     }
     #endif
 
