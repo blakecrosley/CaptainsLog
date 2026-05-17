@@ -9,7 +9,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - GitHub Device Flow and API calls go directly to GitHub. OAuth/device URLs and API URLs are in `GitHubAPIClient`.
 - Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
 - Tokens and cloud AI keys are stored on-device in Keychain.
-- The repo does not currently contain an app icon asset catalog or screenshot assets.
+- The repo contains an app icon asset catalog. Final App Store screenshot exports still need to be captured.
 
 ## App Store Connect Checklist
 
@@ -23,10 +23,10 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 ### Product Page
 
 - Name: `Captain's Log`.
-- Subtitle: needs final copy under 30 characters.
+- Subtitle: candidate copy is in `Docs/AppStoreMetadata.md`; keep it under 30 characters.
 - Primary category recommendation: Developer Tools.
-- Description: explain the product as a private GitHub history journal, not a productivity scorekeeper.
-- Keywords: GitHub, git, commits, journal, developer, changelog, code history.
+- Description: candidate copy is in `Docs/AppStoreMetadata.md`; explain the product as a private GitHub history journal, not a productivity scorekeeper.
+- Keywords: candidate copy is in `Docs/AppStoreMetadata.md`; avoid company or app names in the keyword field.
 - Support URL: required before submission.
 - Privacy Policy URL: required for iOS and macOS apps.
 - Screenshots: Apple requires at least one and up to ten screenshots per device family. For this app, capture dashboard, work map detail, journal detail, repo selection, and AI key settings.

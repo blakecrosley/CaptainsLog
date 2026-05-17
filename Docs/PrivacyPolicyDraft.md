@@ -1,0 +1,80 @@
+# Captain's Log Privacy Policy Draft
+
+Draft status: needs a hosted URL, final contact information, and legal review before App Store submission.
+
+Effective date: [Month Day, 2026]
+
+Captain's Log helps developers understand their GitHub work history. This policy explains what data the app uses, where it is stored, and what leaves the device.
+
+## Data The App Uses
+
+When you connect GitHub, Captain's Log requests information needed to show your work history:
+
+- GitHub account identity, such as your login and avatar.
+- Repository metadata for repositories you choose to make available to the app.
+- Commit metadata, commit messages, authorship information, changed files, and diff statistics for selected repositories.
+- Generated journal summaries and work classifications created from that commit history.
+
+Captain's Log does not ask for Contacts, Photos, Location, Health, Fitness, microphone, camera, advertising identifier, or payment data.
+
+## Where Data Is Stored
+
+Captain's Log stores imported repository history, work metrics, generated journals, and app preferences on your device.
+
+GitHub sessions and optional AI provider keys are stored in the device Keychain. API keys are not stored in Captain's Log servers.
+
+## GitHub
+
+Captain's Log uses GitHub sign-in so you can access your own repository content. GitHub access is limited by the repositories you select through GitHub App installation settings.
+
+You can disconnect GitHub in the app. You can also revoke or change repository access from GitHub.
+
+## AI Summaries
+
+Captain's Log can generate journal summaries from selected commit evidence.
+
+When Apple Foundation Models are available, summaries can be generated on device.
+
+If you attach an OpenAI or Anthropic API key, Captain's Log sends selected commit evidence directly to the selected provider only when you generate a journal entry. This may include repository names, commit messages, changed file paths, and diff summaries needed to create the journal. Provider keys are stored in Keychain and can be deleted from AI settings.
+
+Do not attach a cloud AI key if you do not want selected commit evidence sent to that provider.
+
+## Analytics, Advertising, And Tracking
+
+The current app does not include advertising SDKs, tracking SDKs, or product analytics SDKs.
+
+Captain's Log does not use your data for third-party advertising or tracking.
+
+## Data Retention And Deletion
+
+Local app data remains on your device until you delete the app, clear local data through an in-app control if available, or remove data through system storage controls.
+
+GitHub access can be revoked from GitHub. AI provider keys can be removed from AI settings.
+
+Before App Store submission, Captain's Log should include or document a clear local-data deletion path for imported history and generated journals.
+
+## Third-Party Services
+
+Captain's Log can communicate with these services for app functionality:
+
+- GitHub, for sign-in, repository access, commit history, and diff stats.
+- OpenAI, only when you attach an OpenAI key and generate cloud AI output.
+- Anthropic, only when you attach an Anthropic key and generate cloud AI output.
+
+Each third-party service processes requests under its own terms and privacy practices.
+
+## Children's Privacy
+
+Captain's Log is a developer tool and is not directed to children.
+
+## Contact
+
+For privacy or support questions, contact:
+
+```text
+[support email or support URL]
+```
+
+## Changes
+
+This policy may be updated as Captain's Log changes. The effective date above will be updated when the policy changes.
