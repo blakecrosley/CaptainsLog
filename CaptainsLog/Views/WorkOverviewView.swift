@@ -43,7 +43,7 @@ struct GitRepositoryOverviewSnapshot {
             now: now,
             calendar: calendar
         ) == .unknown {
-            return "Today needs sync"
+            return "Today has not been refreshed"
         }
 
         if let activeRepository = selectedRepositories.first(where: { $0.historyBackfillMonthStart != nil }) {
@@ -411,6 +411,16 @@ private struct SyncStatusPopover: View {
                 }
             }
 
+            if let statusNote {
+                Text(statusNote)
+                    .kit941Font(.caption)
+                    .foregroundStyle(AppSurface.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(Kit941.Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppSurface.mutedFill(opacity: 1), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
+            }
+
             VStack(alignment: .leading, spacing: Kit941.Spacing.xs) {
                 detailRow("Repositories", value: repositoryDetail)
                 detailRow("Latest run", value: latestRunDetail)
@@ -468,6 +478,38 @@ private struct SyncStatusPopover: View {
         return "Ready to update latest work."
     }
 
+    private var statusNote: String? {
+        if isSyncing {
+            return "You can keep using the app while this runs. The dashboard updates after batches finish."
+        }
+
+        if selectedRepositoryCount == 0 {
+            return "Open sync settings to choose repositories, then update latest work."
+        }
+
+        guard let historyIndexDetail else {
+            if lastSyncedAt != nil {
+                return "Use Update now after committing new work; it checks recent commits before older history."
+            }
+            return "Update now checks recent commits first. Older history can continue in the background."
+        }
+
+        let lowered = historyIndexDetail.lowercased()
+        if lowered.contains("today") {
+            return "Update now checks today's commits first, then fills older history and missing line stats separately."
+        }
+        if lowered.contains("indexing") {
+            return "Older months are being backfilled in small batches so the main screen stays usable."
+        }
+        if lowered.contains("paused") {
+            return "Open sync settings to retry indexing or refresh GitHub repository access."
+        }
+        if lowered.contains("complete") {
+            return "Some selected repositories are fully indexed; the remaining repositories will continue in later batches."
+        }
+        return nil
+    }
+
     private var repositoryDetail: String {
         if repositoryCount == 0 {
             return "No repositories loaded"
@@ -486,7 +528,7 @@ private struct SyncStatusPopover: View {
     }
 
     private var historyDetail: String {
-        historyIndexDetail ?? "No background index running"
+        historyIndexDetail ?? "No older-history backfill running"
     }
 
     private var workScopeLabel: String {
