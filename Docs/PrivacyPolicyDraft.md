@@ -47,11 +47,9 @@ Captain's Log does not use your data for third-party advertising or tracking.
 
 ## Data Retention And Deletion
 
-Local app data remains on your device until you delete the app, clear local data through an in-app control if available, or remove data through system storage controls.
+Local app data remains on your device until you delete the app, remove data through system storage controls, or use Privacy & Data > Clear Imported History to remove imported commits, line stats, and generated journals from this device.
 
-GitHub access can be revoked from GitHub. AI provider keys can be removed from AI settings.
-
-Before App Store submission, Captain's Log should include or document a clear local-data deletion path for imported history and generated journals.
+GitHub access can be revoked from GitHub or disconnected in the app. AI provider keys can be removed from AI settings.
 
 ## Third-Party Services
 

@@ -27,6 +27,13 @@ final class CaptainsLogUITests: XCTestCase {
         XCTAssertTrue(actionRow("GitHub Access", in: app).waitForExistence(timeout: 3))
         XCTAssertTrue(actionRow("History Coverage", in: app).waitForExistence(timeout: 3))
         XCTAssertTrue(actionRow("Privacy & Data", in: app).waitForExistence(timeout: 3))
+        actionRow("Privacy & Data", in: app).tap()
+        XCTAssertTrue(app.navigationBars["Privacy & Data"].waitForExistence(timeout: 3))
+        XCTAssertTrue(actionRow("Clear Imported History", in: app).waitForExistence(timeout: 3))
+        let settingsBackButton = app.navigationBars["Privacy & Data"].buttons["Settings"]
+        XCTAssertTrue(settingsBackButton.waitForExistence(timeout: 3))
+        settingsBackButton.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3))
 
         let doneButton = app.buttons["Done"]
         XCTAssertTrue(doneButton.waitForExistence(timeout: 3))

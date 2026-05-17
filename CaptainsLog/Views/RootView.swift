@@ -470,8 +470,11 @@ struct RootView: View {
                                     isSignedIn: appModel.isSignedIn,
                                     activeLogin: activeLogin,
                                     selectedRepositoryCount: githubRepositories.filter(\.isSelected).count,
+                                    importedCommitCount: commits.count,
+                                    journalCount: summaries.count,
                                     hasCloudAIKey: hasCloudAIKey,
-                                    preferredProviderName: preferredAIProvider.displayName
+                                    preferredProviderName: preferredAIProvider.displayName,
+                                    onClearImportedHistory: clearImportedHistory
                                 )
                             } label: {
                                 SettingsDisclosureRow(
@@ -923,6 +926,15 @@ struct RootView: View {
         } catch {
             generationError = error.localizedDescription
         }
+    }
+
+    private func clearImportedHistory() throws -> LocalHistoryDeletionResult {
+        let result = try appModel.clearImportedHistory()
+        commits = []
+        rebuildWorkMetrics()
+        selectedDate = Date()
+        generationError = nil
+        return result
     }
 
     private func selectLatestCommitDateIfUseful(force: Bool = false) {

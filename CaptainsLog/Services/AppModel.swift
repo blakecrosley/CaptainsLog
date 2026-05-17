@@ -70,6 +70,18 @@ private struct MissingDiffStatsRepositoryPriority {
     let newestMissingAt: Date
 }
 
+struct LocalHistoryDeletionResult: Equatable {
+    let deletedCommitCount: Int
+    let deletedJournalCount: Int
+    let resetRepositoryCount: Int
+
+    var message: String {
+        let commitWord = deletedCommitCount == 1 ? "commit" : "commits"
+        let journalWord = deletedJournalCount == 1 ? "journal" : "journals"
+        return "Cleared \(deletedCommitCount.formatted()) \(commitWord) and \(deletedJournalCount.formatted()) \(journalWord)."
+    }
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     enum AuthState: Equatable {
@@ -365,6 +377,44 @@ final class AppModel: ObservableObject {
         authMessage = ""
         repositoryApprovalURL = githubAppInstallURL
         authState = .signedOut
+    }
+
+    @discardableResult
+    func clearImportedHistory() throws -> LocalHistoryDeletionResult {
+        guard let modelContext else {
+            throw StorageError.missingModelContext
+        }
+        guard !isSyncing else {
+            throw StorageError.syncInProgress
+        }
+
+        BackgroundHistoryIndexer.cancelPending()
+
+        let commits = try modelContext.fetch(FetchDescriptor<GitCommitRecord>())
+        let summaries = try modelContext.fetch(FetchDescriptor<DailyJournalSummaryRecord>())
+        let repositories = try modelContext.fetch(FetchDescriptor<GitRepositoryRecord>())
+
+        for commit in commits {
+            modelContext.delete(commit)
+        }
+        for summary in summaries {
+            modelContext.delete(summary)
+        }
+        for repository in repositories {
+            repository.resetImportedHistoryState()
+        }
+
+        try modelContext.save()
+        resetSyncProgress()
+
+        let result = LocalHistoryDeletionResult(
+            deletedCommitCount: commits.count,
+            deletedJournalCount: summaries.count,
+            resetRepositoryCount: repositories.count
+        )
+        syncMessage = result.message
+        syncLogger.info("Cleared imported history: \(commits.count, privacy: .public) commits, \(summaries.count, privacy: .public) journals, \(repositories.count, privacy: .public) repositories reset")
+        return result
     }
 
     func switchAccount(_ account: GitHubAccountRecord) async {
@@ -2460,6 +2510,7 @@ final class AppModel: ObservableObject {
     private enum StorageError: LocalizedError {
         case missingModelContext
         case lockedSummary
+        case syncInProgress
 
         var errorDescription: String? {
             switch self {
@@ -2467,6 +2518,8 @@ final class AppModel: ObservableObject {
                 "Local storage is not ready yet."
             case .lockedSummary:
                 "Unlock this Captain's Log before regenerating it."
+            case .syncInProgress:
+                "Wait for the current sync to finish before clearing imported history."
             }
         }
     }

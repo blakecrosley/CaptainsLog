@@ -41,7 +41,7 @@ App Store Connect privacy answers should disclose the actual user data flow:
 - If the user attaches OpenAI or Anthropic keys, selected commit/work context is sent directly to that provider for app functionality.
 - No advertising, third-party tracking, or analytics SDK is present in the repo today.
 
-The in-app privacy policy needs to say how users revoke GitHub access, delete local data, and remove AI provider keys.
+The in-app Privacy & Data screen now explains GitHub revocation, AI key removal, and the Clear Imported History action for local commits, line stats, and journals.
 
 ### Review Notes
 

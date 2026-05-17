@@ -5,8 +5,15 @@ struct PrivacyDataView: View {
     let isSignedIn: Bool
     let activeLogin: String?
     let selectedRepositoryCount: Int
+    let importedCommitCount: Int
+    let journalCount: Int
     let hasCloudAIKey: Bool
     let preferredProviderName: String
+    let onClearImportedHistory: () throws -> LocalHistoryDeletionResult
+
+    @State private var isConfirmingClearHistory = false
+    @State private var clearHistoryMessage: String?
+    @State private var clearHistoryIsError = false
 
     var body: some View {
         ScrollView {
@@ -23,6 +30,14 @@ struct PrivacyDataView: View {
         }
         .background(AppSurface.backgroundGradient.ignoresSafeArea())
         .navigationTitle("Privacy & Data")
+        .confirmationDialog("Clear imported history?", isPresented: $isConfirmingClearHistory, titleVisibility: .visible) {
+            Button("Clear Imported History", role: .destructive) {
+                clearImportedHistory()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes imported commits, line stats, and generated journals from this device. GitHub access, selected repositories, and AI keys stay attached.")
+        }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -102,8 +117,30 @@ struct PrivacyDataView: View {
                 PrivacyDataRow(
                     icon: "externaldrive",
                     title: "Local history",
-                    description: "Imported commits, line stats, and generated journals are stored locally for the app experience."
+                    description: localHistoryDescription
                 )
+
+                Divider()
+                    .overlay(AppSurface.divider.opacity(0.6))
+
+                AppActionRow(
+                    title: "Clear Imported History",
+                    description: "Remove commits, line stats, and journals from this device while keeping account setup.",
+                    systemImage: "trash",
+                    isDestructive: true,
+                    isDisabled: importedCommitCount == 0 && journalCount == 0,
+                    showsChevron: false,
+                    action: {
+                        isConfirmingClearHistory = true
+                    }
+                )
+
+                if let clearHistoryMessage {
+                    Label(clearHistoryMessage, systemImage: clearHistoryIsError ? "exclamationmark.triangle" : "checkmark.circle")
+                        .kit941Font(.caption)
+                        .foregroundStyle(clearHistoryIsError ? AppSurface.warning : AppSurface.accent)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }
@@ -120,6 +157,12 @@ struct PrivacyDataView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    private var localHistoryDescription: String {
+        let commitWord = importedCommitCount == 1 ? "commit" : "commits"
+        let journalWord = journalCount == 1 ? "journal" : "journals"
+        return "\(importedCommitCount.formatted()) imported \(commitWord) and \(journalCount.formatted()) generated \(journalWord) are stored on this device."
     }
 
     private var summaryText: String {
@@ -140,6 +183,17 @@ struct PrivacyDataView: View {
             return "When you generate a journal, selected commit evidence is sent directly to \(preferredProviderName) using your saved key."
         }
         return "Journal generation uses the on-device Apple model when available."
+    }
+
+    private func clearImportedHistory() {
+        do {
+            let result = try onClearImportedHistory()
+            clearHistoryMessage = result.message
+            clearHistoryIsError = false
+        } catch {
+            clearHistoryMessage = error.localizedDescription
+            clearHistoryIsError = true
+        }
     }
 }
 

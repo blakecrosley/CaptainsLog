@@ -146,6 +146,20 @@ final class GitRepositoryRecord {
         historyBackfillProcessedCommitCount = (historyBackfillProcessedCommitCount ?? 0) + processedCommits
         historyBackfillUpdatedStatCount = (historyBackfillUpdatedStatCount ?? 0) + updatedStats
     }
+
+    func resetImportedHistoryState() {
+        lastSyncedAt = nil
+        historyBackfillLowerBound = nil
+        historyBackfillCursorDate = nil
+        historyBackfillMonthStart = nil
+        historyBackfillMonthEnd = nil
+        historyBackfillPageCursor = nil
+        historyBackfillCompletedAt = nil
+        historyBackfillLastAttemptAt = nil
+        historyBackfillLastError = nil
+        historyBackfillProcessedCommitCount = nil
+        historyBackfillUpdatedStatCount = nil
+    }
 }
 
 @Model

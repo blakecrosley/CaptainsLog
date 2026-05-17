@@ -1,3 +1,4 @@
+import SwiftData
 import XCTest
 @testable import Captain_s_Log
 
@@ -130,6 +131,85 @@ final class GitHubDTOsTests: XCTestCase {
 
         XCTAssertFalse(demo.isGitHubBacked)
         XCTAssertTrue(remote.isGitHubBacked)
+    }
+
+    @MainActor
+    func testClearImportedHistoryDeletesLocalHistoryAndPreservesRepositorySetup() throws {
+        let schema = Schema([
+            GitHubAccountRecord.self,
+            GitRepositoryRecord.self,
+            GitCommitRecord.self,
+            DailyJournalSummaryRecord.self
+        ])
+        let container = try ModelContainer(
+            for: schema,
+            configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]
+        )
+        let context = ModelContext(container)
+        let appModel = AppModel()
+        appModel.configure(modelContext: context)
+
+        let syncDate = Date(timeIntervalSince1970: 1_000)
+        let repo = GitRepositoryRecord(
+            id: 941,
+            ownerLogin: "blakecrosley",
+            name: "captains-log",
+            fullName: "blakecrosley/captains-log",
+            accountLogin: "blakecrosley",
+            isPrivate: true,
+            isSelected: true,
+            lastSyncedAt: syncDate
+        )
+        repo.historyBackfillLowerBound = Date(timeIntervalSince1970: 500)
+        repo.historyBackfillCursorDate = Date(timeIntervalSince1970: 600)
+        repo.historyBackfillCompletedAt = syncDate
+        repo.historyBackfillProcessedCommitCount = 12
+        repo.historyBackfillUpdatedStatCount = 8
+
+        let commit = GitCommitRecord(
+            sha: "abcdef1234567890",
+            repositoryFullName: repo.fullName,
+            authorLogin: "blakecrosley",
+            message: "Add privacy controls",
+            authoredAt: syncDate,
+            htmlURL: nil
+        )
+        commit.applyDiffStats(additions: 20, deletions: 4, changedFileCount: 2)
+        commit.repository = repo
+
+        let summary = DailyJournalSummaryRecord(
+            date: syncDate,
+            title: "Privacy controls",
+            narrative: "Added a local data control.",
+            bullets: ["Cleared imported history"],
+            tags: ["Privacy"],
+            sourceCommitIDs: [commit.id]
+        )
+
+        context.insert(repo)
+        context.insert(commit)
+        context.insert(summary)
+        try context.save()
+
+        let result = try appModel.clearImportedHistory()
+
+        XCTAssertEqual(result.deletedCommitCount, 1)
+        XCTAssertEqual(result.deletedJournalCount, 1)
+        XCTAssertEqual(result.resetRepositoryCount, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<GitCommitRecord>()).count, 0)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<DailyJournalSummaryRecord>()).count, 0)
+
+        let repositories = try context.fetch(FetchDescriptor<GitRepositoryRecord>())
+        let preservedRepo = try XCTUnwrap(repositories.first)
+        XCTAssertEqual(repositories.count, 1)
+        XCTAssertEqual(preservedRepo.fullName, "blakecrosley/captains-log")
+        XCTAssertTrue(preservedRepo.isSelected)
+        XCTAssertNil(preservedRepo.lastSyncedAt)
+        XCTAssertNil(preservedRepo.historyBackfillLowerBound)
+        XCTAssertNil(preservedRepo.historyBackfillCursorDate)
+        XCTAssertNil(preservedRepo.historyBackfillCompletedAt)
+        XCTAssertNil(preservedRepo.historyBackfillProcessedCommitCount)
+        XCTAssertNil(preservedRepo.historyBackfillUpdatedStatCount)
     }
 
     func testDecodesGitHubAppInstallationsResponse() throws {
