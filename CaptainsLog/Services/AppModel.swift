@@ -41,6 +41,16 @@ enum RepositoryHotSyncPolicy {
     static let minimumForegroundInterval: TimeInterval = 120
 }
 
+private enum DemoFixtureIdentity {
+    static let login = "captains-log-demo"
+    static let nodeID = "fixture-captains-log-demo"
+    static let name = "Demo Developer"
+    static let repositoryOwner = "captains-log-demo"
+    static let repositoryName = "work-journal"
+    static let repositoryFullName = "captains-log-demo/work-journal"
+    static let url = URL(string: "https://github.com")!
+}
+
 private enum DiffStatsBackfillOrder {
     case newestFirst
     case oldestFirst
@@ -1095,11 +1105,11 @@ final class AppModel: ObservableObject {
         let repo = try demoRepository(modelContext: modelContext, includeFixtureDetails: includeFixtureDetails)
         if includeFixtureDetails {
             let demoViewer = GitHubViewer(
-                login: "blakecrosley",
-                nodeID: "fixture-blakecrosley",
-                name: "Blake Crosley",
+                login: DemoFixtureIdentity.login,
+                nodeID: DemoFixtureIdentity.nodeID,
+                name: DemoFixtureIdentity.name,
                 avatarURL: nil,
-                htmlURL: URL(string: "https://github.com/blakecrosley")!
+                htmlURL: DemoFixtureIdentity.url
             )
             try upsertAccount(demoViewer, isActive: true, modelContext: modelContext)
             let session = GitHubOAuthSession(accessToken: "captains-log-fixture-token")
@@ -1142,7 +1152,7 @@ final class AppModel: ObservableObject {
                     record = GitCommitRecord(
                         sha: sha,
                         repositoryFullName: repo.fullName,
-                        authorLogin: includeFixtureDetails ? "blakecrosley" : "demo",
+                        authorLogin: includeFixtureDetails ? DemoFixtureIdentity.login : "demo",
                         message: subjects[(offset + index) % subjects.count],
                         authoredAt: calendar.date(byAdding: .hour, value: index + 9, to: calendar.startOfDay(for: date)) ?? date,
                         htmlURL: URL(string: "https://github.com/captains-log/demo/commit/\(sha)")
@@ -2425,13 +2435,13 @@ final class AppModel: ObservableObject {
 
         let repo = GitRepositoryRecord(
             id: demoID,
-            ownerLogin: includeFixtureDetails ? "blakecrosley" : "captains-log",
-            name: includeFixtureDetails ? "CaptainsLog" : "demo",
-            fullName: includeFixtureDetails ? "blakecrosley/CaptainsLog" : "captains-log/demo",
-            accountLogin: includeFixtureDetails ? "blakecrosley" : nil,
-            isPrivate: includeFixtureDetails,
+            ownerLogin: includeFixtureDetails ? DemoFixtureIdentity.repositoryOwner : "captains-log",
+            name: includeFixtureDetails ? DemoFixtureIdentity.repositoryName : "demo",
+            fullName: includeFixtureDetails ? DemoFixtureIdentity.repositoryFullName : "captains-log/demo",
+            accountLogin: includeFixtureDetails ? DemoFixtureIdentity.login : nil,
+            isPrivate: false,
             isSelected: true,
-            htmlURL: URL(string: includeFixtureDetails ? "https://github.com/blakecrosley/CaptainsLog" : "https://github.com")
+            htmlURL: DemoFixtureIdentity.url
         )
         modelContext.insert(repo)
         return repo
