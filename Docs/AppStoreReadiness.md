@@ -10,7 +10,8 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
 - Tokens and cloud AI keys are stored on-device in Keychain.
 - The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data.
-- A local generic iOS archive succeeds and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`. The latest archive was signed with an Apple Development profile, so App Store distribution export/upload is still unverified.
+- A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`. The latest archive was signed with an Apple Development profile, so App Store distribution export/upload is still unverified.
+- The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes.
 
 ## App Store Connect Checklist
 
@@ -31,7 +32,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Keywords: candidate copy is in `Docs/AppStoreMetadata.md`; avoid company or app names in the keyword field.
 - Support URL: `https://blakecrosley.com/captains-log/support` is live and includes the support contact path `blake@941apps.com`.
 - Privacy Policy URL: `https://blakecrosley.com/captains-log/privacy` is live and includes the privacy contact path `blake@941apps.com`. Legal review is still recommended before App Review submission.
-- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload.
+- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload. The May 17, 2026 audit output in `/tmp/captainslog-appstore-audit-screens` passed a visual breadcrumb/clipping check, but the final marketing order still needs human selection.
 
 ### Privacy
 
@@ -65,11 +66,13 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Empty and partial-data states explain "today has not been refreshed", history indexing, and line-stat coverage from the dashboard sync popover.
 - Journal detail now reads like a daily note first, with numbered memorable points, tags, model/source metadata, and commits/diffs available as supporting evidence.
 - Screenshot mode has stable fixture routes for dashboard, Work Map, journal detail, repository access, AI provider settings, and Privacy & Data.
+- Repository management has fixture-reviewed search, bulk selection, selected/hidden filtering, and GitHub access CTAs.
+- The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs.
 
 ### Next
 
-- Repository management now has fixture-reviewed search, bulk selection, selected/hidden filtering, and GitHub access CTAs. A final pass on a real large GitHub account is still recommended before submission.
-- Final App Store screenshot selection still needs human review on iPhone and iPad exports.
+- A final pass on a real large GitHub account is still recommended before submission.
+- Final App Store screenshot ordering and marketing selection still need human review on iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
 
 ## Official References

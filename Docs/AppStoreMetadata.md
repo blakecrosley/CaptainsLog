@@ -163,6 +163,8 @@ Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad ca
 5. AI provider settings with optional key state.
 6. Privacy & Data screen.
 
+Latest audit: on May 17, 2026, the script generated 12 PNGs in `/tmp/captainslog-appstore-audit-screens`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb and the repository access screen did not clip toggles.
+
 Avoid screenshots that show real private repository names unless the repository is intentionally public and safe to market.
 
 ## Privacy Questionnaire Draft
