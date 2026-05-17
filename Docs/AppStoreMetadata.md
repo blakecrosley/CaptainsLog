@@ -160,7 +160,12 @@ Background processing indexes older Git history in batches. The app remains usab
 
 ## Screenshot Set
 
-Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state:
+Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state, then verify and package them with:
+
+```sh
+Scripts/app_store_preflight.sh <screenshot-dir>
+Scripts/package_app_store_screenshots.sh <screenshot-dir>
+```
 
 1. Dashboard with account header, week strip, primary metric, and work map.
 2. Work map detail showing a selected month or year.
@@ -169,7 +174,12 @@ Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad ca
 5. AI provider settings with optional key state.
 6. Privacy & Data screen.
 
-Latest audit: on May 17, 2026, the script generated 12 PNGs in `/tmp/captainslog-appstore-audit-screens`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb and the repository access screen did not clip toggles.
+Latest audit: on May 17, 2026, the script generated 12 PNGs in `/tmp/captainslog-repo-search-audit`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb, the repository access screen did not clip toggles, and `Scripts/app_store_preflight.sh /tmp/captainslog-repo-search-audit` passed.
+
+Packaged upload folders should contain six ordered images for each family:
+
+- `iphone-6.9/01-dashboard.png` through `06-privacy-data.png`.
+- `ipad-13/01-dashboard.png` through `06-privacy-data.png`.
 
 Avoid screenshots that show real private repository names unless the repository is intentionally public and safe to market.
 
@@ -189,5 +199,7 @@ Likely properties:
 - Used for third-party advertising: no.
 - Used for analytics: no in the app code today.
 - Shared with third-party AI: only when the user attaches a cloud AI key and generates a journal entry.
+
+Clipboard note: the GitHub sign-in screen copies the short-lived device code to the system pasteboard only when the user taps "Copy & Open GitHub". The app does not read from the pasteboard.
 
 Before submission, confirm whether GitHub API traffic should be represented as App Store "collection" or as user-initiated service traffic under Apple's collection definition. If uncertain, use the conservative disclosure above.

@@ -34,6 +34,8 @@ Captain's Log sends requests to GitHub when you sign in, choose repositories, sy
 
 Journal summaries use Apple Foundation Models on device when available. If you attach an OpenAI or Anthropic key and generate a journal entry, selected commit evidence is sent directly to the provider you selected for that request.
 
+During GitHub sign-in, tapping "Copy & Open GitHub" copies the short-lived device code to the system pasteboard. Captain's Log does not read from the pasteboard.
+
 ### How do I disconnect GitHub?
 
 Open Settings in Captain's Log and sign out of GitHub. You can also revoke or change repository access from your GitHub App installation settings.

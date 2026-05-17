@@ -23,6 +23,8 @@ Captain's Log stores imported repository history, work metrics, generated journa
 
 GitHub sessions and optional AI provider keys are stored in the device Keychain. API keys are not stored in Captain's Log servers.
 
+When you tap "Copy & Open GitHub" during sign-in, Captain's Log copies the short-lived GitHub device code to the system pasteboard so you can paste it into GitHub. The app does not read from the pasteboard.
+
 ## GitHub
 
 Captain's Log uses GitHub sign-in so you can access your own repository content. GitHub access is limited by the repositories you select through GitHub App installation settings.
