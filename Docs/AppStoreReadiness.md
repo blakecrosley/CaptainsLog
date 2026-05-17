@@ -27,7 +27,7 @@ For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`. For App
 - Confirm automatic signing uses team `M4WTLM6RAQ`.
 - Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
 - Confirm export compliance in App Store Connect matches the binary: this build declares no non-exempt encryption in Info.plist and only uses Apple system networking/TLS. The May 17, 2026 archive at `/tmp/CaptainsLog-ExportCompliance.xcarchive` confirmed `ITSAppUsesNonExemptEncryption=false` in the archived app bundle.
-- Run `Scripts/app_store_preflight.sh <screenshot-dir>` to check metadata limits, published policy/support URLs, source privacy/export flags, build settings, app icon size, and iPhone/iPad screenshot dimensions before uploading.
+- Run `Scripts/app_store_preflight.sh <screenshot-dir>` to check metadata limits, published policy/support URL reachability and expected page content, source privacy/export flags, build settings, app icon size, and iPhone/iPad screenshot dimensions before uploading.
 - `Scripts/app_store_preflight.sh` also runs `Scripts/privacy_required_reason_audit.sh`, which scans the app target and local `Kit941` package source for Apple's required reason API categories and fails if source usage is not represented in `PrivacyInfo.xcprivacy`.
 - Run `Scripts/export_app_store_ipa.sh` to archive the iOS target, export an App Store Connect IPA, and confirm bundle ID, version/build, privacy manifest presence, and `ITSAppUsesNonExemptEncryption=false`.
 - The export manifest records both the CaptainsLog git commit and the local `../941Kit` package git commit/dirty state because Kit941 is compiled directly into the app.
@@ -91,6 +91,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - A final pass on a real large GitHub account is still recommended before submission.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
+- The published Privacy Policy and Support pages include a website-level self-hosted analytics script in the page HTML. This is separate from the app binary, but legal/privacy review should decide whether that script belongs on the App Store policy/support pages.
 - The local Kit941 package was clean at export but ahead of its remote by one commit; push or tag that package commit before final release if source reproducibility needs to be remote-verifiable.
 
 ## Official References

@@ -21,6 +21,10 @@ fail() {
     failures=$((failures + 1))
 }
 
+warn() {
+    printf '[warn] %s\n' "$1"
+}
+
 metadata_field() {
     local label="$1"
     awk -v label="$label" '
@@ -107,6 +111,40 @@ check_url() {
     fi
 }
 
+check_url_contains() {
+    local label="$1"
+    local value="$2"
+    shift 2
+
+    if [[ -z "$value" || "$value" != https://* ]]; then
+        return
+    fi
+
+    if [[ "${SKIP_NETWORK_CHECKS:-0}" == "1" ]]; then
+        pass "$label content check skipped"
+        return
+    fi
+
+    local page
+    if ! page="$(curl --fail --silent --show-error --location --max-time 15 "$value")"; then
+        fail "$label content not reachable: $value"
+        return
+    fi
+
+    local pattern
+    for pattern in "$@"; do
+        if printf '%s' "$page" | grep -Eiq "$pattern"; then
+            pass "$label contains: $pattern"
+        else
+            fail "$label missing required content: $pattern"
+        fi
+    done
+
+    if printf '%s' "$page" | grep -Eiq 'analytics|track\.js|collect'; then
+        warn "$label page references analytics/tracking text or scripts; confirm this is acceptable for the published policy/support page"
+    fi
+}
+
 check_image_size() {
     local path="$1"
     local expected_width="$2"
@@ -184,6 +222,21 @@ else
     check_max_bytes "App Review notes" "$review_notes" 4000
     check_url "Privacy Policy URL" "$privacy_url"
     check_url "Support URL" "$support_url"
+    check_url_contains "Privacy Policy URL" "$privacy_url" \
+        "Captain.?s Log" \
+        "GitHub" \
+        "Keychain" \
+        "OpenAI" \
+        "Anthropic" \
+        "advertising SDKs|tracking SDKs|product analytics SDKs" \
+        "blake@941apps\\.com"
+    check_url_contains "Support URL" "$support_url" \
+        "Captain.?s Log" \
+        "GitHub" \
+        "Keychain" \
+        "OpenAI" \
+        "Anthropic" \
+        "blake@941apps\\.com"
 fi
 
 if [[ ! -f "$INFO_PLIST" ]]; then
