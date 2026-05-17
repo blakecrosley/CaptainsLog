@@ -57,13 +57,20 @@ Also include:
 
 ## UI / Product Readiness
 
-The product direction should stay quiet, precise, and journal-like. The current highest-value cleanup before screenshots:
+The product direction should stay quiet, precise, and journal-like. Current status before final screenshot selection:
 
-1. First-run path: make the GitHub connect and demo-data choice feel like a clean setup screen, not a settings panel.
-2. Empty and partial-data states: make "today needs sync", "history still indexing", and "line stats coverage" understandable from the dashboard popover and detail sheets.
-3. Journal detail: make the summary read like a polished daily note, with commits and diffs as supporting evidence.
-4. Repository management: keep it as a full push view with search, select all, and clear GitHub access CTA.
-5. Screenshot mode: add a stable fixture state for App Store screenshots that hides debug-only progress noise and uses realistic but non-sensitive repository names.
+### Done
+
+- First-run path now presents GitHub connect and demo-data choices as a clean setup screen.
+- Empty and partial-data states explain "today has not been refreshed", history indexing, and line-stat coverage from the dashboard sync popover.
+- Journal detail now reads like a daily note first, with numbered memorable points, tags, model/source metadata, and commits/diffs available as supporting evidence.
+- Screenshot mode has stable fixture routes for dashboard, Work Map, journal detail, repository access, AI provider settings, and Privacy & Data.
+
+### Next
+
+- Repository management still needs final on-device review for long real account lists, search, select all, and the GitHub access CTA.
+- Final App Store screenshot selection still needs human review on iPhone and iPad exports.
+- Support and privacy URLs must be live and verified before App Store Connect submission.
 
 ## Official References
 

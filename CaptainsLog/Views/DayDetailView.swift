@@ -103,71 +103,105 @@ private struct SummaryView: View {
     let summary: DailyJournalSummaryRecord
 
     var body: some View {
-        Kit941.Card {
-            VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-                VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+                HStack(alignment: .firstTextBaseline, spacing: Kit941.Spacing.sm) {
                     Text(summary.title)
-                        .kit941Font(.display, weight: .bold)
+                        .kit941Font(.title, weight: .semibold)
                         .foregroundStyle(AppSurface.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
-                }
 
-                VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-                    Text("What mattered")
-                        .kit941Font(.label, weight: .semibold)
-                        .foregroundStyle(AppSurface.secondaryText)
-                    Text(summary.narrative)
-                        .kit941Font(.body)
-                        .foregroundStyle(AppSurface.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if !summary.bullets.isEmpty {
-                    VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-                        Text("Highlights")
-                            .kit941Font(.label, weight: .semibold)
+                    if summary.isLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(AppSurface.secondaryText)
-
-                        ForEach(summary.bullets, id: \.self) { bullet in
-                            HStack(alignment: .top, spacing: Kit941.Spacing.sm) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(AppSurface.accent)
-                                    .padding(.top, 2)
-                                Text(bullet)
-                                    .kit941Font(.body)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
+                            .accessibilityLabel("Locked")
                     }
                 }
 
-                if !summary.tags.isEmpty {
-                    FlowLayout(spacing: 8) {
-                        ForEach(summary.tags, id: \.self) { tag in
-                            Text(tag)
-                                .kit941Font(.caption)
-                                .foregroundStyle(AppSurface.secondaryText)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(AppSurface.mutedFill(opacity: 0.92), in: Capsule())
-                        }
-                    }
-                }
-
-                HStack {
-                    Text("\(summary.sourceCommitIDs.count) source commits")
-                    Spacer(minLength: Kit941.Spacing.sm)
-                    Text(summary.modelName)
-                }
-                .kit941Font(.caption)
-                .foregroundStyle(AppSurface.secondaryText)
-
-                Text("Generated \(summary.generatedAt.formatted(date: .abbreviated, time: .shortened))")
+                Text(summary.generatedAt.formatted(date: .abbreviated, time: .shortened))
                     .kit941Font(.caption)
                     .foregroundStyle(AppSurface.secondaryText)
             }
+
+            Text(summary.narrative)
+                .kit941Font(.body)
+                .foregroundStyle(AppSurface.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, Kit941.Spacing.xs)
+
+            if !summary.bullets.isEmpty {
+                VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                    ForEach(Array(summary.bullets.enumerated()), id: \.offset) { index, bullet in
+                        JournalBulletRow(index: index + 1, text: bullet)
+                    }
+                }
+            }
+
+            if !summary.tags.isEmpty {
+                FlowLayout(spacing: 8) {
+                    ForEach(summary.tags, id: \.self) { tag in
+                        Text(tag)
+                            .kit941Font(.caption)
+                            .foregroundStyle(AppSurface.secondaryText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(AppSurface.mutedFill(opacity: 0.92), in: Capsule())
+                    }
+                }
+            }
+
+            HStack(spacing: Kit941.Spacing.sm) {
+                SummarySourcePill(
+                    symbol: "number",
+                    text: "\(summary.sourceCommitIDs.count.formatted()) source commits"
+                )
+                SummarySourcePill(
+                    symbol: "sparkles",
+                    text: summary.modelName
+                )
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(Kit941.Spacing.lg)
+        .appPanel(highlighted: true)
+    }
+}
+
+private struct JournalBulletRow: View {
+    let index: Int
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Kit941.Spacing.sm) {
+            Text(index.formatted())
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppSurface.accent)
+                .frame(width: 24, height: 24)
+                .background(AppSurface.accent.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+
+            Text(text)
+                .kit941Font(.body)
+                .foregroundStyle(AppSurface.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct SummarySourcePill: View {
+    let symbol: String
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: symbol)
+            .kit941Font(.caption)
+            .foregroundStyle(AppSurface.secondaryText)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(AppSurface.mutedFill(opacity: 0.84), in: Capsule())
     }
 }
 
