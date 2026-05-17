@@ -15,9 +15,9 @@ For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`. For App
 - `CaptainsLog/App/CaptainsLog-iOS-Info.plist` sets `ITSAppUsesNonExemptEncryption` to `false` for App Store Connect export-compliance prompts. Revisit this if custom encryption, VPN, secure messaging, file encryption, or other cryptographic functionality is added.
 - The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data. The screenshot fixture seeds a fake debug-only OpenAI key so the AI settings and privacy screens show the intended attached-key state without exposing a real secret.
 - A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, `AppIcon76x76@2x~ipad.png`, and `ITSAppUsesNonExemptEncryption=false`.
-- A local App Store Connect export succeeds with automatic signing. The current May 17, 2026 export produced `/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa`, writes `/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt` with the exported CaptainsLog git commit, local Kit941 git commit, and dirty-tree state for both source inputs, uses `get-task-allow=false`, includes bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, `PrivacyInfo.xcprivacy`, and `ITSAppUsesNonExemptEncryption=false`. Upload to App Store Connect/TestFlight is still unverified.
+- A local App Store Connect export succeeds with automatic signing. The current May 17, 2026 export produced `/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa` from CaptainsLog commit `f2a4a166052b5cc1f676bfb1098dd8c5072180a7` and Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2`, writes `/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt` with dirty-tree state for both source inputs, uses `get-task-allow=false`, includes bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, `PrivacyInfo.xcprivacy`, and `ITSAppUsesNonExemptEncryption=false`. Upload to App Store Connect/TestFlight is still unverified.
 - A current Debug build succeeds for the connected iPhone 17 Pro Max, installs through `xcrun devicectl`, and launches with bundle ID `com.blakecrosley.captainslog`.
-- The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes. The May 17, 2026 output in `/tmp/captainslog-key-state-audit` shows the AI settings attached-key state with a fake demo key and packages into `/tmp/captainslog-key-state-packaged`.
+- The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes. The May 17, 2026 output in `/tmp/captainslog-key-state-audit` opens the dashboard on a fuller fixture week, shows the AI settings attached-key state with a fake demo key, and packages into `/tmp/captainslog-key-state-packaged`.
 
 ## App Store Connect Checklist
 
@@ -84,7 +84,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Screenshot mode has stable fixture routes for dashboard, Work Map, journal detail, repository access, AI provider settings, and Privacy & Data.
 - Repository management has fixture-reviewed search, bulk selection, selected/hidden filtering, and GitHub access CTAs.
 - Privacy & Data includes direct published Privacy Policy and Support links.
-- The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs, and the AI provider screenshot now shows the attached-key UI instead of an empty disabled form.
+- The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs, the dashboard now opens on a fuller fixture week, and the AI provider screenshot shows the attached-key UI instead of an empty disabled form.
 
 ### Next
 
@@ -92,7 +92,6 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
 - The published Privacy Policy and Support pages include a website-level self-hosted analytics script in the page HTML. This is separate from the app binary, but legal/privacy review should decide whether that script belongs on the App Store policy/support pages.
-- The local Kit941 package was clean at export but ahead of its remote by one commit; push or tag that package commit before final release if source reproducibility needs to be remote-verifiable.
 
 ## Official References
 
