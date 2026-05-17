@@ -6,7 +6,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Current commit: `3b8f6bb`
+- Exported app commit: `3b8f6bb`
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
 - Team ID used by export scripts: `M4WTLM6RAQ`
