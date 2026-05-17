@@ -2,7 +2,7 @@
 
 This note tracks the current iOS App Store Connect blockers and the decisions still needed before the first TestFlight or App Review upload.
 
-For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`.
+For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`. For App Store Connect privacy answers, use `Docs/AppStorePrivacyAnswers.md`.
 
 ## Current Code Evidence
 
@@ -49,11 +49,13 @@ For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`.
 
 App Store Connect privacy answers should disclose the actual user data flow:
 
-- GitHub account identity and repository/commit metadata are accessed from GitHub for app functionality.
+- GitHub account identity, profile name when returned, and repository/commit metadata are accessed from GitHub for app functionality.
 - OAuth tokens and provider API keys are stored locally in Keychain.
 - Journal generation uses Apple Foundation Models on-device when available.
 - If the user attaches OpenAI or Anthropic keys, selected commit/work context is sent directly to that provider for app functionality.
 - No advertising, third-party tracking, or analytics SDK is present in the repo today.
+
+The paste-ready privacy questionnaire draft is in `Docs/AppStorePrivacyAnswers.md`.
 
 The in-app Privacy & Data screen now explains GitHub revocation, AI key removal, and the Clear Imported History action for local commits, line stats, and journals.
 

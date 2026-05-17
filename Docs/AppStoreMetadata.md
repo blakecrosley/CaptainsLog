@@ -1,6 +1,6 @@
 # Captain's Log App Store Metadata
 
-Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision.
+Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision. For the detailed privacy questionnaire entry, use `Docs/AppStorePrivacyAnswers.md`.
 
 ## Source Constraints
 
@@ -187,21 +187,12 @@ Avoid screenshots that show real private repository names unless the repository 
 
 ## Privacy Questionnaire Draft
 
-This is a conservative working draft, not a final legal answer.
+Use the paste-ready working draft in `Docs/AppStorePrivacyAnswers.md`.
 
-Rationale: Apple's App Privacy Details guidance (`https://developer.apple.com/app-store/app-privacy-details/`) says data collected solely for app functionality still needs to be declared, while data processed only on device is not "collected" for App Store privacy answers. Captain's Log stores imported GitHub history locally, but it also authenticates with GitHub and can send selected commit evidence to OpenAI or Anthropic when the user attaches a cloud key. Use the conservative disclosure below unless legal review provides a narrower final answer.
+Conservative summary:
 
-Data types likely involved for App Functionality:
-
-- User ID: GitHub login/account identifier when signed in.
-- Other User Content: repository names, commit messages, commit metadata, changed files, diff stats, and generated journal text.
-
-Likely properties:
-
-- Linked to the user: yes, when tied to the GitHub account or selected repositories.
-- Used for tracking: no.
-- Used for third-party advertising: no.
-- Used for analytics: no in the app code today.
-- Shared with third-party AI: only when the user attaches a cloud AI key and generates a journal entry.
-
-Clipboard note: the GitHub sign-in screen copies the short-lived device code to the system pasteboard only when the user taps "Copy & Open GitHub". The app does not read from the pasteboard.
+- Data Used to Track You: no.
+- Data Linked to You for App Functionality: GitHub profile name when returned, GitHub login/account identifier, repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, and work classifications.
+- Data Not Linked to You: none in this build unless App Store Connect requires Apple-provided diagnostics to be handled separately.
+- Optional cloud AI: OpenAI and Anthropic receive selected commit evidence only when the user attaches that provider key and generates AI output.
+- Pasteboard: the app writes the short-lived GitHub device code only when the user taps "Copy & Open GitHub"; it does not read the pasteboard.

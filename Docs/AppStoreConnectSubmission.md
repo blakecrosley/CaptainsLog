@@ -22,7 +22,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 | Clean up UI | Fixture screenshot routes and latest PNG audit | Dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data screenshots generated for iPhone and iPad; iPad dashboard uses the adaptive tablet layout | Locally reviewed |
 | Make design feel coherent | `.impeccable.md`, fixture screenshots | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity | Locally reviewed |
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft | Locally ready, legal review open |
-| Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md` | URLs passed preflight reachability checks | Locally ready, legal review open |
+| Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md`, `Docs/AppStorePrivacyAnswers.md` | URLs passed preflight reachability checks; privacy answers map App Store Connect fields to current code evidence | Locally ready, legal review open |
 | Binary export ready | `Scripts/export_app_store_ipa.sh` | Current export produced an IPA with bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `get-task-allow=false`, encryption flag `false`, and a sibling export manifest with the exact git commit | Locally ready |
 | Upload path ready | `Scripts/upload_app_store_ipa.sh` | Local IPA check passes, requires a clean-tree export manifest by default, and validate/upload/status require App Store Connect credentials | Script ready, external credentials open |
 | Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders | Locally ready, human marketing acceptance open |
@@ -135,23 +135,15 @@ Build, install, and launch succeeded on May 17, 2026. The latest launch command 
 
 ## App Privacy Draft
 
-Use the conservative privacy draft in `Docs/AppStoreMetadata.md`:
+Use the conservative, paste-ready privacy draft in `Docs/AppStorePrivacyAnswers.md`.
 
-- User ID: GitHub login/account identifier when signed in.
-- Other User Content: repository names, commit messages, commit metadata, changed files, diff stats, and generated journal text.
-- Linked to user: yes when tied to the GitHub account or selected repositories.
-- Used for tracking: no.
-- Used for third-party advertising: no.
-- Used for analytics: no in the app code today.
-- Shared with third-party AI: only when the user attaches a cloud AI key and generates a journal entry.
+Summary:
 
-Also disclose the user-initiated pasteboard write from GitHub device sign-in if App Store Connect asks about clipboard behavior. Captain's Log writes the short-lived device code only when the user taps "Copy & Open GitHub" and does not read from the pasteboard.
-
-Reasoning from Apple's App Privacy Details guidance (`https://developer.apple.com/app-store/app-privacy-details/`):
-
-- Data collected solely for app functionality still needs to be declared.
-- Data processed only on device is not "collected" for App Store privacy answers.
-- Captain's Log imports and stores GitHub history locally, but GitHub sign-in/API access and optional cloud AI generation mean the conservative App Functionality disclosure is the safer submission answer.
+- Data Used to Track You: no.
+- Data Linked to You for App Functionality: GitHub profile name when returned, GitHub login/account identifier, repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, and work classifications.
+- Data Not Linked to You: none in this build unless App Store Connect requires Apple-provided diagnostics to be handled separately.
+- Optional cloud AI: OpenAI and Anthropic receive selected commit evidence only when the user attaches that provider key and generates AI output.
+- Pasteboard: the app writes the short-lived GitHub device code only when the user taps "Copy & Open GitHub"; it does not read the pasteboard.
 
 Legal review is still recommended before final submission.
 
