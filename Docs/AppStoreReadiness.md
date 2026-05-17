@@ -92,7 +92,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - A final pass on a real large GitHub account is still recommended before submission.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
-- Merge and deploy `blakecrosley.com` PR 15, which removes active analytics scripts from the Captain's Log Privacy Policy and Support pages, then rerun preflight and confirm the live warning is gone.
+- Reconcile `blakecrosley.com` PR 15. The live Captain's Log Privacy Policy and Support pages currently pass the active-analytics preflight check, but the site source PR remains open and should either be merged or closed once the production source of truth is confirmed.
 
 ## Official References
 
