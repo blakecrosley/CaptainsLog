@@ -2,6 +2,8 @@
 
 This note tracks the current iOS App Store Connect blockers and the decisions still needed before the first TestFlight or App Review upload.
 
+For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`.
+
 ## Current Code Evidence
 
 - Bundle ID is `com.blakecrosley.captainslog`; iPhone and iPad are enabled through target family `1,2`; deployment target is iOS 26.0.
