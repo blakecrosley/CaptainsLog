@@ -22,13 +22,13 @@ struct RootView: View {
     @State private var isShowingRepositorySettings = false
     @State private var isShowingDayDetail = false
     @State private var aiCredentialRevision = 0
-    @State private var didStartPerformanceHeartbeat = false
     @State private var didPrepareDebugFixture = false
     @State private var lastHistoryBackfillScheduleAttempt: Date?
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
     @State private var identityAliasesText = ""
     #if DEBUG
+    @State private var didStartPerformanceHeartbeat = false
     @State private var didPresentDebugScreenshotRoute = false
     @State private var debugScreenshotSheetRoute: DebugScreenshotRoute?
     #endif
@@ -241,14 +241,18 @@ struct RootView: View {
             .onAppear {
                 appModel.configure(modelContext: modelContext)
                 loadIdentityAliases()
+                #if DEBUG
                 startPerformanceHeartbeatIfNeeded()
+                #endif
                 reloadCommitSnapshot()
                 selectLatestCommitDateIfUseful()
             }
             .task {
                 appModel.configure(modelContext: modelContext)
                 loadIdentityAliases()
+                #if DEBUG
                 startPerformanceHeartbeatIfNeeded()
+                #endif
                 reloadCommitSnapshot()
                 #if DEBUG
                 if prepareDebugFixtureIfNeeded() {
@@ -810,11 +814,13 @@ struct RootView: View {
             commits = try modelContext.fetch(descriptor)
             rebuildWorkMetrics()
             selectLatestCommitDateIfUseful()
+            #if DEBUG
             logSlowUIOperation(
                 "reloadCommitSnapshot fetched \(commits.count.formatted()) commits",
                 startedAt: start,
                 threshold: 0.08
             )
+            #endif
         } catch {
             rootViewLogger.error("Failed to reload commit snapshot: \(error.localizedDescription, privacy: .public)")
         }
@@ -824,13 +830,16 @@ struct RootView: View {
         let start = Date()
         let filteredCommits = visibleCommits
         workMetrics = WorkMetrics(commits: filteredCommits)
+        #if DEBUG
         logSlowUIOperation(
             "rebuildWorkMetrics used \(filteredCommits.count.formatted()) visible commits",
             startedAt: start,
             threshold: 0.05
         )
+        #endif
     }
 
+    #if DEBUG
     private func startPerformanceHeartbeatIfNeeded() {
         guard !didStartPerformanceHeartbeat else {
             return
@@ -861,6 +870,7 @@ struct RootView: View {
             rootViewLogger.warning("\(operation, privacy: .public) took \(Self.formattedMilliseconds(elapsed), privacy: .public)")
         }
     }
+    #endif
 
     private static func formattedMilliseconds(_ interval: TimeInterval) -> String {
         String(format: "%.1f ms", interval * 1_000)
