@@ -29,8 +29,8 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Primary category recommendation: Developer Tools.
 - Description: candidate copy is in `Docs/AppStoreMetadata.md`; explain the product as a private GitHub history journal, not a productivity scorekeeper.
 - Keywords: candidate copy is in `Docs/AppStoreMetadata.md`; avoid company or app names in the keyword field.
-- Support URL: required before submission.
-- Privacy Policy URL: required for iOS and macOS apps.
+- Support URL: required before submission. Draft page content is in `Docs/SupportPageDraft.md`; it still needs a real contact path and live URL verification.
+- Privacy Policy URL: required for iOS and macOS apps. Draft policy content is in `Docs/PrivacyPolicyDraft.md`; it still needs final contact information, legal review, and live URL verification.
 - Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload.
 
 ### Privacy
@@ -70,6 +70,7 @@ The product direction should stay quiet, precise, and journal-like. The current 
 - App privacy details: https://developer.apple.com/app-store/app-privacy-details/
 - Manage app privacy: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/
 - App information fields: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
+- Platform version fields: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
 - Screenshots: https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots/
 - App icon: https://developer.apple.com/help/app-store-connect/manage-app-information/add-an-app-icon/
 - Review guidelines: https://developer.apple.com/app-store/review/guidelines/

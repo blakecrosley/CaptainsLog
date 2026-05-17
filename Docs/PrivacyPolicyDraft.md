@@ -1,12 +1,12 @@
-# Captain's Log Privacy Policy Draft
+# Captain's Log Privacy Policy
 
-Draft status: needs a hosted URL, final contact information, and legal review before App Store submission.
+Draft status: publish at `https://blakecrosley.com/captains-log/privacy` after adding final contact information and legal review.
 
-Effective date: [Month Day, 2026]
+Effective date: May 17, 2026
 
 Captain's Log helps developers understand their GitHub work history. This policy explains what data the app uses, where it is stored, and what leaves the device.
 
-## Data The App Uses
+## Data the App Uses
 
 When you connect GitHub, Captain's Log requests information needed to show your work history:
 
@@ -15,7 +15,7 @@ When you connect GitHub, Captain's Log requests information needed to show your 
 - Commit metadata, commit messages, authorship information, changed files, and diff statistics for selected repositories.
 - Generated journal summaries and work classifications created from that commit history.
 
-Captain's Log does not ask for Contacts, Photos, Location, Health, Fitness, microphone, camera, advertising identifier, or payment data.
+Captain's Log does not ask for contacts, photos, location, health, fitness, microphone, camera, advertising identifier, or payment data.
 
 ## Where Data Is Stored
 
@@ -39,13 +39,13 @@ If you attach an OpenAI or Anthropic API key, Captain's Log sends selected commi
 
 Do not attach a cloud AI key if you do not want selected commit evidence sent to that provider.
 
-## Analytics, Advertising, And Tracking
+## Analytics, Advertising, and Tracking
 
 The current app does not include advertising SDKs, tracking SDKs, or product analytics SDKs.
 
 Captain's Log does not use your data for third-party advertising or tracking.
 
-## Data Retention And Deletion
+## Data Retention and Deletion
 
 Local app data remains on your device until you delete the app, remove data through system storage controls, or use Privacy & Data > Clear Imported History to remove imported commits, line stats, and generated journals from this device.
 
@@ -61,6 +61,10 @@ Captain's Log can communicate with these services for app functionality:
 
 Each third-party service processes requests under its own terms and privacy practices.
 
+## International Transfers
+
+GitHub, OpenAI, and Anthropic may process requests outside your country or region. Captain's Log does not control where those services process data.
+
 ## Children's Privacy
 
 Captain's Log is a developer tool and is not directed to children.
@@ -70,7 +74,7 @@ Captain's Log is a developer tool and is not directed to children.
 For privacy or support questions, contact:
 
 ```text
-[support email or support URL]
+[support email]
 ```
 
 ## Changes

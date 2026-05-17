@@ -1,6 +1,6 @@
 # Captain's Log App Store Metadata
 
-Draft for English (U.S.) App Store Connect fields. This is paste-ready except for the proposed URLs, support contact details, and final review-test account decision.
+Draft for English (U.S.) App Store Connect fields. This is paste-ready except for live URL verification, support contact details, and the final review-test account decision.
 
 ## Source Constraints
 
