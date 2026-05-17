@@ -74,6 +74,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 ### Done
 
 - First-run path now presents GitHub connect and demo-data choices as a clean setup screen.
+- Dashboard uses a compact single-column layout on iPhone and an adaptive tablet layout on iPad that keeps the Work Map and selected-period summary visible together.
 - Empty and partial-data states explain "today has not been refreshed", history indexing, and line-stat coverage from the dashboard sync popover.
 - Journal detail now reads like a daily note first, with numbered memorable points, tags, model/source metadata, and commits/diffs available as supporting evidence.
 - Screenshot mode has stable fixture routes for dashboard, Work Map, journal detail, repository access, AI provider settings, and Privacy & Data.

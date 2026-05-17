@@ -69,6 +69,8 @@ struct GitRepositoryOverviewSnapshot {
 }
 
 struct WorkOverviewView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @Binding var selectedDate: Date
     @Binding var displayMetric: WorkDisplayMetric
 
@@ -102,36 +104,7 @@ struct WorkOverviewView: View {
     #endif
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Kit941.Spacing.xl) {
-            overviewHeader
-            JournalWeekStrip(
-                selectedDate: $selectedDate,
-                workMetrics: workMetrics,
-                onShowMonth: onShowMonth
-            )
-            WorkLensControl(metric: $displayMetric)
-            ActivityHeatmapView(
-                selectedDate: $selectedDate,
-                workMetrics: workMetrics,
-                repositoryCoverage: repositorySnapshot.coverage,
-                metric: displayMetric,
-                onShowDetail: { isShowingActivityMap = true }
-            )
-            PeriodSnapshotCard(
-                trend: trend,
-                summary: rangeSummary,
-                scope: $selectedScope,
-                metric: displayMetric,
-                onOpen: { isShowingWorkAnalytics = true }
-            )
-            SelectedDayAnnotationRow(
-                selectedDate: selectedDate,
-                snapshot: selectedWorkSnapshot,
-                metric: displayMetric,
-                summary: selectedSummary,
-                onShowDayDetail: onShowDayDetail
-            )
-        }
+        dashboardContent
         .sheet(isPresented: $isShowingWorkAnalytics) {
             WorkAnalyticsSheet(
                 selectedDate: selectedDate,
@@ -166,6 +139,92 @@ struct WorkOverviewView: View {
             presentDebugScreenshotRouteIfNeeded()
         }
         #endif
+    }
+
+    @ViewBuilder
+    private var dashboardContent: some View {
+        if usesWideDashboard {
+            wideDashboardContent
+        } else {
+            compactDashboardContent
+        }
+    }
+
+    private var compactDashboardContent: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.xl) {
+            overviewHeader
+            weekStrip
+            WorkLensControl(metric: $displayMetric)
+            activityMap
+            periodSnapshot
+            selectedDayAnnotation
+        }
+    }
+
+    private var wideDashboardContent: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.xl) {
+            overviewHeader
+            weekStrip
+
+            HStack(alignment: .center, spacing: Kit941.Spacing.md) {
+                WorkLensControl(metric: $displayMetric)
+                    .frame(maxWidth: 420)
+                Spacer(minLength: 0)
+            }
+
+            HStack(alignment: .top, spacing: Kit941.Spacing.lg) {
+                activityMap
+                    .frame(maxWidth: .infinity, alignment: .top)
+
+                VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                    periodSnapshot
+                    selectedDayAnnotation
+                }
+                .frame(width: 360, alignment: .top)
+            }
+        }
+    }
+
+    private var usesWideDashboard: Bool {
+        horizontalSizeClass == .regular
+    }
+
+    private var weekStrip: some View {
+        JournalWeekStrip(
+            selectedDate: $selectedDate,
+            workMetrics: workMetrics,
+            onShowMonth: onShowMonth
+        )
+    }
+
+    private var activityMap: some View {
+        ActivityHeatmapView(
+            selectedDate: $selectedDate,
+            workMetrics: workMetrics,
+            repositoryCoverage: repositorySnapshot.coverage,
+            metric: displayMetric,
+            onShowDetail: { isShowingActivityMap = true }
+        )
+    }
+
+    private var periodSnapshot: some View {
+        PeriodSnapshotCard(
+            trend: trend,
+            summary: rangeSummary,
+            scope: $selectedScope,
+            metric: displayMetric,
+            onOpen: { isShowingWorkAnalytics = true }
+        )
+    }
+
+    private var selectedDayAnnotation: some View {
+        SelectedDayAnnotationRow(
+            selectedDate: selectedDate,
+            snapshot: selectedWorkSnapshot,
+            metric: displayMetric,
+            summary: selectedSummary,
+            onShowDayDetail: onShowDayDetail
+        )
     }
 
     private var trend: WorkTrendSummary {
