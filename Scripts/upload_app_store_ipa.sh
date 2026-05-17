@@ -86,14 +86,19 @@ local_check() {
     [[ "$encryption" == "false" ]] || fail "Unexpected ITSAppUsesNonExemptEncryption=$encryption"
     [[ "$get_task_allow" == "false" ]] || fail "Expected get-task-allow=false, got ${get_task_allow:-missing}"
 
-    local exported_commit git_dirty
+    local exported_commit git_dirty kit941_commit kit941_dirty
     if [[ -f "$export_manifest" ]]; then
         exported_commit="$(awk -F ': ' '/^Exported app commit:/ { print $2; exit }' "$export_manifest")"
         git_dirty="$(awk -F ': ' '/^Git dirty at export:/ { print $2; exit }' "$export_manifest")"
+        kit941_commit="$(awk -F ': ' '/^Kit941 commit:/ { print $2; exit }' "$export_manifest")"
+        kit941_dirty="$(awk -F ': ' '/^Kit941 dirty at export:/ { print $2; exit }' "$export_manifest")"
         [[ -n "$exported_commit" ]] || fail "Export manifest is missing exported commit: $export_manifest"
         [[ -n "$git_dirty" ]] || fail "Export manifest is missing dirty-tree state: $export_manifest"
         if [[ "$git_dirty" == "true" && "$ALLOW_DIRTY_EXPORT" != "1" ]]; then
             fail "IPA was exported from a dirty git tree. Regenerate from a clean tree or set CAPTAINS_LOG_ALLOW_DIRTY_EXPORT=1."
+        fi
+        if [[ "$kit941_dirty" == "true" && "$ALLOW_DIRTY_EXPORT" != "1" ]]; then
+            fail "IPA was exported with dirty Kit941 source. Regenerate from clean package source or set CAPTAINS_LOG_ALLOW_DIRTY_EXPORT=1."
         fi
     else
         if [[ "$ALLOW_MISSING_EXPORT_MANIFEST" != "1" ]]; then
@@ -101,6 +106,8 @@ local_check() {
         fi
         exported_commit=""
         git_dirty=""
+        kit941_commit=""
+        kit941_dirty=""
     fi
 
     printf 'IPA local check passed\n'
@@ -109,6 +116,8 @@ local_check() {
         printf 'Export manifest: present\n'
         [[ -n "$exported_commit" ]] && printf 'Exported app commit: %s\n' "$exported_commit"
         [[ -n "$git_dirty" ]] && printf 'Git dirty at export: %s\n' "$git_dirty"
+        [[ -n "$kit941_commit" ]] && printf 'Kit941 commit: %s\n' "$kit941_commit"
+        [[ -n "$kit941_dirty" ]] && printf 'Kit941 dirty at export: %s\n' "$kit941_dirty"
     else
         printf 'Export manifest: missing\n'
     fi

@@ -10,6 +10,7 @@ OUTPUT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreExport}"
 ARCHIVE_PATH="${ARCHIVE_PATH:-$OUTPUT_DIR/CaptainsLog.xcarchive}"
 EXPORT_PATH="${EXPORT_PATH:-$OUTPUT_DIR/Export}"
 EXPORT_MANIFEST="$EXPORT_PATH/ExportManifest.txt"
+KIT941_DIR="$ROOT_DIR/../941Kit"
 
 git_commit="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf 'unknown')"
 git_status="$(git -C "$ROOT_DIR" status --short 2>/dev/null || true)"
@@ -18,9 +19,29 @@ if [[ -n "$git_status" ]]; then
     git_dirty="true"
 fi
 
+kit941_commit="unavailable"
+kit941_dirty="unavailable"
+kit941_status=""
+if [[ -d "$KIT941_DIR/.git" ]]; then
+    kit941_commit="$(git -C "$KIT941_DIR" rev-parse HEAD 2>/dev/null || printf 'unknown')"
+    kit941_dirty_status="$(git -C "$KIT941_DIR" status --short 2>/dev/null || true)"
+    kit941_branch_status="$(git -C "$KIT941_DIR" status --short --branch 2>/dev/null || true)"
+    kit941_dirty="false"
+    if [[ -n "$kit941_dirty_status" ]]; then
+        kit941_dirty="true"
+    fi
+    kit941_status="$kit941_branch_status"
+fi
+
 if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$git_dirty" == "true" ]]; then
     printf 'Refusing to export from a dirty git tree. Commit or stash changes, or unset CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT.\n' >&2
     printf '%s\n' "$git_status" >&2
+    exit 1
+fi
+
+if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_dirty" == "true" ]]; then
+    printf 'Refusing to export with dirty Kit941 source. Commit or stash changes in %s, or unset CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT.\n' "$KIT941_DIR" >&2
+    printf '%s\n' "$kit941_status" >&2
     exit 1
 fi
 
@@ -107,6 +128,9 @@ fi
     printf 'Created UTC: %s\n' "$created_utc"
     printf 'Exported app commit: %s\n' "$git_commit"
     printf 'Git dirty at export: %s\n' "$git_dirty"
+    printf 'Kit941 path: %s\n' "$KIT941_DIR"
+    printf 'Kit941 commit: %s\n' "$kit941_commit"
+    printf 'Kit941 dirty at export: %s\n' "$kit941_dirty"
     printf 'Archive: %s\n' "$ARCHIVE_PATH"
     printf 'IPA: %s\n' "$ipa_path"
     printf 'Bundle: %s\n' "$archived_bundle_id"
@@ -118,6 +142,11 @@ fi
     else
         printf 'Git status at export: clean\n'
     fi
+    if [[ -n "$kit941_status" ]]; then
+        printf 'Kit941 status at export:\n%s\n' "$kit941_status"
+    else
+        printf 'Kit941 status at export: unavailable\n'
+    fi
 } > "$EXPORT_MANIFEST"
 
 printf 'Archive: %s\n' "$ARCHIVE_PATH"
@@ -125,6 +154,8 @@ printf 'IPA: %s\n' "$ipa_path"
 printf 'Export manifest: %s\n' "$EXPORT_MANIFEST"
 printf 'Exported app commit: %s\n' "$git_commit"
 printf 'Git dirty at export: %s\n' "$git_dirty"
+printf 'Kit941 commit: %s\n' "$kit941_commit"
+printf 'Kit941 dirty at export: %s\n' "$kit941_dirty"
 printf 'Bundle: %s\n' "$archived_bundle_id"
 printf 'Version: %s (%s)\n' "$archived_version" "$archived_build"
 printf 'Privacy manifest: present\n'

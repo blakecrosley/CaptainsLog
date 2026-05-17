@@ -26,6 +26,7 @@ Last local audit: May 17, 2026.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
 - Current Git status after the local audit: clean against `origin/main`.
 - The commits after `dead7833759fb33a8e40f61f00274a8766ac8bd8` are documentation-only handoff updates. Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
+- New exports also record the local `Kit941` package commit and dirty state because the app links `../941Kit` directly.
 
 ## Prompt-To-Artifact Checklist
 
