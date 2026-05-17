@@ -26,6 +26,7 @@ final class CaptainsLogUITests: XCTestCase {
         XCTAssertTrue(actionRow("Update Now", in: app).waitForExistence(timeout: 3))
         XCTAssertTrue(actionRow("GitHub Access", in: app).waitForExistence(timeout: 3))
         XCTAssertTrue(actionRow("History Coverage", in: app).waitForExistence(timeout: 3))
+        XCTAssertTrue(actionRow("Privacy & Data", in: app).waitForExistence(timeout: 3))
 
         let doneButton = app.buttons["Done"]
         XCTAssertTrue(doneButton.waitForExistence(timeout: 3))

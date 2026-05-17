@@ -1,0 +1,74 @@
+# Captain's Log App Store Readiness
+
+This note tracks the current iOS App Store Connect blockers and the decisions still needed before the first TestFlight or App Review upload.
+
+## Current Code Evidence
+
+- Bundle ID is `com.blakecrosley.captainslog`; iPhone and iPad are enabled through target family `1,2`; deployment target is iOS 26.0.
+- The iOS app uses `UserDefaults` / `@AppStorage` for local preferences, so the bundle includes `CaptainsLog/Resources/PrivacyInfo.xcprivacy` with `NSPrivacyAccessedAPICategoryUserDefaults` reason `CA92.1`.
+- GitHub Device Flow and API calls go directly to GitHub. OAuth/device URLs and API URLs are in `GitHubAPIClient`.
+- Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
+- Tokens and cloud AI keys are stored on-device in Keychain.
+- The repo does not currently contain an app icon asset catalog or screenshot assets.
+
+## App Store Connect Checklist
+
+### Build And Signing
+
+- Create the App Store Connect app record with bundle ID `com.blakecrosley.captainslog`.
+- Confirm automatic signing uses team `M4WTLM6RAQ`.
+- Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
+- Archive the iOS target and confirm the privacy manifest is included in the archive.
+
+### Product Page
+
+- Name: `Captain's Log`.
+- Subtitle: needs final copy under 30 characters.
+- Primary category recommendation: Developer Tools.
+- Description: explain the product as a private GitHub history journal, not a productivity scorekeeper.
+- Keywords: GitHub, git, commits, journal, developer, changelog, code history.
+- Support URL: required before submission.
+- Privacy Policy URL: required for iOS and macOS apps.
+- Screenshots: Apple requires at least one and up to ten screenshots per device family. For this app, capture dashboard, work map detail, journal detail, repo selection, and AI key settings.
+
+### Privacy
+
+App Store Connect privacy answers should disclose the actual user data flow:
+
+- GitHub account identity and repository/commit metadata are accessed from GitHub for app functionality.
+- OAuth tokens and provider API keys are stored locally in Keychain.
+- Journal generation uses Apple Foundation Models on-device when available.
+- If the user attaches OpenAI or Anthropic keys, selected commit/work context is sent directly to that provider for app functionality.
+- No advertising, third-party tracking, or analytics SDK is present in the repo today.
+
+The in-app privacy policy needs to say how users revoke GitHub access, delete local data, and remove AI provider keys.
+
+### Review Notes
+
+Explain that GitHub sign-in is required because the app is a client for a specific third-party service and users must sign in to GitHub to access their repository content. Apple guideline 4.8 has an exception for this shape, but the note should be explicit to avoid a generic "missing Sign in with Apple" rejection.
+
+Also include:
+
+- A test GitHub account or demo-data instructions if review cannot access a repository.
+- That OpenAI/Anthropic keys are optional bring-your-own-key settings and not required for core on-device journal generation.
+- That background processing indexes older Git history in batches and should not block the UI.
+
+## UI / Product Readiness
+
+The product direction should stay quiet, precise, and journal-like. The current highest-value cleanup before screenshots:
+
+1. First-run path: make the GitHub connect and demo-data choice feel like a clean setup screen, not a settings panel.
+2. Empty and partial-data states: make "today needs sync", "history still indexing", and "line stats coverage" understandable from the dashboard popover and detail sheets.
+3. Journal detail: make the summary read like a polished daily note, with commits and diffs as supporting evidence.
+4. Repository management: keep it as a full push view with search, select all, and clear GitHub access CTA.
+5. Screenshot mode: add a stable fixture state for App Store screenshots that hides debug-only progress noise and uses realistic but non-sensitive repository names.
+
+## Official References
+
+- App privacy details: https://developer.apple.com/app-store/app-privacy-details/
+- Manage app privacy: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/
+- App information fields: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
+- Screenshots: https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots/
+- App icon: https://developer.apple.com/help/app-store-connect/manage-app-information/add-an-app-icon/
+- Review guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Privacy manifest files: https://developer.apple.com/documentation/bundleresources/privacy-manifest-files

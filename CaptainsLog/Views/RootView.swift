@@ -450,33 +450,35 @@ struct RootView: View {
                     )
 
                     Kit941.Card {
-                        VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                        VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
                             NavigationLink {
                                 AISettingsView(credentialRevision: $aiCredentialRevision)
                             } label: {
-                                HStack(spacing: Kit941.Spacing.md) {
-                                    Image(systemName: hasPreferredAIKey ? "key.fill" : "key")
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundStyle(AppSurface.accent)
-                                        .frame(width: 38, height: 38)
-                                        .background(AppSurface.accent.opacity(0.12), in: Circle())
+                                SettingsDisclosureRow(
+                                    title: "AI providers",
+                                    description: aiSettingsSubtitle,
+                                    systemImage: hasPreferredAIKey ? "key.fill" : "key"
+                                )
+                            }
+                            .buttonStyle(.plain)
 
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text("AI providers")
-                                            .kit941Font(.title, weight: .semibold)
-                                            .foregroundStyle(AppSurface.primaryText)
-                                        Text(aiSettingsSubtitle)
-                                            .kit941Font(.caption)
-                                            .foregroundStyle(AppSurface.secondaryText)
-                                    }
+                            Divider()
+                                .overlay(AppSurface.divider.opacity(0.6))
 
-                                    Spacer(minLength: Kit941.Spacing.sm)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(AppSurface.secondaryText)
-                                }
-                                .contentShape(Rectangle())
+                            NavigationLink {
+                                PrivacyDataView(
+                                    isSignedIn: appModel.isSignedIn,
+                                    activeLogin: activeLogin,
+                                    selectedRepositoryCount: githubRepositories.filter(\.isSelected).count,
+                                    hasCloudAIKey: hasCloudAIKey,
+                                    preferredProviderName: preferredAIProvider.displayName
+                                )
+                            } label: {
+                                SettingsDisclosureRow(
+                                    title: "Privacy & Data",
+                                    description: "What stays on device and what leaves when you sync or generate.",
+                                    systemImage: "hand.raised"
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -1077,6 +1079,45 @@ private struct WorkIdentitySettingsCard: View {
         case .mineAndAliases:
             return "\(visibleCommitCount.formatted()) of \(allSelectedCommitCount.formatted())"
         }
+    }
+}
+
+private struct SettingsDisclosureRow: View {
+    let title: String
+    let description: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: Kit941.Spacing.md) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(AppSurface.accent)
+                .frame(width: 38, height: 38)
+                .background(AppSurface.accent.opacity(0.12), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .kit941Font(.label, weight: .semibold)
+                    .foregroundStyle(AppSurface.primaryText)
+                Text(description)
+                    .kit941Font(.caption)
+                    .foregroundStyle(AppSurface.secondaryText)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: Kit941.Spacing.sm)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AppSurface.secondaryText)
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityHint(description)
+        .accessibilityIdentifier("actionRow.\(title)")
     }
 }
 
