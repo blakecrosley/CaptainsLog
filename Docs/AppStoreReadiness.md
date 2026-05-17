@@ -27,6 +27,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Run `Scripts/app_store_preflight.sh <screenshot-dir>` to check metadata limits, published policy/support URLs, source privacy/export flags, build settings, app icon size, and iPhone/iPad screenshot dimensions before uploading.
 - Run `Scripts/export_app_store_ipa.sh` to archive the iOS target, export an App Store Connect IPA, and confirm bundle ID, version/build, privacy manifest presence, and `ITSAppUsesNonExemptEncryption=false`.
 - Export with App Store distribution signing before upload. The May 17, 2026 local export used `method=app-store-connect`, `destination=export`, automatic signing, and produced `/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa` with `get-task-allow=false`.
+- Run `Scripts/upload_app_store_ipa.sh local-check <ipa>` before uploading. When App Store Connect API credentials are available, run `Scripts/upload_app_store_ipa.sh validate <ipa>`, then `Scripts/upload_app_store_ipa.sh upload <ipa>`. The script uses `xcrun altool` with API key authentication and keeps credentials in environment variables or Apple's supported private-key file locations.
 - Upload the exported build to App Store Connect/TestFlight and verify processing status.
 
 ### Product Page
