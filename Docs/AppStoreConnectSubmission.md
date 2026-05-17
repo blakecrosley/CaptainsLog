@@ -24,7 +24,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft | Locally ready, legal review open |
 | Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md` | URLs passed preflight reachability checks | Locally ready, legal review open |
 | Binary export ready | `Scripts/export_app_store_ipa.sh` | Current export produced an IPA with bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `get-task-allow=false`, encryption flag `false`, and a sibling export manifest with the exact git commit | Locally ready |
-| Upload path ready | `Scripts/upload_app_store_ipa.sh` | Local IPA check passes and reports the export manifest when present; validate/upload/status require App Store Connect credentials | Script ready, external credentials open |
+| Upload path ready | `Scripts/upload_app_store_ipa.sh` | Local IPA check passes, requires a clean-tree export manifest by default, and validate/upload/status require App Store Connect credentials | Script ready, external credentials open |
 | Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders | Locally ready, human marketing acceptance open |
 | Physical device smoke | `xcodebuild`, `xcrun devicectl` | Current Debug build installed on the connected iPhone 17 Pro Max; launch was denied because the device was locked | Build/install verified, unlocked launch open |
 | Real data confidence | App runtime with a large GitHub account | Not rerun after latest App Store prep | Open |
@@ -36,6 +36,13 @@ Run these from the repo root:
 ```sh
 Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+```
+
+`local-check` intentionally requires the sibling `ExportManifest.txt` created by `Scripts/export_app_store_ipa.sh` and fails dirty-tree exports by default. Only bypass this for legacy IPA inspection:
+
+```sh
+CAPTAINS_LOG_ALLOW_MISSING_EXPORT_MANIFEST=1 Scripts/upload_app_store_ipa.sh local-check "/path/to/legacy.ipa"
+CAPTAINS_LOG_ALLOW_DIRTY_EXPORT=1 Scripts/upload_app_store_ipa.sh local-check "/path/to/dirty-export.ipa"
 ```
 
 If the IPA needs to be regenerated:

@@ -13,6 +13,8 @@ fi
 IPA_PATH="${1:-${CAPTAINS_LOG_IPA_PATH:-$DEFAULT_IPA}}"
 ALTOOL_OUTPUT_FORMAT="${ALTOOL_OUTPUT_FORMAT:-normal}"
 WAIT_FOR_PROCESSING="${APP_STORE_CONNECT_WAIT:-0}"
+ALLOW_MISSING_EXPORT_MANIFEST="${CAPTAINS_LOG_ALLOW_MISSING_EXPORT_MANIFEST:-0}"
+ALLOW_DIRTY_EXPORT="${CAPTAINS_LOG_ALLOW_DIRTY_EXPORT:-0}"
 
 usage() {
     cat <<'USAGE'
@@ -33,6 +35,10 @@ Optional:
   APP_STORE_CONNECT_APPLE_ID      App Apple ID for status when delivery ID is unavailable.
   APP_STORE_CONNECT_WAIT=1        Wait for upload/status processing.
   ALTOOL_OUTPUT_FORMAT=json       Use altool JSON output.
+  CAPTAINS_LOG_ALLOW_MISSING_EXPORT_MANIFEST=1
+                                  Allow local-check for a legacy IPA without a sibling ExportManifest.txt.
+  CAPTAINS_LOG_ALLOW_DIRTY_EXPORT=1
+                                  Allow local-check for an export manifest generated from a dirty git tree.
 USAGE
 }
 
@@ -84,7 +90,15 @@ local_check() {
     if [[ -f "$export_manifest" ]]; then
         exported_commit="$(awk -F ': ' '/^Exported app commit:/ { print $2; exit }' "$export_manifest")"
         git_dirty="$(awk -F ': ' '/^Git dirty at export:/ { print $2; exit }' "$export_manifest")"
+        [[ -n "$exported_commit" ]] || fail "Export manifest is missing exported commit: $export_manifest"
+        [[ -n "$git_dirty" ]] || fail "Export manifest is missing dirty-tree state: $export_manifest"
+        if [[ "$git_dirty" == "true" && "$ALLOW_DIRTY_EXPORT" != "1" ]]; then
+            fail "IPA was exported from a dirty git tree. Regenerate from a clean tree or set CAPTAINS_LOG_ALLOW_DIRTY_EXPORT=1."
+        fi
     else
+        if [[ "$ALLOW_MISSING_EXPORT_MANIFEST" != "1" ]]; then
+            fail "Export manifest missing: $export_manifest. Regenerate with Scripts/export_app_store_ipa.sh or set CAPTAINS_LOG_ALLOW_MISSING_EXPORT_MANIFEST=1 for a legacy IPA check."
+        fi
         exported_commit=""
         git_dirty=""
     fi
