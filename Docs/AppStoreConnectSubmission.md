@@ -6,7 +6,8 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Latest pushed commit checked for submission: `dead7833759fb33a8e40f61f00274a8766ac8bd8`
+- Latest pushed repo commit: `a2166bc795d0195621d13493dd2c9d3f6987d051`
+- Exported app commit: `dead7833759fb33a8e40f61f00274a8766ac8bd8`
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
 - Team ID used by export scripts: `M4WTLM6RAQ`
@@ -24,6 +25,7 @@ Last local audit: May 17, 2026.
 - `Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passed: bundle `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `ITSAppUsesNonExemptEncryption=false`, and `get-task-allow=false`.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
 - Current Git status after the local audit: clean against `origin/main`.
+- The commits after `dead7833759fb33a8e40f61f00274a8766ac8bd8` are documentation-only handoff updates. Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
 
 ## Prompt-To-Artifact Checklist
 
