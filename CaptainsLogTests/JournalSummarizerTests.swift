@@ -21,24 +21,31 @@ final class JournalSummarizerTests: XCTestCase {
         XCTAssertTrue(text.contains("Build contribution heatmap"))
     }
 
-    func testOpenAIKeyWinsProviderSelection() {
+    func testPreferredCloudKeyWinsProviderSelection() {
+        let store = AIProviderCredentialStore(service: "test.captainslog.provider", inMemory: true)
+        store.preferredProvider = .openai
+        XCTAssertTrue(store.saveKey("sk-test", for: .openai))
+
         XCTAssertEqual(
-            JournalSummaryProvider.preferred(hasOpenAIKey: true, foundationAvailability: .available),
-            .openai
+            JournalSummaryProvider.preferred(credentialStore: store, foundationAvailability: .available),
+            .cloud(.openai)
         )
         XCTAssertEqual(
-            JournalSummaryProvider.preferred(hasOpenAIKey: true, foundationAvailability: .unavailable("Not ready")),
-            .openai
+            JournalSummaryProvider.preferred(credentialStore: store, foundationAvailability: .unavailable("Not ready")),
+            .cloud(.openai)
         )
     }
 
-    func testProviderSelectionFallsBackToAppleWithoutOpenAIKey() {
+    func testProviderSelectionFallsBackToAppleWithoutSelectedCloudKey() {
+        let store = AIProviderCredentialStore(service: "test.captainslog.provider.fallback", inMemory: true)
+        store.preferredProvider = .anthropic
+
         XCTAssertEqual(
-            JournalSummaryProvider.preferred(hasOpenAIKey: false, foundationAvailability: .available),
+            JournalSummaryProvider.preferred(credentialStore: store, foundationAvailability: .available),
             .appleFoundationModels
         )
         XCTAssertNil(
-            JournalSummaryProvider.preferred(hasOpenAIKey: false, foundationAvailability: .unavailable("Not ready"))
+            JournalSummaryProvider.preferred(credentialStore: store, foundationAvailability: .unavailable("Not ready"))
         )
     }
 
@@ -65,5 +72,34 @@ final class JournalSummarizerTests: XCTestCase {
         XCTAssertEqual(record.title, "OpenAI Entry")
         XCTAssertEqual(record.modelName, "OpenAI gpt-5.5")
         XCTAssertEqual(record.sourceCommitIDs, ["owner/repo#abc"])
+    }
+
+    func testLockedSummaryRecordRefusesOverwrite() {
+        let date = Date(timeIntervalSince1970: 1_767_808_800)
+        let record = DailyJournalSummaryRecord(
+            date: date,
+            title: "Kept Entry",
+            narrative: "Keep this.",
+            bullets: ["Original"],
+            tags: ["Journal"],
+            sourceCommitIDs: ["owner/repo#old"],
+            modelName: "OpenAI gpt-5.5",
+            isLocked: true
+        )
+        let draft = JournalSummaryDraft(
+            title: "Replacement",
+            narrative: "This should not be saved.",
+            bullets: ["New"],
+            tags: ["AI"]
+        )
+
+        let didUpdate = record.update(from: draft, sourceCommitIDs: ["owner/repo#new"], modelName: "Anthropic Claude")
+
+        XCTAssertFalse(didUpdate)
+        XCTAssertTrue(record.isLocked)
+        XCTAssertEqual(record.title, "Kept Entry")
+        XCTAssertEqual(record.narrative, "Keep this.")
+        XCTAssertEqual(record.sourceCommitIDs, ["owner/repo#old"])
+        XCTAssertEqual(record.modelName, "OpenAI gpt-5.5")
     }
 }

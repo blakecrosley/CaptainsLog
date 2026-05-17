@@ -3,12 +3,28 @@ import Security
 
 enum AIProvider: String, CaseIterable, Identifiable {
     case openai
+    case anthropic
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
         case .openai: "OpenAI"
+        case .anthropic: "Anthropic"
+        }
+    }
+
+    var shortModelName: String {
+        switch self {
+        case .openai: OpenAIJournalSummarizer.modelName
+        case .anthropic: AnthropicJournalSummarizer.modelName
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .openai: "sparkles"
+        case .anthropic: "sparkle.magnifyingglass"
         }
     }
 
@@ -21,16 +37,23 @@ enum AIProvider: String, CaseIterable, Identifiable {
         guard !trimmed.isEmpty else {
             return "Key is empty."
         }
-        return trimmed.hasPrefix("sk-") ? nil : "OpenAI keys start with sk-."
+        switch self {
+        case .openai:
+            return trimmed.hasPrefix("sk-") ? nil : "OpenAI keys start with sk-."
+        case .anthropic:
+            return trimmed.hasPrefix("sk-ant-") ? nil : "Anthropic keys start with sk-ant-."
+        }
     }
 }
 
 final class AIProviderCredentialStore: @unchecked Sendable {
     static let shared = AIProviderCredentialStore()
+    static let preferredProviderDefaultsKey = "ai.preferredProvider"
 
     private let service: String
     private let inMemory: Bool
     private var memory: [String: String] = [:]
+    private var memoryPreferredProvider: AIProvider = .openai
     private let memoryLock = NSLock()
 
     init(service: String? = nil, inMemory: Bool = false) {
@@ -57,6 +80,30 @@ final class AIProviderCredentialStore: @unchecked Sendable {
         loadKey(for: provider) != nil
     }
 
+    func hasAnyCloudKey() -> Bool {
+        AIProvider.allCases.contains { hasKey(for: $0) }
+    }
+
+    var preferredProvider: AIProvider {
+        get {
+            if inMemory {
+                memoryLock.lock()
+                defer { memoryLock.unlock() }
+                return memoryPreferredProvider
+            }
+            return AIProvider(rawValue: UserDefaults.standard.string(forKey: Self.preferredProviderDefaultsKey) ?? "") ?? .openai
+        }
+        set {
+            if inMemory {
+                memoryLock.lock()
+                memoryPreferredProvider = newValue
+                memoryLock.unlock()
+                return
+            }
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.preferredProviderDefaultsKey)
+        }
+    }
+
     func keyPreview(for provider: AIProvider, visibleSuffixLength: Int = 6) -> String? {
         guard let key = loadKey(for: provider)?.trimmingCharacters(in: .whitespacesAndNewlines),
               !key.isEmpty else {
@@ -64,7 +111,13 @@ final class AIProviderCredentialStore: @unchecked Sendable {
         }
 
         let suffix = key.suffix(max(1, visibleSuffixLength))
-        let prefix = key.hasPrefix("sk-proj-") ? "sk-proj-" : "sk-"
+        let prefix: String
+        switch provider {
+        case .openai:
+            prefix = key.hasPrefix("sk-proj-") ? "sk-proj-" : "sk-"
+        case .anthropic:
+            prefix = "sk-ant-"
+        }
         return "\(prefix)...\(suffix)"
     }
 

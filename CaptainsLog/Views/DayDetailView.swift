@@ -1,6 +1,20 @@
 import SwiftUI
 import Kit941
 
+private enum DayDetailMode: String, CaseIterable, Identifiable {
+    case journal
+    case commits
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .journal: "Journal"
+        case .commits: "Commits"
+        }
+    }
+}
+
 struct DayDetailView: View {
     let selectedDate: Date
     let commits: [GitCommitRecord]
@@ -8,13 +22,13 @@ struct DayDetailView: View {
     let summary: DailyJournalSummaryRecord?
     let isGeneratingSummary: Bool
     let generationError: String?
-    let canGenerate: Bool
     let generationProvider: JournalSummaryProvider?
-    let onGenerate: @MainActor @Sendable () -> Void
+
+    @State private var selectedMode: DayDetailMode = .journal
 
     var body: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-            HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
                         .kit941Font(.title, weight: .bold)
@@ -23,14 +37,12 @@ struct DayDetailView: View {
                         .foregroundStyle(AppSurface.secondaryText)
                 }
 
-                Spacer(minLength: Kit941.Spacing.md)
-
-                Kit941.Button(role: .secondary) {
-                    await MainActor.run { onGenerate() }
-                } label: {
-                    Label(summary == nil ? "Generate" : "Regenerate", systemImage: generationProvider?.symbolName ?? "sparkles")
+                Picker("Day view", selection: $selectedMode) {
+                    ForEach(DayDetailMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
                 }
-                .disabled(!canGenerate || isGeneratingSummary)
+                .pickerStyle(.segmented)
             }
 
             if let generationError {
@@ -39,34 +51,42 @@ struct DayDetailView: View {
                     .foregroundStyle(AppSurface.danger)
             }
 
-            if isGeneratingSummary {
-                Kit941.Card {
-                    HStack(spacing: Kit941.Spacing.md) {
-                        ProgressView()
-                        Text("Generating journal entry")
-                            .kit941Font(.body)
-                            .foregroundStyle(AppSurface.secondaryText)
-                    }
-                }
-            } else if let summary {
-                SummaryView(summary: summary)
-            } else if commits.isEmpty {
-                Kit941.StatusView(
-                    style: .empty,
-                    symbol: "calendar.badge.clock",
-                    headline: "No commits imported",
-                    description: "Choose another day or sync repositories from GitHub."
-                )
-            } else {
-                Kit941.StatusView(
-                    style: .empty,
-                    symbol: generationProvider?.symbolName ?? "sparkles",
-                    headline: "No journal yet",
-                    description: "Generate a summary from this day's commits."
-                )
+            switch selectedMode {
+            case .journal:
+                journalContent
+            case .commits:
+                CommitListView(commits: commits)
             }
+        }
+    }
 
-            CommitListView(commits: commits)
+    @ViewBuilder
+    private var journalContent: some View {
+        if isGeneratingSummary {
+            Kit941.Card {
+                HStack(spacing: Kit941.Spacing.md) {
+                    ProgressView()
+                    Text("Generating journal entry")
+                        .kit941Font(.body)
+                        .foregroundStyle(AppSurface.secondaryText)
+                }
+            }
+        } else if let summary {
+            SummaryView(summary: summary)
+        } else if commits.isEmpty {
+            Kit941.StatusView(
+                style: .empty,
+                symbol: "calendar.badge.clock",
+                headline: "No commits imported",
+                description: "Choose another day or sync repositories from GitHub."
+            )
+        } else {
+            Kit941.StatusView(
+                style: .empty,
+                symbol: generationProvider?.symbolName ?? "sparkles",
+                headline: "No journal yet",
+                description: "Generate a summary from this day's commits."
+            )
         }
     }
 
@@ -84,30 +104,39 @@ private struct SummaryView: View {
 
     var body: some View {
         Kit941.Card {
-            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
                     Text(summary.title)
-                        .kit941Font(.title, weight: .bold)
-                    Spacer(minLength: Kit941.Spacing.sm)
-                    Text(summary.generatedAt, style: .time)
-                        .kit941Font(.caption)
-                        .foregroundStyle(AppSurface.secondaryText)
+                        .kit941Font(.display, weight: .bold)
+                        .foregroundStyle(AppSurface.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text(summary.narrative)
-                    .kit941Font(.body)
-                    .foregroundStyle(AppSurface.primaryText)
+                VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+                    Text("What mattered")
+                        .kit941Font(.label, weight: .semibold)
+                        .foregroundStyle(AppSurface.secondaryText)
+                    Text(summary.narrative)
+                        .kit941Font(.body)
+                        .foregroundStyle(AppSurface.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if !summary.bullets.isEmpty {
                     VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+                        Text("Highlights")
+                            .kit941Font(.label, weight: .semibold)
+                            .foregroundStyle(AppSurface.secondaryText)
+
                         ForEach(summary.bullets, id: \.self) { bullet in
                             HStack(alignment: .top, spacing: Kit941.Spacing.sm) {
-                                Circle()
-                                    .fill(AppSurface.accent)
-                                    .frame(width: 6, height: 6)
-                                    .padding(.top, 7)
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(AppSurface.accent)
+                                    .padding(.top, 2)
                                 Text(bullet)
                                     .kit941Font(.body)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
@@ -118,6 +147,7 @@ private struct SummaryView: View {
                         ForEach(summary.tags, id: \.self) { tag in
                             Text(tag)
                                 .kit941Font(.caption)
+                                .foregroundStyle(AppSurface.secondaryText)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(AppSurface.mutedFill(opacity: 0.92), in: Capsule())
@@ -125,7 +155,15 @@ private struct SummaryView: View {
                     }
                 }
 
-                Text("\(summary.sourceCommitIDs.count) source commits - \(summary.modelName)")
+                HStack {
+                    Text("\(summary.sourceCommitIDs.count) source commits")
+                    Spacer(minLength: Kit941.Spacing.sm)
+                    Text(summary.modelName)
+                }
+                .kit941Font(.caption)
+                .foregroundStyle(AppSurface.secondaryText)
+
+                Text("Generated \(summary.generatedAt.formatted(date: .abbreviated, time: .shortened))")
                     .kit941Font(.caption)
                     .foregroundStyle(AppSurface.secondaryText)
             }
@@ -148,7 +186,12 @@ private struct CommitListView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(commits) { commit in
-                        CommitRow(commit: commit)
+                        NavigationLink {
+                            CommitEvidenceView(commit: commit)
+                        } label: {
+                            CommitRow(commit: commit)
+                        }
+                        .buttonStyle(.plain)
                         if commit.id != commits.last?.id {
                             Divider()
                         }
@@ -202,8 +245,13 @@ private struct CommitRow: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(AppSurface.secondaryText)
         }
         .padding(Kit941.Spacing.md)
+        .contentShape(Rectangle())
     }
 
     private var statsLabel: String {
@@ -218,6 +266,154 @@ private struct CommitRow: View {
 
     private var statsColor: Color {
         commit.hasDiffStats ? AppSurface.accent : AppSurface.secondaryText
+    }
+}
+
+struct CommitEvidenceView: View {
+    @Environment(\.openURL) private var openURL
+
+    let commit: GitCommitRecord
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                headerCard
+                statsCard
+                filesCard
+            }
+            .padding(.horizontal, Kit941.Spacing.md)
+            .padding(.vertical, Kit941.Spacing.lg)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .background(AppSurface.backgroundGradient.ignoresSafeArea())
+        .navigationTitle(commit.shortSHA)
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+    }
+
+    private var headerCard: some View {
+        Kit941.Card {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                Text(commit.messageHeadline)
+                    .kit941Font(.title, weight: .bold)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !commit.messageBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(commit.messageBody)
+                        .kit941Font(.body)
+                        .foregroundStyle(AppSurface.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(alignment: .leading, spacing: 7) {
+                    evidenceRow("Repository", value: commit.repositoryFullName)
+                    evidenceRow("Commit", value: commit.sha)
+                    evidenceRow("Author", value: commit.authorLogin ?? "Unlinked Git author")
+                    evidenceRow("Authored", value: commit.authoredAt.formatted(date: .abbreviated, time: .shortened))
+                }
+
+                if let url = commit.htmlURL {
+                    Kit941.Button(role: .secondary) {
+                        await MainActor.run { openURL(url) }
+                    } label: {
+                        Label("Open on GitHub", systemImage: "arrow.up.right.square")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    private var statsCard: some View {
+        Kit941.Card {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                Text("Changes")
+                    .kit941Font(.title, weight: .semibold)
+
+                if commit.hasDiffStats {
+                    HStack(spacing: Kit941.Spacing.md) {
+                        evidenceMetric("+\((commit.additions ?? 0).formatted())", label: "Additions", color: AppSurface.accent)
+                        evidenceMetric("-\((commit.deletions ?? 0).formatted())", label: "Deletions", color: AppSurface.warning)
+                        evidenceMetric("\((commit.changedFileCount ?? 0).formatted())", label: "Files", color: AppSurface.secondaryText)
+                    }
+                } else {
+                    Label(diffStatusLabel, systemImage: "clock")
+                        .kit941Font(.body)
+                        .foregroundStyle(AppSurface.secondaryText)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var filesCard: some View {
+        let files = commit.changedFiles
+        if !files.isEmpty {
+            Kit941.Card {
+                VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                    Text("Changed Files")
+                        .kit941Font(.title, weight: .semibold)
+
+                    VStack(spacing: 0) {
+                        ForEach(files, id: \.self) { file in
+                            HStack(spacing: Kit941.Spacing.sm) {
+                                Image(systemName: "doc.text")
+                                    .foregroundStyle(AppSurface.secondaryText)
+                                Text(file)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(AppSurface.primaryText)
+                                    .lineLimit(2)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 8)
+
+                            if file != files.last {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func evidenceRow(_ title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Kit941.Spacing.sm) {
+            Text(title)
+                .kit941Font(.caption, weight: .semibold)
+                .foregroundStyle(AppSurface.secondaryText)
+                .frame(width: 76, alignment: .leading)
+            Text(value)
+                .kit941Font(.caption)
+                .foregroundStyle(AppSurface.primaryText)
+                .textSelection(.enabled)
+                .lineLimit(3)
+                .minimumScaleFactor(0.8)
+        }
+    }
+
+    private func evidenceMetric(_ value: String, label: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(value)
+                .kit941Font(.title, weight: .bold)
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            Text(label)
+                .kit941Font(.caption)
+                .foregroundStyle(AppSurface.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var diffStatusLabel: String {
+        if commit.diffStatsError != nil {
+            return "Line stats skipped"
+        }
+        return "Line stats pending"
     }
 }
 

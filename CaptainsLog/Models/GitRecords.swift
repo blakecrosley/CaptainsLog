@@ -277,6 +277,7 @@ final class DailyJournalSummaryRecord {
     var sourceCommitIDsBlob: String
     var generatedAt: Date
     var modelName: String
+    var isLocked: Bool = false
 
     init(
         date: Date,
@@ -286,7 +287,8 @@ final class DailyJournalSummaryRecord {
         tags: [String],
         sourceCommitIDs: [String],
         generatedAt: Date = Date(),
-        modelName: String = "Apple Foundation Models"
+        modelName: String = "Apple Foundation Models",
+        isLocked: Bool = false
     ) {
         self.dayKey = GitCommitRecord.dayKey(for: date)
         self.date = date
@@ -297,6 +299,7 @@ final class DailyJournalSummaryRecord {
         self.sourceCommitIDsBlob = sourceCommitIDs.joined(separator: "\n")
         self.generatedAt = generatedAt
         self.modelName = modelName
+        self.isLocked = isLocked
     }
 
     var bullets: [String] {
@@ -311,7 +314,12 @@ final class DailyJournalSummaryRecord {
         sourceCommitIDsBlob.split(separator: "\n").map(String.init)
     }
 
-    func update(from draft: JournalSummaryDraft, sourceCommitIDs: [String], modelName: String) {
+    @discardableResult
+    func update(from draft: JournalSummaryDraft, sourceCommitIDs: [String], modelName: String) -> Bool {
+        guard !isLocked else {
+            return false
+        }
+
         title = draft.title
         narrative = draft.narrative
         bulletsBlob = draft.bullets.joined(separator: "\n")
@@ -319,6 +327,7 @@ final class DailyJournalSummaryRecord {
         sourceCommitIDsBlob = sourceCommitIDs.joined(separator: "\n")
         generatedAt = Date()
         self.modelName = modelName
+        return true
     }
 }
 

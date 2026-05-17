@@ -243,6 +243,9 @@ struct GitHubDeviceCodeResponse: Decodable, Equatable {
 
 struct GitHubTokenResponse: Decodable, Equatable {
     let accessToken: String?
+    let expiresIn: Int?
+    let refreshToken: String?
+    let refreshTokenExpiresIn: Int?
     let tokenType: String?
     let scope: String?
     let error: String?
@@ -250,6 +253,9 @@ struct GitHubTokenResponse: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
+        case expiresIn = "expires_in"
+        case refreshToken = "refresh_token"
+        case refreshTokenExpiresIn = "refresh_token_expires_in"
         case tokenType = "token_type"
         case scope
         case error

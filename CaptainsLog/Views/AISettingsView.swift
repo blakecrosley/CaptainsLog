@@ -4,9 +4,11 @@ import Kit941
 struct AISettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var credentialRevision: Int
+    @AppStorage(AIProviderCredentialStore.preferredProviderDefaultsKey) private var preferredProviderRaw = AIProvider.openai.rawValue
 
+    @State private var selectedProvider = AIProvider.openai
     @State private var key = ""
-    @State private var storedKeyPreview = AIProviderCredentialStore.shared.keyPreview(for: .openai)
+    @State private var storedKeyPreviews: [AIProvider: String] = [:]
     @State private var message: String?
     @State private var messageIsError = false
     @State private var isTesting = false
@@ -15,7 +17,7 @@ struct AISettingsView: View {
     private let store = AIProviderCredentialStore.shared
 
     private var hasKey: Bool {
-        storedKeyPreview != nil
+        storedKeyPreviews[selectedProvider] != nil
     }
 
     private var trimmedKey: String {
@@ -23,50 +25,87 @@ struct AISettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-                    header
-                    keyCard
-                    note
-                }
-                .padding(.horizontal, Kit941.Spacing.md)
-                .padding(.vertical, Kit941.Spacing.lg)
-                .frame(maxWidth: 620)
-                .frame(maxWidth: .infinity, alignment: .top)
+        ScrollView {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                header
+                providerCard
+                keyCard
+                note
             }
-            .background(AppSurface.backgroundGradient.ignoresSafeArea())
-            .navigationTitle("AI")
-            .confirmationDialog("Remove OpenAI key?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
-                Button("Delete Key", role: .destructive) {
-                    delete()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Captain's Log will stop using OpenAI until a new key is attached.")
+            .padding(.horizontal, Kit941.Spacing.md)
+            .padding(.vertical, Kit941.Spacing.lg)
+            .frame(maxWidth: 620)
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .background(AppSurface.backgroundGradient.ignoresSafeArea())
+        .navigationTitle("AI")
+        .confirmationDialog("Remove \(selectedProvider.displayName) key?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("Delete Key", role: .destructive) {
+                delete()
             }
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Captain's Log will stop using \(selectedProvider.displayName) until a new key is attached.")
+        }
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
             }
-            .onAppear {
-                refreshStoredKeyState()
-            }
+        }
+        .onAppear {
+            selectedProvider = AIProvider(rawValue: preferredProviderRaw) ?? .openai
+            refreshStoredKeyState()
+        }
+        .onChange(of: selectedProvider) { _, provider in
+            preferredProviderRaw = provider.rawValue
+            key = ""
+            message = nil
+            credentialRevision += 1
         }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-            Text("OpenAI BYOK")
+            Text("AI providers")
                 .kit941Font(.display, weight: .bold)
-            Text("When a key is attached, Captain's Log uses OpenAI for journal generation. Without a key, it uses Apple Foundation Models.")
+            Text("Attach your own cloud AI key for journal summaries. If the selected provider has no key, Captain's Log uses Apple Foundation Models when available.")
                 .kit941Font(.body)
                 .foregroundStyle(AppSurface.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var providerCard: some View {
+        Kit941.Card {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                VStack(alignment: .leading, spacing: Kit941.Spacing.xs) {
+                    Text("Current provider")
+                        .kit941Font(.title, weight: .semibold)
+                    Text("This controls which cloud model is used when you generate a Captain's Log.")
+                        .kit941Font(.caption)
+                        .foregroundStyle(AppSurface.secondaryText)
+                }
+
+                Picker("Current provider", selection: $selectedProvider) {
+                    ForEach(AIProvider.allCases) { provider in
+                        Text(provider.displayName).tag(provider)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                VStack(spacing: 0) {
+                    ForEach(AIProvider.allCases) { provider in
+                        providerStatusRow(provider)
+                        if provider.id != AIProvider.allCases.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+                .background(AppSurface.mutedFill(opacity: 0.55), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
+            }
         }
     }
 
@@ -77,7 +116,7 @@ struct AISettingsView: View {
                     Image(systemName: hasKey ? "key.fill" : "key")
                         .foregroundStyle(hasKey ? AppSurface.accent : AppSurface.tertiaryText)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("OpenAI key")
+                        Text("\(selectedProvider.displayName) key")
                             .kit941Font(.title, weight: .semibold)
                         Text(hasKey ? "Key attached to this device" : "No key attached")
                             .kit941Font(.caption)
@@ -86,8 +125,8 @@ struct AISettingsView: View {
                     Spacer(minLength: 0)
                 }
 
-                if let storedKeyPreview {
-                    attachedKeyRow(preview: storedKeyPreview)
+                if let preview = storedKeyPreviews[selectedProvider] {
+                    attachedKeyRow(preview: preview)
                 }
 
                 SecureField(hasKey ? "Paste replacement key" : "Paste API key", text: $key)
@@ -107,25 +146,63 @@ struct AISettingsView: View {
                     Label(message, systemImage: messageIsError ? "exclamationmark.triangle" : "checkmark.circle")
                         .kit941Font(.caption)
                         .foregroundStyle(messageIsError ? AppSurface.warning : AppSurface.accent)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                HStack(spacing: Kit941.Spacing.sm) {
-                    Kit941.Button {
-                        await test()
-                    } label: {
-                        Label(isTesting ? "Testing" : "Test", systemImage: "checkmark.circle")
-                    }
-                    .disabled((trimmedKey.isEmpty && !hasKey) || isTesting)
+                VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+                    AppActionRow(
+                        title: hasKey ? "Replace Key" : "Save Key",
+                        description: "Store this \(selectedProvider.displayName) key in this device's Keychain.",
+                        systemImage: "square.and.arrow.down",
+                        isProminent: true,
+                        isDisabled: trimmedKey.isEmpty,
+                        showsChevron: false,
+                        action: save
+                    )
 
-                    Kit941.Button(role: .secondary) {
-                        await MainActor.run { save() }
-                    } label: {
-                        Label(hasKey ? "Replace" : "Save", systemImage: "square.and.arrow.down")
-                    }
-                    .disabled(trimmedKey.isEmpty)
+                    AppActionRow(
+                        title: isTesting ? "Testing Connection" : "Test Connection",
+                        description: "Verify the attached or pasted \(selectedProvider.displayName) key before using it for journals.",
+                        systemImage: "checkmark.circle",
+                        isDisabled: (trimmedKey.isEmpty && !hasKey) || isTesting,
+                        showsChevron: false,
+                        action: {
+                            Task { await test() }
+                        }
+                    )
                 }
             }
         }
+    }
+
+    private func providerStatusRow(_ provider: AIProvider) -> some View {
+        Button {
+            selectedProvider = provider
+        } label: {
+            HStack(spacing: Kit941.Spacing.sm) {
+                Image(systemName: provider == selectedProvider ? "checkmark.circle.fill" : provider.symbolName)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(provider == selectedProvider ? AppSurface.accent : AppSurface.secondaryText)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(provider.displayName)
+                        .kit941Font(.label, weight: .semibold)
+                        .foregroundStyle(AppSurface.primaryText)
+                    Text(storedKeyPreviews[provider] ?? "No key attached")
+                        .font(.system(size: 12, weight: .medium, design: storedKeyPreviews[provider] == nil ? .default : .monospaced))
+                        .foregroundStyle(AppSurface.secondaryText)
+                        .privacySensitive(storedKeyPreviews[provider] != nil)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func attachedKeyRow(preview: String) -> some View {
@@ -160,7 +237,7 @@ struct AISettingsView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Delete OpenAI key")
+            .accessibilityLabel("Delete \(selectedProvider.displayName) key")
         }
         .padding(.leading, 12)
         .padding(.trailing, 6)
@@ -169,14 +246,14 @@ struct AISettingsView: View {
     }
 
     private var note: some View {
-        Text("Keys are stored in this device's Keychain. Captain's Log will only send requests directly to OpenAI after you choose a feature that needs cloud classification.")
+        Text("Keys are stored in this device's Keychain. Captain's Log sends summary requests directly to the selected provider only when you generate a journal entry.")
             .kit941Font(.caption)
             .foregroundStyle(AppSurface.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func checkFormat(for candidate: String) {
-        if let violation = AIProvider.openai.formatViolation(for: candidate) {
+        if let violation = selectedProvider.formatViolation(for: candidate) {
             message = violation
             messageIsError = true
         } else {
@@ -187,7 +264,7 @@ struct AISettingsView: View {
 
     private func test() async {
         guard let candidate = keyForTesting() else {
-            message = "Paste or attach an OpenAI key first."
+            message = "Paste or attach a \(selectedProvider.displayName) key first."
             messageIsError = true
             return
         }
@@ -198,12 +275,18 @@ struct AISettingsView: View {
         }
 
         isTesting = true
-        let result = await OpenAIWorkClassifier().testConnection(key: candidate)
+        let result: Result<Void, Error>
+        switch selectedProvider {
+        case .openai:
+            result = await OpenAIWorkClassifier().testConnection(key: candidate).mapError { $0 as Error }
+        case .anthropic:
+            result = await AnthropicJournalSummarizer().testConnection(key: candidate).mapError { $0 as Error }
+        }
         isTesting = false
 
         switch result {
         case .success:
-            message = trimmedKey.isEmpty ? "Attached key works." : "OpenAI connection works. Save to attach it."
+            message = trimmedKey.isEmpty ? "Attached key works." : "\(selectedProvider.displayName) connection works. Save to attach it."
             messageIsError = false
         case .failure(let error):
             message = error.localizedDescription
@@ -212,13 +295,13 @@ struct AISettingsView: View {
     }
 
     private func save() {
-        if let violation = AIProvider.openai.formatViolation(for: trimmedKey) {
+        if let violation = selectedProvider.formatViolation(for: trimmedKey) {
             message = violation
             messageIsError = true
             return
         }
 
-        guard store.saveKey(trimmedKey, for: .openai) else {
+        guard store.saveKey(trimmedKey, for: selectedProvider) else {
             message = "Keychain could not save this key."
             messageIsError = true
             return
@@ -227,27 +310,29 @@ struct AISettingsView: View {
         key = ""
         refreshStoredKeyState()
         credentialRevision += 1
-        message = "Key attached."
+        message = "\(selectedProvider.displayName) key attached."
         messageIsError = false
     }
 
     private func delete() {
-        store.deleteKey(for: .openai)
+        store.deleteKey(for: selectedProvider)
         key = ""
         refreshStoredKeyState()
         credentialRevision += 1
-        message = "Key deleted."
+        message = "\(selectedProvider.displayName) key deleted."
         messageIsError = false
     }
 
     private func refreshStoredKeyState() {
-        storedKeyPreview = store.keyPreview(for: .openai)
+        storedKeyPreviews = AIProvider.allCases.reduce(into: [:]) { previews, provider in
+            previews[provider] = store.keyPreview(for: provider)
+        }
     }
 
     private func keyForTesting() -> String? {
         if !trimmedKey.isEmpty {
             return trimmedKey
         }
-        return store.loadKey(for: .openai)
+        return store.loadKey(for: selectedProvider)
     }
 }

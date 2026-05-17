@@ -99,6 +99,10 @@ final class CaptainsLogAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        guard !CaptainsLogApp.isUITesting else {
+            return true
+        }
+
         let registered = BGTaskScheduler.shared.register(
             forTaskWithIdentifier: BackgroundHistoryIndexer.taskIdentifier,
             using: .main

@@ -9,6 +9,10 @@ struct JournalWeekStrip: View {
     @State private var weekDragTranslation: CGFloat = 0
     @State private var isSettling = false
 
+    private var weekSpring: Animation {
+        .interactiveSpring(response: 0.34, dampingFraction: 0.78, blendDuration: 0.08)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
             HStack(alignment: .top, spacing: Kit941.Spacing.md) {
@@ -50,9 +54,17 @@ struct JournalWeekStrip: View {
             GeometryReader { proxy in
                 let pageWidth = max(proxy.size.width, 1)
 
-                weekPage(containing: selectedDate, selectedPageDate: selectedDate)
-                    .frame(width: pageWidth)
-                    .offset(x: weekDragTranslation)
+                HStack(spacing: 0) {
+                    weekPage(containing: weekDate(offset: -1), selectedPageDate: weekDate(offset: -1))
+                        .frame(width: pageWidth)
+                    weekPage(containing: selectedDate, selectedPageDate: selectedDate)
+                        .frame(width: pageWidth)
+                    weekPage(containing: weekDate(offset: 1), selectedPageDate: weekDate(offset: 1))
+                        .frame(width: pageWidth)
+                }
+                    .frame(width: pageWidth * 3, alignment: .leading)
+                    .offset(x: -pageWidth + weekDragTranslation)
+                    .scaleEffect(weekDragScale(pageWidth: pageWidth))
                     .contentShape(Rectangle())
                     .gesture(weekGesture(pageWidth: pageWidth))
             }
@@ -91,7 +103,9 @@ struct JournalWeekStrip: View {
     }
 
     private func select(_ day: Date) {
-        withAnimation(Kit941.Motion.snappy) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
             selectedDate = Calendar.current.startOfDay(for: day)
         }
         Kit941.Haptics.impact(.soft)
@@ -101,7 +115,12 @@ struct JournalWeekStrip: View {
         DragGesture(minimumDistance: 18)
             .onChanged { value in
                 guard !isSettling else { return }
-                weekDragTranslation = interactiveWeekOffset(for: value.translation.width, pageWidth: pageWidth)
+                guard hasWeekSwipeIntent(value.translation) else { return }
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    weekDragTranslation = interactiveWeekOffset(for: value.translation.width, pageWidth: pageWidth)
+                }
             }
             .onEnded { value in
                 guard !isSettling else { return }
@@ -110,49 +129,74 @@ struct JournalWeekStrip: View {
     }
 
     private func handleWeekDrag(_ value: DragGesture.Value, pageWidth: CGFloat) {
-        let threshold = max(pageWidth * 0.20, 70)
-        let predicted = value.predictedEndTranslation.width
-        let translation = value.translation.width
-        let resolved = abs(predicted) > abs(translation) ? predicted : translation
-
-        guard abs(resolved) >= threshold else {
+        let predicted = value.predictedEndTranslation
+        guard hasWeekSwipeIntent(value.translation) || hasWeekSwipeIntent(predicted) else {
             snapWeekBack()
             return
         }
 
-        let offset = resolved < 0 ? 1 : -1
-        settleWeek(by: offset)
+        let offset = predicted.width < 0 ? 1 : -1
+        let distancePush = abs(value.translation.width) > pageWidth * 0.24
+        let projectedPush = abs(predicted.width) > pageWidth * 0.26
+        let velocityPush = abs(predicted.width - value.translation.width) > pageWidth * 0.18
+        guard distancePush || projectedPush || velocityPush else {
+            snapWeekBack()
+            return
+        }
+
+        settleWeek(by: offset, pageWidth: pageWidth)
     }
 
-    private func settleWeek(by offset: Int) {
+    private func settleWeek(by offset: Int, pageWidth: CGFloat) {
         isSettling = true
-        let targetDate = weekDate(offset: offset)
+        Kit941.Haptics.impact(.soft)
 
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            selectedDate = Calendar.current.startOfDay(for: targetDate)
+        withAnimation(weekSpring) {
+            weekDragTranslation = offset > 0 ? -pageWidth : pageWidth
         }
 
-        withAnimation(Kit941.Motion.snappy) {
-            weekDragTranslation = 0
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            isSettling = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
+            let targetDate = weekDate(offset: offset)
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                selectedDate = Calendar.current.startOfDay(for: targetDate)
+                weekDragTranslation = 0
+                isSettling = false
+            }
         }
     }
 
     private func snapWeekBack() {
-        withAnimation(Kit941.Motion.smooth) {
+        withAnimation(weekSpring) {
             weekDragTranslation = 0
             isSettling = false
         }
     }
 
+    private func weekDragScale(pageWidth: CGFloat) -> CGFloat {
+        1 - min(abs(weekDragTranslation) / max(pageWidth * 18, 1), 0.012)
+    }
+
+    private func hasWeekSwipeIntent(_ translation: CGSize) -> Bool {
+        let horizontal = abs(translation.width)
+        let vertical = abs(translation.height)
+        return horizontal >= 14 && horizontal > vertical * 1.15
+    }
+
     private func interactiveWeekOffset(for translation: CGFloat, pageWidth: CGFloat) -> CGFloat {
-        let limit = min(pageWidth * 0.16, 54)
-        return min(max(translation, -limit), limit)
+        guard translation != 0 else { return 0 }
+        let sign: CGFloat = translation < 0 ? -1 : 1
+        let magnitude = abs(translation)
+        let pageTravel = min(magnitude, pageWidth)
+        let overflow = max(magnitude - pageWidth, 0)
+        return sign * (pageTravel + elasticOffset(overflow, limit: 34))
+    }
+
+    private func elasticOffset(_ value: CGFloat, limit: CGFloat) -> CGFloat {
+        let magnitude = abs(value)
+        let sign: CGFloat = value < 0 ? -1 : 1
+        return sign * ((limit * magnitude) / (limit + magnitude))
     }
 }
 

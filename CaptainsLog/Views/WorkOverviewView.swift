@@ -70,6 +70,7 @@ struct GitRepositoryOverviewSnapshot {
 
 struct WorkOverviewView: View {
     @Binding var selectedDate: Date
+    @Binding var displayMetric: WorkDisplayMetric
 
     let workMetrics: WorkMetrics
     let selectedWorkSnapshot: DayWorkSnapshot
@@ -82,21 +83,19 @@ struct WorkOverviewView: View {
     let syncMessage: String
     let importedCommitCount: Int
     let updatedDiffStatCount: Int
-    let hasOpenAIKey: Bool
     let workIdentityScope: WorkIdentityScope
     let identityAliasCount: Int
     let onShowAccounts: @MainActor @Sendable () -> Void
     let onSyncLatest: @MainActor @Sendable () -> Void
     let onFillLineStats: @MainActor @Sendable (WorkRangeScope, DateInterval) -> Void
     let onShowSettings: @MainActor @Sendable () -> Void
-    let onShowAISettings: @MainActor @Sendable () -> Void
     let onShowMonth: @MainActor @Sendable () -> Void
     let onShowDayDetail: @MainActor @Sendable () -> Void
 
-    @State private var displayMetric: WorkDisplayMetric = .changes
     @State private var selectedScope: WorkRangeScope = .week
     @State private var isShowingWorkAnalytics = false
     @State private var isShowingActivityMap = false
+    @State private var isShowingSyncStatus = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.xl) {
@@ -106,6 +105,7 @@ struct WorkOverviewView: View {
                 workMetrics: workMetrics,
                 onShowMonth: onShowMonth
             )
+            WorkLensControl(metric: $displayMetric)
             ActivityHeatmapView(
                 selectedDate: $selectedDate,
                 workMetrics: workMetrics,
@@ -117,12 +117,13 @@ struct WorkOverviewView: View {
                 trend: trend,
                 summary: rangeSummary,
                 scope: $selectedScope,
-                metric: $displayMetric,
+                metric: displayMetric,
                 onOpen: { isShowingWorkAnalytics = true }
             )
             SelectedDayAnnotationRow(
                 selectedDate: selectedDate,
                 snapshot: selectedWorkSnapshot,
+                metric: displayMetric,
                 summary: selectedSummary,
                 onShowDayDetail: onShowDayDetail
             )
@@ -132,7 +133,7 @@ struct WorkOverviewView: View {
                 selectedDate: selectedDate,
                 workMetrics: workMetrics,
                 scope: $selectedScope,
-                metric: $displayMetric,
+                metric: displayMetric,
                 isSyncing: isSyncing,
                 canFillLineStats: isGitHubSignedIn,
                 onFillLineStats: onFillLineStats
@@ -144,7 +145,7 @@ struct WorkOverviewView: View {
                 selectedDate: $selectedDate,
                 workMetrics: workMetrics,
                 repositoryCoverage: repositorySnapshot.coverage,
-                metric: $displayMetric
+                metric: displayMetric
             )
             .presentationDetents([.large])
         }
@@ -185,35 +186,47 @@ struct WorkOverviewView: View {
                 Spacer(minLength: Kit941.Spacing.sm)
 
                 HStack(spacing: Kit941.Spacing.xs) {
-                    if isSyncing {
-                        ProgressView()
-                            .controlSize(.small)
-                            .frame(width: 38, height: 38)
-                    } else {
-                        if isGitHubSignedIn {
-                            iconButton("Sync Latest", systemImage: "arrow.clockwise", action: onSyncLatest)
-                        } else {
-                            iconButton("Sign in with GitHub", systemImage: "person.crop.circle.badge.plus", action: onShowAccounts)
+                    if isGitHubSignedIn {
+                        SyncStatusButton(
+                            repositoryCount: repositorySnapshot.repositoryCount,
+                            selectedRepositoryCount: repositorySnapshot.selectedRepositoryCount,
+                            isSyncing: isSyncing,
+                            syncMessage: syncMessage,
+                            historyIndexDetail: repositorySnapshot.historyIndexDetail,
+                            lastSyncedAt: repositorySnapshot.lastSyncedAt,
+                            action: {
+                                isShowingSyncStatus = true
+                            }
+                        )
+                        .popover(isPresented: $isShowingSyncStatus, arrowEdge: .top) {
+                            SyncStatusPopover(
+                                repositoryCount: repositorySnapshot.repositoryCount,
+                                selectedRepositoryCount: repositorySnapshot.selectedRepositoryCount,
+                                isSyncing: isSyncing,
+                                syncMessage: syncMessage,
+                                importedCommitCount: importedCommitCount,
+                                updatedDiffStatCount: updatedDiffStatCount,
+                                lastSyncedAt: repositorySnapshot.lastSyncedAt,
+                                historyIndexDetail: repositorySnapshot.historyIndexDetail,
+                                workIdentityScope: workIdentityScope,
+                                identityAliasCount: identityAliasCount,
+                                onSyncLatest: {
+                                    isShowingSyncStatus = false
+                                    onSyncLatest()
+                                },
+                                onShowSettings: {
+                                    isShowingSyncStatus = false
+                                    onShowSettings()
+                                }
+                            )
+                            .presentationCompactAdaptation(.popover)
                         }
+                    } else {
+                        iconButton("Sign in with GitHub", systemImage: "person.crop.circle.badge.plus", action: onShowAccounts)
                     }
-                    iconButton("AI", systemImage: hasOpenAIKey ? "sparkles" : "sparkles.slash", action: onShowAISettings)
                     iconButton("Settings", systemImage: "gearshape", action: onShowSettings)
                 }
             }
-
-            SyncStatusStrip(
-                repositoryCount: repositorySnapshot.repositoryCount,
-                selectedRepositoryCount: repositorySnapshot.selectedRepositoryCount,
-                isGitHubSignedIn: isGitHubSignedIn,
-                isSyncing: isSyncing,
-                syncMessage: syncMessage,
-                importedCommitCount: importedCommitCount,
-                updatedDiffStatCount: updatedDiffStatCount,
-                lastSyncedAt: repositorySnapshot.lastSyncedAt,
-                historyIndexDetail: repositorySnapshot.historyIndexDetail,
-                workIdentityScope: workIdentityScope,
-                identityAliasCount: identityAliasCount
-            )
         }
     }
 
@@ -243,63 +256,84 @@ struct WorkOverviewView: View {
     }
 }
 
-private struct SyncStatusStrip: View {
+private struct SyncStatusButton: View {
     let repositoryCount: Int
     let selectedRepositoryCount: Int
-    let isGitHubSignedIn: Bool
     let isSyncing: Bool
     let syncMessage: String
-    let importedCommitCount: Int
-    let updatedDiffStatCount: Int
-    let lastSyncedAt: Date?
     let historyIndexDetail: String?
-    let workIdentityScope: WorkIdentityScope
-    let identityAliasCount: Int
+    let lastSyncedAt: Date?
+    let action: @MainActor @Sendable () -> Void
 
     var body: some View {
-        HStack(spacing: Kit941.Spacing.sm) {
-            statusIcon
+        Button {
+            action()
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Circle()
+                    .fill(AppSurface.mutedFill(opacity: 1))
+                    .frame(width: 38, height: 38)
 
-            Text(compactStatus)
-                .kit941Font(.caption, weight: .semibold)
-                .foregroundStyle(AppSurface.secondaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                if isSyncing {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(AppSurface.accent)
+                        .frame(width: 38, height: 38)
+                } else {
+                    Image(systemName: statusSymbol)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                        .frame(width: 38, height: 38)
+                }
 
-            Spacer(minLength: 0)
-
-            if isSyncing {
-                ProgressView()
-                    .controlSize(.small)
+                if needsAttention {
+                    Circle()
+                        .fill(AppSurface.warning)
+                        .frame(width: 8, height: 8)
+                        .overlay(
+                            Circle()
+                                .stroke(AppSurface.background, lineWidth: 1.5)
+                        )
+                        .offset(x: -2, y: 2)
+                }
             }
+            .contentShape(Circle())
         }
-        .padding(.horizontal, Kit941.Spacing.md)
-        .padding(.vertical, 9)
-        .background(AppSurface.mutedFill(opacity: 1), in: Capsule())
+        .buttonStyle(.plain)
+        .accessibilityLabel("GitHub sync status")
+        .accessibilityValue(accessibilityValue)
     }
 
-    private var statusIcon: some View {
-        Image(systemName: statusSymbol)
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(isGitHubSignedIn ? AppSurface.accent : AppSurface.warning)
+    private var statusSymbol: String {
+        if needsAttention {
+            return "exclamationmark.triangle.fill"
+        }
+        if lastSyncedAt != nil {
+            return "checkmark"
+        }
+        return "arrow.clockwise"
     }
 
-    private var title: String {
-        if isSyncing {
-            return "Syncing GitHub"
-        }
-        if !isGitHubSignedIn {
-            return "GitHub signed out"
-        }
-        return repositoryCount > 0 ? "GitHub history" : "GitHub connected"
+    private var iconColor: Color {
+        needsAttention ? AppSurface.warning : AppSurface.primaryText
     }
 
-    private var compactStatus: String {
+    private var needsAttention: Bool {
+        selectedRepositoryCount == 0 || isErrorMessage || historyIndexDetail?.localizedCaseInsensitiveContains("paused") == true
+    }
+
+    private var isErrorMessage: Bool {
+        let lowered = syncMessage.lowercased()
+        return lowered.contains("failed")
+            || lowered.contains("error")
+            || lowered.contains("unauthorized")
+            || lowered.contains("401")
+            || lowered.contains("404")
+    }
+
+    private var accessibilityValue: String {
         if isSyncing {
             return syncMessage.isEmpty ? "Syncing GitHub" : syncMessage
-        }
-        if !isGitHubSignedIn {
-            return "GitHub signed out"
         }
         if selectedRepositoryCount == 0 {
             return "No repositories selected"
@@ -308,25 +342,118 @@ private struct SyncStatusStrip: View {
             return historyIndexDetail
         }
         if let lastSyncedAt {
-            return "Today current. \(selectedRepositoryCount.formatted()) repos. Synced \(lastSyncedAt.formatted(date: .omitted, time: .shortened))"
+            return "Last synced \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"
         }
-        return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) repos selected. Sync needed"
+        return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) repositories selected"
+    }
+}
+
+private struct SyncStatusPopover: View {
+    let repositoryCount: Int
+    let selectedRepositoryCount: Int
+    let isSyncing: Bool
+    let syncMessage: String
+    let importedCommitCount: Int
+    let updatedDiffStatCount: Int
+    let lastSyncedAt: Date?
+    let historyIndexDetail: String?
+    let workIdentityScope: WorkIdentityScope
+    let identityAliasCount: Int
+    let onSyncLatest: @MainActor @Sendable () -> Void
+    let onShowSettings: @MainActor @Sendable () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+            HStack(alignment: .center, spacing: Kit941.Spacing.sm) {
+                statusIcon
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .kit941Font(.title, weight: .semibold)
+                        .foregroundStyle(AppSurface.primaryText)
+                    Text(detail)
+                        .kit941Font(.caption)
+                        .foregroundStyle(AppSurface.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: Kit941.Spacing.xs) {
+                detailRow("Repositories", value: repositoryDetail)
+                detailRow("Latest run", value: latestRunDetail)
+                detailRow("History", value: historyDetail)
+                detailRow("Work scope", value: workScopeLabel)
+            }
+
+            VStack(spacing: Kit941.Spacing.xs) {
+                popoverAction("Update now", systemImage: "arrow.clockwise", isDisabled: selectedRepositoryCount == 0, action: onSyncLatest)
+                popoverAction("Sync settings", systemImage: "slider.horizontal.3", action: onShowSettings)
+            }
+        }
+        .padding(Kit941.Spacing.lg)
+        .frame(width: 320, alignment: .leading)
+    }
+
+    private var statusIcon: some View {
+        ZStack {
+            Circle()
+                .fill(AppSurface.accent.opacity(0.12))
+                .frame(width: 38, height: 38)
+
+            if isSyncing {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(AppSurface.accent)
+            } else {
+                Image(systemName: statusSymbol)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(statusColor)
+            }
+        }
+    }
+
+    private var title: String {
+        if isSyncing {
+            return "Syncing GitHub"
+        }
+        return repositoryCount > 0 ? "GitHub history" : "GitHub connected"
     }
 
     private var detail: String {
-        if !syncMessage.isEmpty {
-            return syncMessage
+        if isSyncing {
+            return syncMessage.isEmpty ? "Syncing GitHub" : syncMessage
         }
-        if importedCommitCount > 0 || updatedDiffStatCount > 0 {
-            return "\(importedCommitCount.formatted()) commits, \(updatedDiffStatCount.formatted()) diff stats this run"
+        if selectedRepositoryCount == 0 {
+            return "Choose repositories before Captain's Log can update the dashboard."
         }
         if let historyIndexDetail {
             return historyIndexDetail
         }
         if let lastSyncedAt {
+            return "Last updated \(lastSyncedAt.formatted(date: .omitted, time: .shortened))."
+        }
+        return "Ready to update latest work."
+    }
+
+    private var repositoryDetail: String {
+        if repositoryCount == 0 {
+            return "No repositories loaded"
+        }
+        return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) selected"
+    }
+
+    private var latestRunDetail: String {
+        if importedCommitCount > 0 || updatedDiffStatCount > 0 {
+            return "\(importedCommitCount.formatted()) commits, \(updatedDiffStatCount.formatted()) diff stats this run"
+        }
+        if let lastSyncedAt {
             return "Last sync \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"
         }
-        return "\(selectedRepositoryCount.formatted()) of \(repositoryCount.formatted()) repositories selected"
+        return "Not synced yet"
+    }
+
+    private var historyDetail: String {
+        historyIndexDetail ?? "No background index running"
     }
 
     private var workScopeLabel: String {
@@ -345,7 +472,133 @@ private struct SyncStatusStrip: View {
         if isSyncing {
             return "arrow.triangle.2.circlepath"
         }
-        return isGitHubSignedIn ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+        if selectedRepositoryCount == 0 {
+            return "exclamationmark.triangle.fill"
+        }
+        return "checkmark.seal.fill"
+    }
+
+    private var statusColor: Color {
+        selectedRepositoryCount == 0 ? AppSurface.warning : AppSurface.accent
+    }
+
+    private func detailRow(_ label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Kit941.Spacing.md) {
+            Text(label)
+                .kit941Font(.caption, weight: .semibold)
+                .foregroundStyle(AppSurface.secondaryText)
+                .frame(width: 78, alignment: .leading)
+            Text(value)
+                .kit941Font(.caption)
+                .foregroundStyle(AppSurface.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func popoverAction(
+        _ title: String,
+        systemImage: String,
+        isDisabled: Bool = false,
+        action: @escaping @MainActor @Sendable () -> Void
+    ) -> some View {
+        Button {
+            action()
+        } label: {
+            HStack(spacing: Kit941.Spacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(title)
+                    .kit941Font(.label, weight: .semibold)
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(isDisabled ? AppSurface.secondaryText : AppSurface.primaryText)
+            .padding(.horizontal, Kit941.Spacing.md)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppSurface.mutedFill(opacity: 1), in: RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.55 : 1)
+    }
+}
+
+private struct WorkLensControl: View {
+    @Binding var metric: WorkDisplayMetric
+
+    var body: some View {
+        Picker("Work lens", selection: $metric) {
+            ForEach(WorkDisplayMetric.allCases) { option in
+                Text(option.title).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("Work lens")
+        .accessibilityValue(metric.title)
+    }
+}
+
+private struct WorkLensContextRow: View {
+    let metric: WorkDisplayMetric
+    let summary: WorkRangeSummary
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Kit941.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(metric.title) lens")
+                    .kit941Font(.caption, weight: .semibold)
+                    .foregroundStyle(AppSurface.primaryText)
+                Text(dataBasisLabel)
+                    .kit941Font(.caption)
+                    .foregroundStyle(AppSurface.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Spacer(minLength: Kit941.Spacing.sm)
+
+            if metric == .changes && summary.commitCount > 0 {
+                DataConfidenceMark(summary: summary)
+            }
+        }
+        .padding(.horizontal, Kit941.Spacing.md)
+        .padding(.vertical, 10)
+        .background(AppSurface.mutedFill(opacity: 1), in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private var dataBasisLabel: String {
+        guard summary.commitCount > 0 else {
+            return "No imported work"
+        }
+        switch metric {
+        case .commits:
+            return "GitHub commits from selected repositories"
+        case .changes:
+            guard summary.statsBackedCommitCount > 0 else {
+                return "Waiting for changed-line stats"
+            }
+            let backed = summary.statsBackedCommitCount.formatted()
+            let total = summary.commitCount.formatted()
+            if summary.isDiffStatsComplete {
+                return "Complete changed-line stats: \(backed) of \(total)"
+            }
+            return "Partial changed-line stats: \(backed) of \(total)"
+        }
+    }
+}
+
+private struct WorkLensPill: View {
+    let metric: WorkDisplayMetric
+
+    var body: some View {
+        Text(metric.title)
+            .kit941Font(.caption, weight: .semibold)
+            .foregroundStyle(AppSurface.primaryText)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(AppSurface.mutedFill(opacity: 1), in: Capsule())
     }
 }
 
@@ -353,7 +606,7 @@ private struct PeriodSnapshotCard: View {
     let trend: WorkTrendSummary
     let summary: WorkRangeSummary
     @Binding var scope: WorkRangeScope
-    @Binding var metric: WorkDisplayMetric
+    let metric: WorkDisplayMetric
     let onOpen: @MainActor @Sendable () -> Void
 
     var body: some View {
@@ -730,57 +983,13 @@ private enum WorkBreakdownDimension: String, CaseIterable, Identifiable {
     }
 }
 
-private struct MetricChoiceRow: View {
-    let summary: WorkRangeSummary
-    @Binding var metric: WorkDisplayMetric
-
-    var body: some View {
-        HStack(spacing: Kit941.Spacing.sm) {
-            ForEach(WorkDisplayMetric.allCases) { option in
-                Button {
-                    metric = option
-                } label: {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(option.title)
-                            .kit941Font(.caption, weight: .semibold)
-                            .foregroundStyle(AppSurface.secondaryText)
-                        Text(option.value(for: summary).formatted())
-                            .kit941Font(.title, weight: .semibold)
-                            .foregroundStyle(AppSurface.primaryText)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(Kit941.Spacing.md)
-                    .background(background(for: option), in: RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Kit941.Radius.lg, style: .continuous)
-                            .strokeBorder(borderColor(for: option), lineWidth: option == metric ? 1.2 : 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(option.title), \(option.value(for: summary).formatted())")
-            }
-        }
-    }
-
-    private func background(for option: WorkDisplayMetric) -> Color {
-        option == metric ? AppSurface.accent.opacity(0.12) : AppSurface.mutedFill(opacity: 1)
-    }
-
-    private func borderColor(for option: WorkDisplayMetric) -> Color {
-        option == metric ? AppSurface.accent.opacity(0.42) : AppSurface.panelStroke().opacity(1)
-    }
-}
-
 private struct WorkAnalyticsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let selectedDate: Date
     let workMetrics: WorkMetrics
     @Binding var scope: WorkRangeScope
-    @Binding var metric: WorkDisplayMetric
+    let metric: WorkDisplayMetric
     let isSyncing: Bool
     let canFillLineStats: Bool
     let onFillLineStats: @MainActor @Sendable (WorkRangeScope, DateInterval) -> Void
@@ -830,7 +1039,7 @@ private struct WorkAnalyticsSheet: View {
             }
             .pickerStyle(.segmented)
 
-            MetricChoiceRow(summary: summary, metric: $metric)
+            WorkLensContextRow(metric: metric, summary: summary)
         }
     }
 
@@ -1078,7 +1287,7 @@ private struct WorkMapDetailSheet: View {
     @Binding var selectedDate: Date
     let workMetrics: WorkMetrics
     let repositoryCoverage: [ActivityRepositoryCoverage]
-    @Binding var metric: WorkDisplayMetric
+    let metric: WorkDisplayMetric
     @State private var selectedMapYear: Int?
 
     var body: some View {
@@ -1127,14 +1336,11 @@ private struct WorkMapDetailSheet: View {
 
                 Spacer(minLength: Kit941.Spacing.sm)
 
-                DashboardFactPill(text: selectedMapYear.map(String.init) ?? "52W")
+                HStack(spacing: Kit941.Spacing.xs) {
+                    WorkLensPill(metric: metric)
+                    DashboardFactPill(text: selectedMapYear.map(String.init) ?? "52W")
+                }
             }
-
-            Picker("Metric", selection: $metric) {
-                Text("Lines").tag(WorkDisplayMetric.changes)
-                Text("Commits").tag(WorkDisplayMetric.commits)
-            }
-            .pickerStyle(.segmented)
         }
     }
 
@@ -1563,7 +1769,7 @@ private struct PeriodReadView: View {
     let summary: WorkRangeSummary
     let trendSummaries: [WorkRangeSummary]
     @Binding var scope: WorkRangeScope
-    @Binding var metric: WorkDisplayMetric
+    let metric: WorkDisplayMetric
     let isSyncing: Bool
     let canFillLineStats: Bool
     let onFillLineStats: @MainActor @Sendable (WorkRangeScope, DateInterval) -> Void
@@ -1605,12 +1811,7 @@ private struct PeriodReadView: View {
             }
             .pickerStyle(.segmented)
 
-            Picker("Metric", selection: $metric) {
-                ForEach(WorkDisplayMetric.allCases) { metric in
-                    Text(metric.title).tag(metric)
-                }
-            }
-            .pickerStyle(.segmented)
+            WorkLensContextRow(metric: metric, summary: summary)
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(metric.value(for: summary).formatted())
@@ -2308,6 +2509,7 @@ private struct WorkBreakdownStrip: View {
 private struct SelectedDayAnnotationRow: View {
     let selectedDate: Date
     let snapshot: DayWorkSnapshot
+    let metric: WorkDisplayMetric
     let summary: DailyJournalSummaryRecord?
     let onShowDayDetail: @MainActor @Sendable () -> Void
 
@@ -2351,14 +2553,23 @@ private struct SelectedDayAnnotationRow: View {
         guard snapshot.commitCount > 0 else {
             return "No imported work"
         }
-        if snapshot.mode == .diffBacked {
-            return "\(snapshot.displayValue.formatted()) \(snapshot.displayUnit), \(snapshot.changedFiles.formatted()) files"
+        switch metric {
+        case .commits:
+            let unit = snapshot.commitCount == 1 ? "commit" : "commits"
+            if snapshot.statsBackedCommitCount > 0 {
+                return "\(snapshot.commitCount.formatted()) \(unit), \(snapshot.totalChanges.formatted()) known lines"
+            }
+            return "\(snapshot.commitCount.formatted()) \(unit)"
+        case .changes:
+            if snapshot.mode == .diffBacked {
+                return "\(snapshot.displayValue.formatted()) \(snapshot.displayUnit), \(snapshot.changedFiles.formatted()) files"
+            }
+            if snapshot.statsBackedCommitCount > 0 {
+                return "\(snapshot.displayValue.formatted()) \(snapshot.displayUnit), +\(snapshot.additions.formatted()) -\(snapshot.deletions.formatted())"
+            }
+            let coverage = snapshot.coverage.formatted(.percent.precision(.fractionLength(0)))
+            return "\(snapshot.commitCount.formatted()) commits, \(coverage) stats coverage"
         }
-        if snapshot.statsBackedCommitCount > 0 {
-            return "\(snapshot.displayValue.formatted()) \(snapshot.displayUnit), +\(snapshot.additions.formatted()) -\(snapshot.deletions.formatted())"
-        }
-        let coverage = snapshot.coverage.formatted(.percent.precision(.fractionLength(0)))
-        return "\(snapshot.commitCount.formatted()) commits, \(coverage) stats coverage"
     }
 
     private var statusLabel: String {

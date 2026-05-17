@@ -92,6 +92,7 @@ final class AppModel: ObservableObject {
 
     private var modelContext: ModelContext?
     private var token: String?
+    private var oauthSession: GitHubOAuthSession?
     private var viewer: GitHubViewer?
     private var pendingDeviceCode: GitHubDeviceCodeResponse?
     private let syncLogger = Logger(subsystem: "com.blakecrosley.captainslog", category: "sync")
@@ -147,26 +148,29 @@ final class AppModel: ObservableObject {
     func loadSession() async {
         foundationAvailability = JournalSummarizer.availability()
         do {
-            guard let savedToken = try KeychainTokenStore.readToken() else {
+            guard let savedSession = try KeychainTokenStore.readSession() else {
                 syncLogger.info("No saved GitHub token found during session load")
                 authState = .signedOut
                 return
             }
-            token = savedToken
-            let loadedViewer = try await GitHubAPIClient(token: savedToken, appSlug: githubAppSlug).viewer()
+            let validSession = try await refreshSessionIfNeeded(savedSession, login: nil)
+            oauthSession = validSession
+            token = validSession.accessToken
+            let loadedViewer = try await GitHubAPIClient(token: validSession.accessToken, appSlug: githubAppSlug).viewer()
             viewer = loadedViewer
             if let modelContext {
                 try deleteDemoData(modelContext: modelContext)
                 try upsertAccount(loadedViewer, isActive: true, modelContext: modelContext)
                 try modelContext.save()
             }
-            try KeychainTokenStore.saveToken(savedToken, login: loadedViewer.login)
+            try KeychainTokenStore.saveSession(validSession, login: loadedViewer.login)
             authState = .signedIn(loadedViewer)
             syncLogger.info("Loaded GitHub session for \(loadedViewer.login, privacy: .public)")
         } catch {
-            if handleUnauthorizedGitHubError(error, operation: "Load GitHub session") {
+            if handleExpiredGitHubSessionError(error, operation: "Load GitHub session") {
                 return
             }
+            oauthSession = nil
             token = nil
             viewer = nil
             authState = .failed(error.localizedDescription)
@@ -175,23 +179,32 @@ final class AppModel: ObservableObject {
     }
 
     private func restoreSessionForSyncIfNeeded() async -> Bool {
-        if token != nil, viewer != nil {
-            return true
+        if let currentSession = oauthSession, let currentViewer = viewer {
+            do {
+                let validSession = try await refreshSessionIfNeeded(currentSession, login: currentViewer.login)
+                oauthSession = validSession
+                token = validSession.accessToken
+                return true
+            } catch {
+                return !handleExpiredGitHubSessionError(error, operation: "Refresh GitHub session", login: currentViewer.login)
+            }
         }
 
         syncMessage = "Restoring GitHub session"
         syncLogger.info("Sync requested without an in-memory GitHub session; restoring from keychain")
 
         do {
-            guard let savedToken = try KeychainTokenStore.readToken() else {
+            guard let savedSession = try KeychainTokenStore.readSession() else {
                 syncMessage = "Sign in to GitHub again"
                 authState = .signedOut
                 syncLogger.error("No saved GitHub token available for sync")
                 return false
             }
 
-            token = savedToken
-            let loadedViewer = try await GitHubAPIClient(token: savedToken, appSlug: githubAppSlug).viewer()
+            let validSession = try await refreshSessionIfNeeded(savedSession, login: nil)
+            oauthSession = validSession
+            token = validSession.accessToken
+            let loadedViewer = try await GitHubAPIClient(token: validSession.accessToken, appSlug: githubAppSlug).viewer()
             viewer = loadedViewer
 
             if let modelContext {
@@ -199,14 +212,15 @@ final class AppModel: ObservableObject {
                 try modelContext.save()
             }
 
-            try KeychainTokenStore.saveToken(savedToken, login: loadedViewer.login)
+            try KeychainTokenStore.saveSession(validSession, login: loadedViewer.login)
             authState = .signedIn(loadedViewer)
             syncLogger.info("Restored GitHub session for \(loadedViewer.login, privacy: .public)")
             return true
         } catch {
-            if handleUnauthorizedGitHubError(error, operation: "Restore GitHub session") {
+            if handleExpiredGitHubSessionError(error, operation: "Restore GitHub session") {
                 return false
             }
+            oauthSession = nil
             token = nil
             viewer = nil
             syncMessage = "GitHub session failed: \(error.localizedDescription)"
@@ -214,6 +228,42 @@ final class AppModel: ObservableObject {
             syncLogger.error("Failed to restore GitHub session: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    private func refreshSessionIfNeeded(
+        _ session: GitHubOAuthSession,
+        login: String?
+    ) async throws -> GitHubOAuthSession {
+        guard session.shouldRefresh() else {
+            return session
+        }
+        guard let refreshToken = session.refreshToken else {
+            return session
+        }
+
+        syncMessage = "Refreshing GitHub session"
+        let refreshedSession = try await GitHubDeviceAuthService(clientID: githubClientID)
+            .refreshSession(refreshToken: refreshToken)
+        if let login {
+            try KeychainTokenStore.saveSession(refreshedSession, login: login)
+        }
+        syncLogger.info("Refreshed GitHub session token")
+        return refreshedSession
+    }
+
+    private func handleExpiredGitHubSessionError(
+        _ error: Error,
+        operation: String,
+        login: String? = nil
+    ) -> Bool {
+        if handleUnauthorizedGitHubError(error, operation: operation, login: login) {
+            return true
+        }
+        guard let githubError = error as? GitHubError, githubError.isRefreshTokenInvalid else {
+            return false
+        }
+        expireGitHubSession(operation: operation, login: login)
+        return true
     }
 
     private func handleUnauthorizedGitHubError(
@@ -224,7 +274,11 @@ final class AppModel: ObservableObject {
         guard let githubError = error as? GitHubError, githubError.isUnauthorized else {
             return false
         }
+        expireGitHubSession(operation: operation, login: login)
+        return true
+    }
 
+    private func expireGitHubSession(operation: String, login: String?) {
         let invalidLogin = login ?? viewer?.login
         if let invalidLogin {
             try? KeychainTokenStore.deleteToken(login: invalidLogin)
@@ -232,6 +286,7 @@ final class AppModel: ObservableObject {
             try? KeychainTokenStore.deleteToken()
         }
 
+        oauthSession = nil
         token = nil
         viewer = nil
         pendingDeviceCode = nil
@@ -241,8 +296,7 @@ final class AppModel: ObservableObject {
         syncMessage = message
         authMessage = message
         authState = .signedOut
-        syncLogger.error("\(operation, privacy: .public) failed because GitHub rejected the saved token with HTTP 401")
-        return true
+        syncLogger.error("\(operation, privacy: .public) failed because GitHub rejected the saved session")
     }
 
     func signIn() async {
@@ -274,14 +328,15 @@ final class AppModel: ObservableObject {
         authState = .completingSignIn(code)
         do {
             let auth = GitHubDeviceAuthService(clientID: githubClientID)
-            guard let accessToken = try await auth.exchangeDeviceCode(deviceCode: code.deviceCode) else {
+            guard let session = try await auth.exchangeDeviceSession(deviceCode: code.deviceCode) else {
                 authState = .waitingForUser(code)
                 authMessage = "GitHub has not confirmed this code yet."
                 return
             }
-            let loadedViewer = try await GitHubAPIClient(token: accessToken, appSlug: githubAppSlug).viewer()
-            try KeychainTokenStore.saveToken(accessToken, login: loadedViewer.login)
-            token = accessToken
+            let loadedViewer = try await GitHubAPIClient(token: session.accessToken, appSlug: githubAppSlug).viewer()
+            try KeychainTokenStore.saveSession(session, login: loadedViewer.login)
+            oauthSession = session
+            token = session.accessToken
             pendingDeviceCode = nil
             authMessage = ""
             viewer = loadedViewer
@@ -303,6 +358,7 @@ final class AppModel: ObservableObject {
         } else {
             try? KeychainTokenStore.deleteToken()
         }
+        oauthSession = nil
         token = nil
         viewer = nil
         pendingDeviceCode = nil
@@ -318,19 +374,21 @@ final class AppModel: ObservableObject {
         }
 
         do {
-            guard let savedToken = try KeychainTokenStore.readToken(login: account.login) else {
+            guard let savedSession = try KeychainTokenStore.readSession(login: account.login) else {
                 authState = .failed("Sign in to @\(account.login) again.")
                 return
             }
-            let loadedViewer = try await GitHubAPIClient(token: savedToken, appSlug: githubAppSlug).viewer()
+            let validSession = try await refreshSessionIfNeeded(savedSession, login: account.login)
+            let loadedViewer = try await GitHubAPIClient(token: validSession.accessToken, appSlug: githubAppSlug).viewer()
             try KeychainTokenStore.saveActiveLogin(loadedViewer.login)
-            token = savedToken
+            oauthSession = validSession
+            token = validSession.accessToken
             viewer = loadedViewer
             try upsertAccount(loadedViewer, isActive: true, modelContext: modelContext)
             try modelContext.save()
             authState = .signedIn(loadedViewer)
         } catch {
-            if handleUnauthorizedGitHubError(error, operation: "Switch GitHub account", login: account.login) {
+            if handleExpiredGitHubSessionError(error, operation: "Switch GitHub account", login: account.login) {
                 return
             }
             authState = .failed(error.localizedDescription)
@@ -979,12 +1037,20 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func seedDemoData() throws {
+    func seedDemoData(includeFixtureDetails: Bool = false) throws {
         guard let modelContext else {
             throw StorageError.missingModelContext
         }
 
         let repo = try demoRepository(modelContext: modelContext)
+        if includeFixtureDetails {
+            repo.lastSyncedAt = Date()
+            repo.pushedAt = Date()
+            repo.historyBackfillCompletedAt = Date()
+            repo.historyBackfillLowerBound = Calendar.current.date(byAdding: .year, value: -1, to: Date())
+            repo.historyBackfillLastError = nil
+        }
+
         let calendar = Calendar.current
         let subjects = [
             "Add GitHub device auth shell",
@@ -1004,19 +1070,38 @@ final class AppModel: ObservableObject {
             let commitsForDay = (offset % 4) + 1
             for index in 0..<commitsForDay {
                 let sha = "demo\(offset)\(index)00000000000000000000000000000000000"
-                let record = GitCommitRecord(
-                    sha: sha,
-                    repositoryFullName: repo.fullName,
-                    authorLogin: "demo",
-                    message: subjects[(offset + index) % subjects.count],
-                    authoredAt: calendar.date(byAdding: .hour, value: index + 9, to: calendar.startOfDay(for: date)) ?? date,
-                    htmlURL: nil
-                )
-                record.repository = repo
-                if try !commitExists(id: record.id, modelContext: modelContext) {
+                let id = "\(repo.fullName)#\(sha)"
+                let record: GitCommitRecord
+                if let existing = try fetchCommit(id: id, modelContext: modelContext) {
+                    record = existing
+                } else {
+                    record = GitCommitRecord(
+                        sha: sha,
+                        repositoryFullName: repo.fullName,
+                        authorLogin: "demo",
+                        message: subjects[(offset + index) % subjects.count],
+                        authoredAt: calendar.date(byAdding: .hour, value: index + 9, to: calendar.startOfDay(for: date)) ?? date,
+                        htmlURL: URL(string: "https://github.com/captains-log/demo/commit/\(sha)")
+                    )
                     modelContext.insert(record)
                 }
+                record.repository = repo
+                if includeFixtureDetails {
+                    let additions = (offset + 1) * (index + 4) * 7
+                    let deletions = (offset % 5 + 1) * (index + 1) * 3
+                    record.applyDiffStats(additions: additions, deletions: deletions, changedFileCount: index + 2)
+                    let demoFiles = [
+                        "CaptainsLog/Views/WorkOverviewView.swift",
+                        "CaptainsLog/Services/AppModel.swift",
+                        "CaptainsLogTests/CalendarMathTests.swift"
+                    ]
+                    record.changedFiles = Array(demoFiles.prefix(index + 2))
+                }
             }
+        }
+
+        if includeFixtureDetails {
+            try seedDemoSummary(modelContext: modelContext, repo: repo, calendar: calendar)
         }
 
         try modelContext.save()
@@ -1040,7 +1125,9 @@ final class AppModel: ObservableObject {
         descriptor.fetchLimit = 1
 
         if let existing = try modelContext.fetch(descriptor).first {
-            existing.update(from: draft, sourceCommitIDs: sourceCommitIDs, modelName: modelName)
+            guard existing.update(from: draft, sourceCommitIDs: sourceCommitIDs, modelName: modelName) else {
+                throw StorageError.lockedSummary
+            }
         } else {
             modelContext.insert(
                 DailyJournalSummaryRecord(
@@ -1055,6 +1142,25 @@ final class AppModel: ObservableObject {
             )
         }
 
+        try modelContext.save()
+    }
+
+    func toggleSummaryLock(date: Date) throws {
+        guard let modelContext else {
+            throw StorageError.missingModelContext
+        }
+
+        let dayKey = GitCommitRecord.dayKey(for: date)
+        var descriptor = FetchDescriptor<DailyJournalSummaryRecord>(
+            predicate: #Predicate { $0.dayKey == dayKey }
+        )
+        descriptor.fetchLimit = 1
+
+        guard let summary = try modelContext.fetch(descriptor).first else {
+            return
+        }
+
+        summary.isLocked.toggle()
         try modelContext.save()
     }
 
@@ -2263,6 +2369,62 @@ final class AppModel: ObservableObject {
         return repo
     }
 
+    private func fetchCommit(id: String, modelContext: ModelContext) throws -> GitCommitRecord? {
+        var descriptor = FetchDescriptor<GitCommitRecord>(
+            predicate: #Predicate { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        return try modelContext.fetch(descriptor).first
+    }
+
+    private func seedDemoSummary(
+        modelContext: ModelContext,
+        repo: GitRepositoryRecord,
+        calendar: Calendar
+    ) throws {
+        let today = calendar.startOfDay(for: Date())
+        let todayKey = GitCommitRecord.dayKey(for: today, calendar: calendar)
+        let sourceIDs = try modelContext.fetch(FetchDescriptor<GitCommitRecord>())
+            .filter { $0.repositoryFullName == repo.fullName && $0.dayKey == todayKey }
+            .map(\.id)
+
+        guard !sourceIDs.isEmpty else {
+            return
+        }
+
+        let draft = JournalSummaryDraft(
+            title: "Built the app spine",
+            narrative: "The day focused on turning GitHub history into a readable work record. The fixture covers sync state, changed-line stats, Work Map data, and journal evidence so screen QA can run without a live GitHub account.",
+            bullets: [
+                "Connected the dashboard to demo commits with changed-line stats.",
+                "Added enough source evidence to open day and commit detail screens.",
+                "Marked history coverage complete for the fixture repository."
+            ],
+            tags: ["fixture", "sync", "journal"]
+        )
+
+        let dayKey = GitCommitRecord.dayKey(for: today, calendar: calendar)
+        var descriptor = FetchDescriptor<DailyJournalSummaryRecord>(
+            predicate: #Predicate { $0.dayKey == dayKey }
+        )
+        descriptor.fetchLimit = 1
+        if let existing = try modelContext.fetch(descriptor).first {
+            _ = existing.update(from: draft, sourceCommitIDs: sourceIDs, modelName: "UI Fixture")
+        } else {
+            modelContext.insert(
+                DailyJournalSummaryRecord(
+                    date: today,
+                    title: draft.title,
+                    narrative: draft.narrative,
+                    bullets: draft.bullets,
+                    tags: draft.tags,
+                    sourceCommitIDs: sourceIDs,
+                    modelName: "UI Fixture"
+                )
+            )
+        }
+    }
+
     private func deleteDemoData(modelContext: ModelContext) throws {
         let descriptor = FetchDescriptor<GitRepositoryRecord>(
             predicate: #Predicate { $0.id < 0 }
@@ -2279,9 +2441,15 @@ final class AppModel: ObservableObject {
 
     private enum StorageError: LocalizedError {
         case missingModelContext
+        case lockedSummary
 
         var errorDescription: String? {
-            "Local storage is not ready yet."
+            switch self {
+            case .missingModelContext:
+                "Local storage is not ready yet."
+            case .lockedSummary:
+                "Unlock this Captain's Log before regenerating it."
+            }
         }
     }
 }

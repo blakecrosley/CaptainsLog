@@ -40,6 +40,30 @@ final class GitHubDTOsTests: XCTestCase {
         XCTAssertEqual(viewer.nodeID, "MDQ6VXNlcjk0MQ==")
     }
 
+    func testDecodesExpiringGitHubAppUserToken() throws {
+        let json = Data("""
+        {
+          "access_token": "ghu_access",
+          "expires_in": 28800,
+          "refresh_token": "ghr_refresh",
+          "refresh_token_expires_in": 15897600,
+          "scope": "",
+          "token_type": "bearer"
+        }
+        """.utf8)
+
+        let response = try GitHubJSON.decoder.decode(GitHubTokenResponse.self, from: json)
+        let session = try GitHubOAuthSession(
+            response: response,
+            receivedAt: Date(timeIntervalSince1970: 1_000)
+        )
+
+        XCTAssertEqual(session.accessToken, "ghu_access")
+        XCTAssertEqual(session.accessTokenExpiresAt, Date(timeIntervalSince1970: 29_800))
+        XCTAssertEqual(session.refreshToken, "ghr_refresh")
+        XCTAssertEqual(session.refreshTokenExpiresAt, Date(timeIntervalSince1970: 15_898_600))
+    }
+
     func testEmptyLocalRepositorySyncIgnoresStaleLastSyncedAt() throws {
         let calendar = Calendar(identifier: .gregorian)
         let fallbackSince = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))

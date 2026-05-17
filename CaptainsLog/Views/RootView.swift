@@ -20,15 +20,16 @@ struct RootView: View {
     @State private var isShowingMonthCalendar = false
     @State private var isShowingAccountSwitcher = false
     @State private var isShowingRepositorySettings = false
-    @State private var isShowingAISettings = false
     @State private var isShowingDayDetail = false
     @State private var aiCredentialRevision = 0
     @State private var didStartPerformanceHeartbeat = false
+    @State private var didPrepareDebugFixture = false
     @State private var lastHistoryBackfillScheduleAttempt: Date?
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
     @State private var identityAliasesText = ""
     @AppStorage(WorkIdentityPreferences.scopeKey) private var workIdentityScopeRaw = WorkIdentityScope.allSelectedRepos.rawValue
+    @AppStorage("work.displayMetric") private var workDisplayMetricRaw = WorkDisplayMetric.changes.rawValue
 
     private var githubRepositories: [GitRepositoryRecord] {
         repositories.filter { repository in
@@ -132,13 +133,45 @@ struct RootView: View {
         }
     }
 
+    private var workDisplayMetric: WorkDisplayMetric {
+        WorkDisplayMetric(rawValue: workDisplayMetricRaw) ?? .changes
+    }
+
+    private var workDisplayMetricBinding: Binding<WorkDisplayMetric> {
+        Binding {
+            workDisplayMetric
+        } set: { newValue in
+            workDisplayMetricRaw = newValue.rawValue
+        }
+    }
+
     private var identityAliases: Set<String> {
         WorkIdentitySelection.aliases(from: identityAliasesText)
     }
 
-    private var hasOpenAIKey: Bool {
+    private var preferredAIProvider: AIProvider {
         _ = aiCredentialRevision
-        return AIProviderCredentialStore.shared.hasKey(for: .openai)
+        return AIProviderCredentialStore.shared.preferredProvider
+    }
+
+    private var hasCloudAIKey: Bool {
+        _ = aiCredentialRevision
+        return AIProviderCredentialStore.shared.hasAnyCloudKey()
+    }
+
+    private var hasPreferredAIKey: Bool {
+        _ = aiCredentialRevision
+        return AIProviderCredentialStore.shared.hasKey(for: preferredAIProvider)
+    }
+
+    private var aiSettingsSubtitle: String {
+        if hasPreferredAIKey {
+            return "\(preferredAIProvider.displayName) selected, key attached"
+        }
+        if hasCloudAIKey {
+            return "\(preferredAIProvider.displayName) selected; choose an attached provider or add a key"
+        }
+        return "Attach your own OpenAI or Anthropic API key"
     }
 
     private var selectedRepositoryFingerprint: String {
@@ -153,7 +186,7 @@ struct RootView: View {
 
     private var preferredJournalProvider: JournalSummaryProvider? {
         JournalSummaryProvider.preferred(
-            hasOpenAIKey: hasOpenAIKey,
+            credentialStore: .shared,
             foundationAvailability: appModel.foundationAvailability
         )
     }
@@ -187,11 +220,8 @@ struct RootView: View {
                 .sheet(isPresented: $isShowingRepositorySettings) {
                     repositorySettingsSheet
                 }
-                .sheet(isPresented: $isShowingAISettings) {
-                    AISettingsView(credentialRevision: $aiCredentialRevision)
-                }
-                .sheet(isPresented: $isShowingDayDetail) {
-                    dayDetailSheet
+                .navigationDestination(isPresented: $isShowingDayDetail) {
+                    dayDetailPage
                 }
             }
             .navigationTitle("Captain's Log")
@@ -211,6 +241,14 @@ struct RootView: View {
                 loadIdentityAliases()
                 startPerformanceHeartbeatIfNeeded()
                 reloadCommitSnapshot()
+                #if DEBUG
+                if prepareDebugFixtureIfNeeded() {
+                    return
+                }
+                #endif
+                if CaptainsLogApp.isUITesting {
+                    return
+                }
                 await appModel.loadSession()
                 startForegroundLatestSync()
                 selectLatestCommitDateIfUseful()
@@ -275,6 +313,7 @@ struct RootView: View {
         return VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
             WorkOverviewView(
                 selectedDate: $selectedDate,
+                displayMetric: workDisplayMetricBinding,
                 workMetrics: data.metrics,
                 selectedWorkSnapshot: data.selectedWorkSnapshot,
                 selectedSummary: data.selectedSummary,
@@ -286,7 +325,6 @@ struct RootView: View {
                 syncMessage: appModel.syncMessage,
                 importedCommitCount: appModel.importedCommitCount,
                 updatedDiffStatCount: appModel.updatedDiffStatCount,
-                hasOpenAIKey: hasOpenAIKey,
                 workIdentityScope: workIdentityScope,
                 identityAliasCount: identityAliases.count,
                 onShowAccounts: { isShowingAccountSwitcher = true },
@@ -303,48 +341,56 @@ struct RootView: View {
                     }
                 },
                 onShowSettings: { isShowingRepositorySettings = true },
-                onShowAISettings: { isShowingAISettings = true },
                 onShowMonth: { isShowingMonthCalendar = true },
                 onShowDayDetail: { isShowingDayDetail = true }
             )
         }
     }
 
-    private var dayDetailSheet: some View {
+    private var dayDetailPage: some View {
         let data = workData
 
-        return NavigationStack {
-            ScrollView {
-                DayDetailView(
-                    selectedDate: selectedDate,
-                    commits: data.selectedCommits,
-                    workSnapshot: data.selectedWorkSnapshot,
-                    summary: data.selectedSummary,
-                    isGeneratingSummary: isGeneratingSummary,
-                    generationError: generationError,
-                    canGenerate: canGenerateSummary,
-                    generationProvider: preferredJournalProvider,
-                    onGenerate: generateSummary
-                )
-                .padding(.horizontal, Kit941.Spacing.md)
-                .padding(.vertical, Kit941.Spacing.lg)
-                .frame(maxWidth: 680)
-                .frame(maxWidth: .infinity, alignment: .top)
-            }
-            .background(AppSurface.backgroundGradient.ignoresSafeArea())
-            .navigationTitle("Day Detail")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        isShowingDayDetail = false
+        return ScrollView {
+            DayDetailView(
+                selectedDate: selectedDate,
+                commits: data.selectedCommits,
+                workSnapshot: data.selectedWorkSnapshot,
+                summary: data.selectedSummary,
+                isGeneratingSummary: isGeneratingSummary,
+                generationError: generationError,
+                generationProvider: preferredJournalProvider
+            )
+            .padding(.horizontal, Kit941.Spacing.md)
+            .padding(.vertical, Kit941.Spacing.lg)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .background(AppSurface.backgroundGradient.ignoresSafeArea())
+        .navigationTitle(selectedDate.formatted(.dateTime.month(.abbreviated).day().year()))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        #endif
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                if let summary = data.selectedSummary {
+                    Button {
+                        toggleSelectedSummaryLock()
+                    } label: {
+                        Image(systemName: summary.isLocked ? "lock.fill" : "lock.open")
                     }
+                    .accessibilityLabel(summary.isLocked ? "Unlock journal" : "Lock journal")
                 }
+
+                Button {
+                    generateSummary()
+                } label: {
+                    Image(systemName: preferredJournalProvider?.symbolName ?? "sparkles")
+                }
+                .disabled(!canGenerateSummary || isGeneratingSummary)
+                .accessibilityLabel(data.selectedSummary == nil ? "Generate journal" : "Regenerate journal")
             }
         }
-        .presentationDetents([.medium, .large])
     }
 
     private var accountSwitcherSheet: some View {
@@ -372,8 +418,8 @@ struct RootView: View {
     private var setupStack: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
             header
-            modelGate
             authPanel
+            modelGate
         }
     }
 
@@ -381,6 +427,20 @@ struct RootView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                    AccountSettingsCard(
+                        activeLogin: activeLogin,
+                        isSignedIn: appModel.isSignedIn,
+                        repositoryCount: githubRepositories.count,
+                        onSignIn: {
+                            Task { await appModel.signIn() }
+                        },
+                        onSignOut: {
+                            appModel.signOut()
+                        }
+                    )
+
+                    repoPanel
+
                     WorkIdentitySettingsCard(
                         scope: workIdentityScopeBinding,
                         activeLogin: activeLogin,
@@ -389,30 +449,36 @@ struct RootView: View {
                         allSelectedCommitCount: allSelectedCommits.count
                     )
 
-                    repoPanel
-
                     Kit941.Card {
                         VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                            HStack(spacing: Kit941.Spacing.sm) {
-                                Image(systemName: hasOpenAIKey ? "sparkles" : "sparkles.slash")
-                                    .foregroundStyle(AppSurface.accent)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text("AI")
-                                        .kit941Font(.title, weight: .semibold)
-                                    Text(hasOpenAIKey ? "OpenAI key stored on this device" : "OpenAI BYOK not set")
-                                        .kit941Font(.caption)
+                            NavigationLink {
+                                AISettingsView(credentialRevision: $aiCredentialRevision)
+                            } label: {
+                                HStack(spacing: Kit941.Spacing.md) {
+                                    Image(systemName: hasPreferredAIKey ? "key.fill" : "key")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(AppSurface.accent)
+                                        .frame(width: 38, height: 38)
+                                        .background(AppSurface.accent.opacity(0.12), in: Circle())
+
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("AI providers")
+                                            .kit941Font(.title, weight: .semibold)
+                                            .foregroundStyle(AppSurface.primaryText)
+                                        Text(aiSettingsSubtitle)
+                                            .kit941Font(.caption)
+                                            .foregroundStyle(AppSurface.secondaryText)
+                                    }
+
+                                    Spacer(minLength: Kit941.Spacing.sm)
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 13, weight: .semibold))
                                         .foregroundStyle(AppSurface.secondaryText)
                                 }
-                                Spacer(minLength: 0)
+                                .contentShape(Rectangle())
                             }
-
-                            Kit941.Button(role: .secondary) {
-                                await MainActor.run {
-                                    isShowingAISettings = true
-                                }
-                            } label: {
-                                Label("Open AI Settings", systemImage: "key")
-                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -440,31 +506,33 @@ struct RootView: View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
             HStack(spacing: Kit941.Spacing.sm) {
                 Image(systemName: "book.pages")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(AppSurface.accent)
+                    .frame(width: 34, height: 34)
+                    .background(AppSurface.accent.opacity(0.12), in: Circle())
                     .accessibilityHidden(true)
 
-                Text("Captain's Log")
-                    .kit941Font(.display, weight: .bold)
-                    .foregroundStyle(AppSurface.primaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Captain's Log")
+                        .kit941Font(.title, weight: .semibold)
+                        .foregroundStyle(AppSurface.primaryText)
+                        .lineLimit(1)
+                    Text("GitHub work journal")
+                        .kit941Font(.caption)
+                        .foregroundStyle(AppSurface.secondaryText)
+                }
             }
-
-            Text("GitHub history, written as a daily work journal.")
-                .kit941Font(.body)
-                .foregroundStyle(AppSurface.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
     private var modelGate: some View {
-        if hasOpenAIKey {
+        if hasPreferredAIKey {
             HStack(spacing: Kit941.Spacing.sm) {
-                Image(systemName: "sparkles")
+                Image(systemName: preferredAIProvider.symbolName)
                     .foregroundStyle(AppSurface.accent)
-                Text("OpenAI key attached")
+                Text("\(preferredAIProvider.displayName) key attached")
                     .kit941Font(.label)
                     .foregroundStyle(AppSurface.primaryText)
             }
@@ -563,26 +631,36 @@ struct RootView: View {
                             .foregroundStyle(AppSurface.secondaryText)
                     }
 
-                    HStack(spacing: Kit941.Spacing.sm) {
+                    VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
                         if githubRepositories.isEmpty, appModel.githubRepositoryApprovalURL != nil {
-                            Kit941.Button {
-                                await MainActor.run { openGitHubRepositorySelection() }
-                            } label: {
-                                Label("Approve Repository Access", systemImage: "checklist")
+                            AppActionRow(
+                                title: "Approve Repository Access",
+                                description: "Open GitHub and choose repositories for Captain's Log.",
+                                systemImage: "checklist",
+                                isProminent: true,
+                                action: openGitHubRepositorySelection
+                            )
+                        }
+
+                        AppActionRow(
+                            title: "GitHub Access",
+                            description: "Refresh repository access after changes in GitHub.",
+                            systemImage: "arrow.clockwise",
+                            action: {
+                                Task { await appModel.refreshRepositories() }
                             }
-                        }
+                        )
 
-                        Kit941.Button(role: .secondary) {
-                            await appModel.refreshRepositories()
-                        } label: {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
-
-                        Kit941.Button(role: .plain) {
-                            await appModel.signOut()
-                        } label: {
-                            Text("Sign out")
-                        }
+                        AppActionRow(
+                            title: "Sign Out",
+                            description: "Remove this GitHub session from the device.",
+                            systemImage: "rectangle.portrait.and.arrow.right",
+                            isDestructive: true,
+                            showsChevron: false,
+                            action: {
+                                appModel.signOut()
+                            }
+                        )
                     }
                 }
             }
@@ -639,6 +717,33 @@ struct RootView: View {
             await refreshCurrentAccount()
         }
     }
+
+    #if DEBUG
+    private func prepareDebugFixtureIfNeeded() -> Bool {
+        let environment = ProcessInfo.processInfo.environment
+        let shouldSeedFixture = environment["CAPTAINS_LOG_UI_FIXTURE"] == "1"
+            || environment["CAPTAINS_LOG_DEBUG_FIXTURE"] == "1"
+        guard shouldSeedFixture else {
+            return false
+        }
+
+        guard !didPrepareDebugFixture else {
+            return true
+        }
+
+        didPrepareDebugFixture = true
+        do {
+            try appModel.seedDemoData(includeFixtureDetails: true)
+            reloadCommitSnapshot()
+            selectLatestCommitDateIfUseful(force: true)
+            generationError = nil
+        } catch {
+            generationError = error.localizedDescription
+            rootViewLogger.error("Failed to prepare UI fixture: \(error.localizedDescription, privacy: .public)")
+        }
+        return true
+    }
+    #endif
 
     private func refreshCurrentAccount() async {
         guard appModel.isSignedIn else {
@@ -761,7 +866,10 @@ struct RootView: View {
     }
 
     private var canGenerateSummary: Bool {
-        preferredJournalProvider != nil && !workData.selectedCommits.isEmpty
+        let data = workData
+        return preferredJournalProvider != nil
+            && !data.selectedCommits.isEmpty
+            && data.selectedSummary?.isLocked != true
     }
 
     private var lowerCalendarBound: Date {
@@ -772,8 +880,14 @@ struct RootView: View {
     }
 
     private func generateSummary() {
+        let data = workData
+        guard data.selectedSummary?.isLocked != true else {
+            generationError = "Unlock this Captain's Log before regenerating it."
+            return
+        }
+
         let targetDate = selectedDate
-        let evidence = workData.selectedCommits.map(JournalCommitEvidence.init(record:))
+        let evidence = data.selectedCommits.map(JournalCommitEvidence.init(record:))
         let sourceIDs = evidence.map(\.id)
         generationError = nil
         isGeneratingSummary = true
@@ -799,6 +913,16 @@ struct RootView: View {
         }
     }
 
+    private func toggleSelectedSummaryLock() {
+        let targetDate = selectedDate
+        do {
+            try appModel.toggleSummaryLock(date: targetDate)
+            generationError = nil
+        } catch {
+            generationError = error.localizedDescription
+        }
+    }
+
     private func selectLatestCommitDateIfUseful(force: Bool = false) {
         guard let latestCommitDate = visibleCommits.first?.authoredAt else {
             return
@@ -821,6 +945,63 @@ private struct RootWorkData {
     let selectedCommits: [GitCommitRecord]
     let selectedWorkSnapshot: DayWorkSnapshot
     let selectedSummary: DailyJournalSummaryRecord?
+}
+
+private struct AccountSettingsCard: View {
+    let activeLogin: String?
+    let isSignedIn: Bool
+    let repositoryCount: Int
+    let onSignIn: @MainActor @Sendable () -> Void
+    let onSignOut: @MainActor @Sendable () -> Void
+
+    var body: some View {
+        Kit941.Card {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                HStack(spacing: Kit941.Spacing.sm) {
+                    Image(systemName: isSignedIn ? "checkmark.seal.fill" : "person.crop.circle.badge.plus")
+                        .foregroundStyle(AppSurface.accent)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("GitHub Account")
+                            .kit941Font(.title, weight: .semibold)
+                        Text(statusText)
+                            .kit941Font(.caption)
+                            .foregroundStyle(AppSurface.secondaryText)
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                if isSignedIn {
+                    AppActionRow(
+                        title: "Sign Out",
+                        description: "Remove this GitHub session from the device.",
+                        systemImage: "rectangle.portrait.and.arrow.right",
+                        isDestructive: true,
+                        showsChevron: false,
+                        action: onSignOut
+                    )
+                } else {
+                    AppActionRow(
+                        title: "Sign in with GitHub",
+                        description: "Connect an account before syncing repository history.",
+                        systemImage: "person.crop.circle.badge.checkmark",
+                        isProminent: true,
+                        action: onSignIn
+                    )
+                }
+            }
+        }
+    }
+
+    private var statusText: String {
+        guard isSignedIn else {
+            return "Not connected"
+        }
+        let login = activeLogin ?? "Connected"
+        if repositoryCount > 0 {
+            return "\(login), \(repositoryCount.formatted()) repositories available"
+        }
+        return "\(login), repository access pending"
+    }
 }
 
 private struct WorkIdentitySettingsCard: View {

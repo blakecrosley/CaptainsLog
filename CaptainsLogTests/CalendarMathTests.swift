@@ -670,14 +670,17 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertEqual(WorkLanguageClassifier.language(for: "Dockerfile"), "Docker")
     }
 
-    func testCredentialStoreSupportsInMemoryBYOK() {
+    func testCredentialStoreSupportsInMemoryAIKeys() {
         let store = AIProviderCredentialStore(service: "test.captainslog.ai", inMemory: true)
 
         XCTAssertFalse(store.hasKey(for: .openai))
         XCTAssertTrue(store.saveKey("sk-test", for: .openai))
         XCTAssertEqual(store.loadKey(for: .openai), "sk-test")
+        XCTAssertTrue(store.saveKey("sk-ant-test", for: .anthropic))
+        XCTAssertEqual(store.loadKey(for: .anthropic), "sk-ant-test")
         store.deleteKey(for: .openai)
         XCTAssertFalse(store.hasKey(for: .openai))
+        XCTAssertTrue(store.hasKey(for: .anthropic))
     }
 
     func testCredentialStoreShowsMaskedKeyPreview() {
@@ -687,6 +690,8 @@ final class CalendarMathTests: XCTestCase {
         XCTAssertTrue(store.saveKey("sk-proj-abcdef123456", for: .openai))
 
         XCTAssertEqual(store.keyPreview(for: .openai), "sk-proj-...123456")
+        XCTAssertTrue(store.saveKey("sk-ant-api03-abcdef123456", for: .anthropic))
+        XCTAssertEqual(store.keyPreview(for: .anthropic), "sk-ant-...123456")
     }
 
     private func makeCommit(

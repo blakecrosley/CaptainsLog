@@ -494,6 +494,42 @@ struct GitHubRepositoryAccess: Equatable {
     }
 }
 
+struct GitHubOAuthSession: Codable, Equatable {
+    let accessToken: String
+    let accessTokenExpiresAt: Date?
+    let refreshToken: String?
+    let refreshTokenExpiresAt: Date?
+
+    init(
+        accessToken: String,
+        accessTokenExpiresAt: Date? = nil,
+        refreshToken: String? = nil,
+        refreshTokenExpiresAt: Date? = nil
+    ) {
+        self.accessToken = accessToken
+        self.accessTokenExpiresAt = accessTokenExpiresAt
+        self.refreshToken = refreshToken
+        self.refreshTokenExpiresAt = refreshTokenExpiresAt
+    }
+
+    init(response: GitHubTokenResponse, receivedAt: Date = Date()) throws {
+        guard let accessToken = response.accessToken else {
+            throw GitHubError.invalidResponse
+        }
+        self.accessToken = accessToken
+        self.accessTokenExpiresAt = response.expiresIn.map { receivedAt.addingTimeInterval(TimeInterval($0)) }
+        self.refreshToken = response.refreshToken
+        self.refreshTokenExpiresAt = response.refreshTokenExpiresIn.map { receivedAt.addingTimeInterval(TimeInterval($0)) }
+    }
+
+    func shouldRefresh(now: Date = Date(), leeway: TimeInterval = 300) -> Bool {
+        guard let accessTokenExpiresAt else {
+            return false
+        }
+        return now >= accessTokenExpiresAt.addingTimeInterval(-leeway)
+    }
+}
+
 struct GitHubDeviceAuthService: Sendable {
     let clientID: String
 
@@ -536,8 +572,8 @@ struct GitHubDeviceAuthService: Sendable {
 
             let response = try await tokenResponse(deviceCode: deviceCode)
 
-            if let token = response.accessToken {
-                return token
+            if response.accessToken != nil {
+                return try GitHubOAuthSession(response: response).accessToken
             }
 
             switch response.error {
@@ -560,10 +596,14 @@ struct GitHubDeviceAuthService: Sendable {
     }
 
     func exchangeDeviceCode(deviceCode: String) async throws -> String? {
+        try await exchangeDeviceSession(deviceCode: deviceCode)?.accessToken
+    }
+
+    func exchangeDeviceSession(deviceCode: String) async throws -> GitHubOAuthSession? {
         let response = try await tokenResponse(deviceCode: deviceCode)
 
-        if let token = response.accessToken {
-            return token
+        if response.accessToken != nil {
+            return try GitHubOAuthSession(response: response)
         }
 
         switch response.error {
@@ -582,6 +622,11 @@ struct GitHubDeviceAuthService: Sendable {
         }
     }
 
+    func refreshSession(refreshToken: String) async throws -> GitHubOAuthSession {
+        let response = try await refreshTokenResponse(refreshToken: refreshToken)
+        return try GitHubOAuthSession(response: response)
+    }
+
     private func tokenResponse(deviceCode: String) async throws -> GitHubTokenResponse {
         var request = URLRequest(url: URL(string: "https://github.com/login/oauth/access_token")!)
         request.httpMethod = "POST"
@@ -596,6 +641,26 @@ struct GitHubDeviceAuthService: Sendable {
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
         return try GitHubJSON.decoder.decode(GitHubTokenResponse.self, from: data)
+    }
+
+    private func refreshTokenResponse(refreshToken: String) async throws -> GitHubTokenResponse {
+        var request = URLRequest(url: URL(string: "https://github.com/login/oauth/access_token")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = formBody([
+            "client_id": clientID,
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken
+        ])
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
+        let tokenResponse = try GitHubJSON.decoder.decode(GitHubTokenResponse.self, from: data)
+        if let error = tokenResponse.error {
+            throw GitHubError.oauth(error, tokenResponse.errorDescription)
+        }
+        return tokenResponse
     }
 
     private func validate(response: URLResponse, data: Data) throws {
@@ -649,6 +714,13 @@ enum GitHubError: LocalizedError, Equatable {
             return false
         }
         return true
+    }
+
+    var isRefreshTokenInvalid: Bool {
+        guard case .oauth(let error, _) = self else {
+            return false
+        }
+        return error == "bad_refresh_token" || error == "expired_token"
     }
 
     var isRecoverableCommitHistoryStatsFailure: Bool {

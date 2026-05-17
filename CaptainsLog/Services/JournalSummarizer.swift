@@ -22,29 +22,30 @@ struct JournalSummaryResult: Equatable, Sendable {
 }
 
 enum JournalSummaryProvider: Equatable {
-    case openai
+    case cloud(AIProvider)
     case appleFoundationModels
 
     var modelName: String {
         switch self {
-        case .openai: "OpenAI \(OpenAIJournalSummarizer.modelName)"
+        case .cloud(let provider): "\(provider.displayName) \(provider.shortModelName)"
         case .appleFoundationModels: "Apple Foundation Models"
         }
     }
 
     var symbolName: String {
         switch self {
-        case .openai: "sparkles"
+        case .cloud(let provider): provider.symbolName
         case .appleFoundationModels: "apple.intelligence"
         }
     }
 
     static func preferred(
-        hasOpenAIKey: Bool,
+        credentialStore: AIProviderCredentialStore = .shared,
         foundationAvailability: FoundationModelAvailability
     ) -> JournalSummaryProvider? {
-        if hasOpenAIKey {
-            return .openai
+        let preferredProvider = credentialStore.preferredProvider
+        if credentialStore.hasKey(for: preferredProvider) {
+            return .cloud(preferredProvider)
         }
         if foundationAvailability == .available {
             return .appleFoundationModels
@@ -125,17 +126,24 @@ enum JournalSummarizer {
         }
 
         let provider = JournalSummaryProvider.preferred(
-            hasOpenAIKey: credentialStore.hasKey(for: .openai),
+            credentialStore: credentialStore,
             foundationAvailability: availability()
         )
         guard let provider else {
-            throw JournalSummaryError.unavailable("Add an OpenAI key or enable Apple Intelligence to generate journal entries.")
+            throw JournalSummaryError.unavailable("Add a cloud AI key or enable Apple Intelligence to generate journal entries.")
         }
 
         switch provider {
-        case .openai:
-            let draft = try await OpenAIJournalSummarizer(credentialStore: credentialStore)
-                .generate(for: date, evidence: evidence)
+        case .cloud(let cloudProvider):
+            let draft: JournalSummaryDraft
+            switch cloudProvider {
+            case .openai:
+                draft = try await OpenAIJournalSummarizer(credentialStore: credentialStore)
+                    .generate(for: date, evidence: evidence)
+            case .anthropic:
+                draft = try await AnthropicJournalSummarizer(credentialStore: credentialStore)
+                    .generate(for: date, evidence: evidence)
+            }
             return JournalSummaryResult(draft: draft, modelName: provider.modelName)
         case .appleFoundationModels:
             let draft = try await generateWithFoundationModels(for: date, evidence: evidence)
@@ -148,6 +156,7 @@ enum JournalSummarizer {
         let session = LanguageModelSession(
             instructions: """
             You write a concise private work journal from Git commit evidence.
+            Start with the memorable TL;DR of the day.
             Only describe work supported by the supplied commits.
             Do not invent shipped features, metrics, deployment status, customer impact, or unstated intent.
             Prefer concrete verbs. Keep the tone calm and factual.
@@ -276,6 +285,7 @@ struct OpenAIJournalSummarizer: Sendable {
 
     private static let systemPrompt = """
     You write a concise private work journal from Git commit evidence.
+    Start with the memorable TL;DR of the day.
     Only describe work supported by the supplied commits.
     Do not invent shipped features, metrics, deployment status, customer impact, or unstated intent.
     Prefer concrete verbs. Keep the tone calm and factual.
@@ -289,17 +299,18 @@ struct OpenAIJournalSummarizer: Sendable {
             "properties": [
                 "title": [
                     "type": "string",
-                    "description": "Short title for the day, 3 to 8 words"
+                    "description": "Memorable TL;DR title for the day, 3 to 8 words"
                 ],
                 "narrative": [
                     "type": "string",
-                    "description": "One concise paragraph summarizing what the developer accomplished"
+                    "description": "One short paragraph explaining what mattered that day"
                 ],
                 "bullets": [
                     "type": "array",
                     "items": ["type": "string"],
                     "minItems": 0,
-                    "maxItems": 6
+                    "maxItems": 6,
+                    "description": "Three to six concrete evidence bullets from the commits"
                 ],
                 "tags": [
                     "type": "array",
@@ -310,6 +321,183 @@ struct OpenAIJournalSummarizer: Sendable {
             ],
             "required": ["title", "narrative", "bullets", "tags"]
         ]
+    }
+}
+
+enum CloudAIProviderError: LocalizedError, Equatable {
+    case missingKey(AIProvider)
+    case invalidResponse(AIProvider)
+    case providerError(AIProvider, Int, String)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingKey(let provider):
+            return "Add a \(provider.displayName) API key in AI settings."
+        case .invalidResponse(let provider):
+            return "\(provider.displayName) returned a response Captain's Log could not read."
+        case .providerError(let provider, let status, _):
+            return "\(provider.displayName) returned HTTP \(status)."
+        }
+    }
+}
+
+struct AnthropicJournalSummarizer: Sendable {
+    static let modelName = "claude-sonnet-4-6"
+
+    var credentialStore: AIProviderCredentialStore = .shared
+    var session: URLSession = .shared
+
+    func testConnection(key: String) async -> Result<Void, CloudAIProviderError> {
+        guard AIProvider.anthropic.formatViolation(for: key) == nil else {
+            return .failure(.missingKey(.anthropic))
+        }
+
+        let payload: [String: Any] = [
+            "model": Self.modelName,
+            "max_tokens": 8,
+            "messages": [
+                ["role": "user", "content": "Reply with ok."]
+            ]
+        ]
+
+        do {
+            _ = try await postData(
+                URL(string: "https://api.anthropic.com/v1/messages")!,
+                key: key,
+                payload: payload,
+                timeout: 12
+            )
+            return .success(())
+        } catch let error as CloudAIProviderError {
+            return .failure(error)
+        } catch {
+            return .failure(.invalidResponse(.anthropic))
+        }
+    }
+
+    func generate(for date: Date, evidence: [JournalCommitEvidence]) async throws -> JournalSummaryDraft {
+        guard let key = credentialStore.loadKey(for: .anthropic) else {
+            throw CloudAIProviderError.missingKey(.anthropic)
+        }
+
+        let payload: [String: Any] = [
+            "model": Self.modelName,
+            "max_tokens": 1_200,
+            "system": Self.systemPrompt,
+            "messages": [
+                ["role": "user", "content": Self.userPrompt(for: date, evidence: evidence)]
+            ],
+            "output_config": [
+                "format": [
+                    "type": "json_schema",
+                    "schema": Self.responseSchema
+                ]
+            ]
+        ]
+
+        let data = try await postData(
+            URL(string: "https://api.anthropic.com/v1/messages")!,
+            key: key,
+            payload: payload,
+            timeout: 90
+        )
+        let response = try JSONDecoder().decode(AnthropicMessageResponse.self, from: data)
+        guard response.stopReason != "max_tokens",
+              response.stopReason != "refusal",
+              let text = response.outputText,
+              let textData = text.data(using: .utf8) else {
+            throw CloudAIProviderError.invalidResponse(.anthropic)
+        }
+        return try JSONDecoder().decode(JournalSummaryDraft.self, from: textData)
+    }
+
+    private func postData(_ url: URL, key: String, payload: [String: Any], timeout: TimeInterval) async throws -> Data {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = timeout
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        request.setValue(key, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw CloudAIProviderError.invalidResponse(.anthropic)
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw CloudAIProviderError.providerError(.anthropic, http.statusCode, String(body.prefix(320)))
+        }
+        return data
+    }
+
+    private static func userPrompt(for date: Date, evidence: [JournalCommitEvidence]) -> String {
+        """
+        Date:
+        \(date.formatted(date: .complete, time: .omitted))
+
+        Commits:
+        \(JournalSummarizer.commitEvidence(for: evidence))
+
+        Write the daily entry.
+        """
+    }
+
+    private static let systemPrompt = """
+    You write a concise private work journal from Git commit evidence.
+    Start with the memorable TL;DR of the day.
+    Only describe work supported by the supplied commits.
+    Do not invent shipped features, metrics, deployment status, customer impact, or unstated intent.
+    Prefer concrete verbs. Keep the tone calm and factual.
+    Return only JSON that matches the schema.
+    """
+
+    private static var responseSchema: [String: Any] {
+        [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": [
+                "title": [
+                    "type": "string",
+                    "description": "Memorable TL;DR title for the day, 3 to 8 words"
+                ],
+                "narrative": [
+                    "type": "string",
+                    "description": "One short paragraph explaining what mattered that day"
+                ],
+                "bullets": [
+                    "type": "array",
+                    "items": ["type": "string"],
+                    "description": "Three to six concrete evidence bullets from the commits"
+                ],
+                "tags": [
+                    "type": "array",
+                    "items": ["type": "string"],
+                    "description": "One to five short topic tags inferred from commit evidence"
+                ]
+            ],
+            "required": ["title", "narrative", "bullets", "tags"]
+        ]
+    }
+}
+
+private struct AnthropicMessageResponse: Decodable {
+    let content: [Content]
+    let stopReason: String?
+
+    var outputText: String? {
+        let text = content.compactMap(\.text).joined()
+        return text.isEmpty ? nil : text
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case content
+        case stopReason = "stop_reason"
+    }
+
+    struct Content: Decodable {
+        let type: String
+        let text: String?
     }
 }
 
@@ -327,10 +515,10 @@ enum JournalSummaryError: LocalizedError {
 #if canImport(FoundationModels)
 @Generable(description: "A daily developer journal entry based only on supplied Git commit evidence")
 struct FoundationJournalSummary {
-    @Guide(description: "Short title for the day, 3 to 8 words")
+    @Guide(description: "Memorable TL;DR title for the day, 3 to 8 words")
     var title: String
 
-    @Guide(description: "One concise paragraph summarizing what the developer accomplished")
+    @Guide(description: "One short paragraph explaining what mattered that day")
     var narrative: String
 
     @Guide(description: "Three to six concrete accomplishment bullets", .count(3...6))

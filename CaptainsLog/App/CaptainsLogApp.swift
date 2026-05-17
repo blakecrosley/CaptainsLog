@@ -27,11 +27,16 @@ struct CaptainsLogApp: App {
 
     private static func makeModelContainer() -> ModelContainer {
         do {
-            return try ModelContainer(
-                for: GitHubAccountRecord.self,
+            let schema = Schema([
+                GitHubAccountRecord.self,
                 GitRepositoryRecord.self,
                 GitCommitRecord.self,
                 DailyJournalSummaryRecord.self
+            ])
+            let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
+            return try ModelContainer(
+                for: schema,
+                configurations: [configuration]
             )
         } catch {
             fatalError("Failed to create Captain's Log model container: \(error)")
@@ -40,6 +45,11 @@ struct CaptainsLogApp: App {
 
     private var selectedTheme: AppSurface.Theme {
         AppSurface.defaultTheme
+    }
+
+    static var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("-ui-testing")
+            || ProcessInfo.processInfo.environment["CAPTAINS_LOG_UI_TESTING"] == "1"
     }
 }
 
@@ -57,16 +67,16 @@ private func seedOpenAICredentialFromLaunchEnvironmentIfPresent() {
     }
 
     if let violation = AIProvider.openai.formatViolation(for: key) {
-        debugPrint("Skipped debug OpenAI BYOK seed: \(violation)")
+        debugPrint("Skipped debug OpenAI key seed: \(violation)")
         return
     }
 
     guard AIProviderCredentialStore.shared.saveKey(key, for: .openai) else {
-        debugPrint("Skipped debug OpenAI BYOK seed: Keychain save failed")
+        debugPrint("Skipped debug OpenAI key seed: Keychain save failed")
         return
     }
 
-    debugPrint("Seeded OpenAI BYOK credential from debug launch environment")
+    debugPrint("Seeded OpenAI key from debug launch environment")
 }
 #endif
 
