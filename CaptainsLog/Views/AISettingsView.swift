@@ -150,15 +150,16 @@ struct AISettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-                    AppActionRow(
-                        title: hasKey ? "Replace Key" : "Save Key",
-                        description: "Store this \(selectedProvider.displayName) key in this device's Keychain.",
-                        systemImage: "square.and.arrow.down",
-                        isProminent: true,
-                        isDisabled: trimmedKey.isEmpty,
-                        showsChevron: false,
-                        action: save
-                    )
+                    if !trimmedKey.isEmpty {
+                        AppActionRow(
+                            title: hasKey ? "Replace Key" : "Save Key",
+                            description: "Store this \(selectedProvider.displayName) key in this device's Keychain.",
+                            systemImage: "square.and.arrow.down",
+                            isProminent: true,
+                            showsChevron: false,
+                            action: save
+                        )
+                    }
 
                     AppActionRow(
                         title: isTesting ? "Testing Connection" : "Test Connection",
