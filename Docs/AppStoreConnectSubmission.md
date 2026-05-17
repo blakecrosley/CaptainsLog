@@ -6,6 +6,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
+- Current commit: `3b8f6bb`
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
 - Team ID used by export scripts: `M4WTLM6RAQ`
@@ -22,7 +23,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 | Make design feel coherent | `.impeccable.md`, fixture screenshots | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity | Locally reviewed |
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft | Locally ready, legal review open |
 | Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md` | URLs passed preflight reachability checks | Locally ready, legal review open |
-| Binary export ready | `Scripts/export_app_store_ipa.sh` | Current export produced an IPA with bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `get-task-allow=false`, encryption flag `false` | Locally ready |
+| Binary export ready | `Scripts/export_app_store_ipa.sh` | Current export from commit `3b8f6bb` produced an IPA with bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `get-task-allow=false`, encryption flag `false` | Locally ready |
 | Upload path ready | `Scripts/upload_app_store_ipa.sh` | Local IPA check passes; validate/upload/status require App Store Connect credentials | Script ready, external credentials open |
 | Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders | Locally ready, human marketing acceptance open |
 | Real data confidence | App runtime with a large GitHub account | Not rerun after latest App Store prep | Open |
