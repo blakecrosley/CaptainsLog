@@ -1153,9 +1153,19 @@ final class AppModel: ObservableObject {
             "Store summary source commit IDs"
         ]
 
-        for offset in 0..<18 {
-            guard offset % 3 != 1,
-                  let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else {
+        let recentOffsets = (0..<18).filter { $0 % 3 != 1 }
+        let yearOffsets = includeFixtureDetails
+            ? [
+                24, 31, 45, 58, 73, 84,
+                97, 112, 126, 139, 154, 168,
+                183, 197, 212, 229, 244, 259,
+                276, 291, 307, 322, 339, 356
+            ]
+            : []
+        let demoDayOffsets = recentOffsets + yearOffsets
+
+        for offset in demoDayOffsets {
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else {
                 continue
             }
 
