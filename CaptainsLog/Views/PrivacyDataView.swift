@@ -73,7 +73,7 @@ struct PrivacyDataView: View {
     private var dataFlowCard: some View {
         Kit941.Card {
             VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                Text("What Leaves The Device")
+                Text("What Leaves the Device")
                     .kit941Font(.title, weight: .semibold)
                     .foregroundStyle(AppSurface.primaryText)
 

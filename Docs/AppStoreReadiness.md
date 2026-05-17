@@ -11,10 +11,10 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Tokens and cloud AI keys are stored on-device in Keychain.
 - The app does not import CryptoKit, CommonCrypto, or custom cryptography APIs. Current network calls use system `URLSession` over HTTPS for GitHub, OpenAI, Anthropic, and the published support/privacy links.
 - `CaptainsLog/App/CaptainsLog-iOS-Info.plist` sets `ITSAppUsesNonExemptEncryption` to `false` for App Store Connect export-compliance prompts. Revisit this if custom encryption, VPN, secure messaging, file encryption, or other cryptographic functionality is added.
-- The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data.
+- The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data. The screenshot fixture seeds a fake debug-only OpenAI key so the AI settings and privacy screens show the intended attached-key state without exposing a real secret.
 - A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, `AppIcon76x76@2x~ipad.png`, and `ITSAppUsesNonExemptEncryption=false`.
 - A local App Store Connect export succeeds with automatic signing. The exported IPA is signed by `Apple Distribution: Christopher Crosley (M4WTLM6RAQ)`, uses `get-task-allow=false`, includes symbols, and keeps the privacy manifest in the app bundle. Upload to App Store Connect/TestFlight is still unverified.
-- The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes.
+- The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes. The May 17, 2026 output in `/tmp/captainslog-key-state-audit` shows the AI settings attached-key state with a fake demo key and packages into `/tmp/captainslog-key-state-packaged`.
 
 ## App Store Connect Checklist
 
@@ -39,7 +39,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Support URL: `https://blakecrosley.com/captains-log/support` is live and includes the support contact path `blake@941apps.com`.
 - Privacy Policy URL: `https://blakecrosley.com/captains-log/privacy` is live and includes the privacy contact path `blake@941apps.com`. Legal review is still recommended before App Review submission.
 - The in-app Privacy & Data screen links to the published Privacy Policy and Support pages so users and App Review can reach the same public documents from inside the app.
-- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh`, verify with `Scripts/app_store_preflight.sh <screenshot-dir>`, then run `Scripts/package_app_store_screenshots.sh <screenshot-dir>` to create numbered iPhone and iPad upload folders. The recommended order is dashboard, Work Map, journal detail, repository access, AI provider settings, then Privacy & Data. The May 17, 2026 audit output in `/tmp/captainslog-repo-search-audit` passed preflight after the repository search placement polish, but final marketing acceptance still needs human review.
+- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh`, verify with `Scripts/app_store_preflight.sh <screenshot-dir>`, then run `Scripts/package_app_store_screenshots.sh <screenshot-dir>` to create numbered iPhone and iPad upload folders. The recommended order is dashboard, Work Map, journal detail, repository access, AI provider settings, then Privacy & Data. The May 17, 2026 audit output in `/tmp/captainslog-key-state-audit` passed preflight after the AI attached-key screenshot polish, but final marketing acceptance still needs human review.
 
 ### Privacy
 
@@ -75,7 +75,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Screenshot mode has stable fixture routes for dashboard, Work Map, journal detail, repository access, AI provider settings, and Privacy & Data.
 - Repository management has fixture-reviewed search, bulk selection, selected/hidden filtering, and GitHub access CTAs.
 - Privacy & Data includes direct published Privacy Policy and Support links.
-- The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs.
+- The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs, and the AI provider screenshot now shows the attached-key UI instead of an empty disabled form.
 
 ### Next
 

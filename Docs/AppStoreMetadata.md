@@ -171,15 +171,17 @@ Scripts/package_app_store_screenshots.sh <screenshot-dir>
 2. Work map detail showing a selected month or year.
 3. Journal detail with TL;DR and commit evidence.
 4. Repository access screen with selected repositories and search.
-5. AI provider settings with optional key state.
+5. AI provider settings with an attached demo key state.
 6. Privacy & Data screen.
 
-Latest audit: on May 17, 2026, the script generated 12 PNGs in `/tmp/captainslog-repo-search-audit`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb, the repository access screen did not clip toggles, and `Scripts/app_store_preflight.sh /tmp/captainslog-repo-search-audit` passed.
+Latest audit: on May 17, 2026, the script generated 12 PNGs in `/tmp/captainslog-key-state-audit`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb, the repository access screen did not clip toggles, the AI settings screen showed an attached demo key state, and `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed.
 
 Packaged upload folders should contain six ordered images for each family:
 
 - `iphone-6.9/01-dashboard.png` through `06-privacy-data.png`.
 - `ipad-13/01-dashboard.png` through `06-privacy-data.png`.
+
+Latest packaged output: `/tmp/captainslog-key-state-packaged`.
 
 Avoid screenshots that show real private repository names unless the repository is intentionally public and safe to market.
 

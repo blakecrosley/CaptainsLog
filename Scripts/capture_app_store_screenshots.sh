@@ -8,6 +8,7 @@ BUNDLE_ID="com.blakecrosley.captainslog"
 OUTPUT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreScreenshots}"
 PHONE_NAME="${PHONE_NAME:-iPhone 17 Pro Max}"
 IPAD_NAME="${IPAD_NAME:-iPad Pro 13-inch (M5)}"
+SCREENSHOT_OPENAI_KEY="${CAPTAINS_LOG_SCREENSHOT_OPENAI_KEY:-sk-captainslog-screenshot-demo26}"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -61,14 +62,24 @@ capture_dashboard() {
         --wifiBars 3 \
         --cellularBars 4 >/dev/null 2>&1 || true
 
+    local launch_environment=(
+        SIMCTL_CHILD_CAPTAINS_LOG_UI_FIXTURE=1
+    )
+
     if [[ -n "$route" ]]; then
-        SIMCTL_CHILD_CAPTAINS_LOG_UI_FIXTURE=1 \
-        SIMCTL_CHILD_CAPTAINS_LOG_SCREENSHOT_ROUTE="$route" \
-            xcrun simctl launch --terminate-running-process "$device_id" "$BUNDLE_ID" >/dev/null
-    else
-        SIMCTL_CHILD_CAPTAINS_LOG_UI_FIXTURE=1 \
-            xcrun simctl launch --terminate-running-process "$device_id" "$BUNDLE_ID" >/dev/null
+        launch_environment+=(
+            SIMCTL_CHILD_CAPTAINS_LOG_SCREENSHOT_ROUTE="$route"
+        )
     fi
+
+    if [[ -n "$SCREENSHOT_OPENAI_KEY" ]]; then
+        launch_environment+=(
+            SIMCTL_CHILD_CAPTAINS_LOG_DEBUG_OPENAI_API_KEY="$SCREENSHOT_OPENAI_KEY"
+        )
+    fi
+
+    env "${launch_environment[@]}" \
+        xcrun simctl launch --terminate-running-process "$device_id" "$BUNDLE_ID" >/dev/null
 
     sleep "${SCREENSHOT_DELAY_SECONDS:-3}"
     xcrun simctl io "$device_id" screenshot "$output_path" >/dev/null
