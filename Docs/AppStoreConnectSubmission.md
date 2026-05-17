@@ -186,5 +186,5 @@ If App Review needs a live account, create a purpose-built GitHub account with s
 - Verify TestFlight processing status.
 - Make the final screenshot marketing decision.
 - Complete legal/privacy review.
-- Merge and deploy `blakecrosley.com` PR 15, which removes active analytics scripts from the Captain's Log Privacy Policy and Support pages, then rerun preflight and confirm the live warning is gone.
+- Reconcile `blakecrosley.com` PR 15. The live Captain's Log Privacy Policy and Support pages currently pass the active-analytics preflight check, but the site source PR remains open and should either be merged or closed once the production source of truth is confirmed.
 - Run one real large-account QA pass before submitting for review.
