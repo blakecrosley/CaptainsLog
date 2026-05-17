@@ -1118,7 +1118,7 @@ private struct WorkAnalyticsSheet: View {
                 }
                 .padding(.horizontal, Kit941.Spacing.md)
                 .padding(.vertical, Kit941.Spacing.lg)
-                .frame(maxWidth: 720)
+                .appReadablePage(compactMaxWidth: 720, regularMaxWidth: 860)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
             .background(AppSurface.backgroundGradient.ignoresSafeArea())
@@ -1387,6 +1387,7 @@ private struct WorkAnalyticsSheet: View {
 }
 
 private struct WorkMapDetailSheet: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedDate: Date
     let workMetrics: WorkMetrics
@@ -1397,22 +1398,10 @@ private struct WorkMapDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-                    header
-                    ActivityHeatmapView(
-                        selectedDate: $selectedDate,
-                        workMetrics: workMetrics,
-                        repositoryCoverage: repositoryCoverage,
-                        metric: metric,
-                        selectedYear: $selectedMapYear,
-                        showsHeaderTitle: false
-                    )
-                    WorkMapDayInspector(selectedDate: selectedDate, insight: dayInsight, metric: metric)
-                    WorkMapRhythmPanel(insights: periodInsights, metric: metric)
-                }
+                content
                 .padding(.horizontal, Kit941.Spacing.md)
                 .padding(.vertical, Kit941.Spacing.lg)
-                .frame(maxWidth: 720)
+                .appReadablePage(compactMaxWidth: 720, regularMaxWidth: 900)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
             .background(AppSurface.backgroundGradient.ignoresSafeArea())
@@ -1424,6 +1413,30 @@ private struct WorkMapDetailSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+            header
+            ActivityHeatmapView(
+                selectedDate: $selectedDate,
+                workMetrics: workMetrics,
+                repositoryCoverage: repositoryCoverage,
+                metric: metric,
+                selectedYear: $selectedMapYear,
+                showsHeaderTitle: false
+            )
+
+            if usesWideLayout {
+                HStack(alignment: .top, spacing: Kit941.Spacing.lg) {
+                    WorkMapDayInspector(selectedDate: selectedDate, insight: dayInsight, metric: metric)
+                    WorkMapRhythmPanel(insights: periodInsights, metric: metric)
+                }
+            } else {
+                WorkMapDayInspector(selectedDate: selectedDate, insight: dayInsight, metric: metric)
+                WorkMapRhythmPanel(insights: periodInsights, metric: metric)
             }
         }
     }
@@ -1502,6 +1515,10 @@ private struct WorkMapDetailSheet: View {
         let lastDay = weeks.last?.last ?? calendar.startOfDay(for: Date())
         let end = calendar.date(byAdding: .day, value: 1, to: lastDay) ?? lastDay
         return DateInterval(start: start, end: end)
+    }
+
+    private var usesWideLayout: Bool {
+        horizontalSizeClass == .regular
     }
 }
 

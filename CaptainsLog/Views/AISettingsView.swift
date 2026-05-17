@@ -3,6 +3,7 @@ import Kit941
 
 struct AISettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Binding var credentialRevision: Int
     @AppStorage(AIProviderCredentialStore.preferredProviderDefaultsKey) private var preferredProviderRaw = AIProvider.openai.rawValue
 
@@ -26,15 +27,10 @@ struct AISettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-                header
-                providerCard
-                keyCard
-                note
-            }
+            content
             .padding(.horizontal, Kit941.Spacing.md)
             .padding(.vertical, Kit941.Spacing.lg)
-            .frame(maxWidth: 620)
+            .appReadablePage(compactMaxWidth: 620, regularMaxWidth: 840)
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .background(AppSurface.backgroundGradient.ignoresSafeArea())
@@ -64,6 +60,24 @@ struct AISettingsView: View {
             key = ""
             message = nil
             credentialRevision += 1
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+            header
+
+            if usesWideLayout {
+                HStack(alignment: .top, spacing: Kit941.Spacing.lg) {
+                    providerCard
+                    keyCard
+                }
+            } else {
+                providerCard
+                keyCard
+            }
+
+            note
         }
     }
 
@@ -251,6 +265,10 @@ struct AISettingsView: View {
             .kit941Font(.caption)
             .foregroundStyle(AppSurface.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var usesWideLayout: Bool {
+        horizontalSizeClass == .regular
     }
 
     private func checkFormat(for candidate: String) {

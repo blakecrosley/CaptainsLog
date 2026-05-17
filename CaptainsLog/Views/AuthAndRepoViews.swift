@@ -640,7 +640,7 @@ struct RepositorySelectionView: View {
             }
             .padding(.horizontal, Kit941.Spacing.md)
             .padding(.vertical, Kit941.Spacing.lg)
-            .frame(maxWidth: 680)
+            .appReadablePage(compactMaxWidth: 680, regularMaxWidth: 820)
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .background(AppSurface.backgroundGradient.ignoresSafeArea())

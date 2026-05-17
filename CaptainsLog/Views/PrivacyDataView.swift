@@ -3,6 +3,7 @@ import Kit941
 
 struct PrivacyDataView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let isSignedIn: Bool
     let activeLogin: String?
@@ -19,16 +20,10 @@ struct PrivacyDataView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
-                summaryCard
-                dataFlowCard
-                publicLinksCard
-                controlsCard
-                reviewNoteCard
-            }
+            content
             .padding(.horizontal, Kit941.Spacing.md)
             .padding(.vertical, Kit941.Spacing.lg)
-            .frame(maxWidth: 680)
+            .appReadablePage(compactMaxWidth: 680, regularMaxWidth: 900)
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .background(AppSurface.backgroundGradient.ignoresSafeArea())
@@ -44,6 +39,33 @@ struct PrivacyDataView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+
+    private var content: some View {
+        Group {
+            if usesWideLayout {
+                HStack(alignment: .top, spacing: Kit941.Spacing.lg) {
+                    VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                        summaryCard
+                        dataFlowCard
+                        reviewNoteCard
+                    }
+
+                    VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                        publicLinksCard
+                        controlsCard
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
+                    summaryCard
+                    dataFlowCard
+                    publicLinksCard
+                    controlsCard
+                    reviewNoteCard
+                }
+            }
+        }
     }
 
     private var summaryCard: some View {
@@ -217,6 +239,10 @@ struct PrivacyDataView: View {
             return "When you generate a journal, selected commit evidence is sent directly to \(preferredProviderName) using your saved key."
         }
         return "Journal generation uses the on-device Apple model when available."
+    }
+
+    private var usesWideLayout: Bool {
+        horizontalSizeClass == .regular
     }
 
     private static let privacyPolicyURL = URL(string: "https://blakecrosley.com/captains-log/privacy")!

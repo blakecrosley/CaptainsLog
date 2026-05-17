@@ -376,7 +376,7 @@ struct RootView: View {
             )
             .padding(.horizontal, Kit941.Spacing.md)
             .padding(.vertical, Kit941.Spacing.lg)
-            .frame(maxWidth: 680)
+            .appReadablePage(compactMaxWidth: 680, regularMaxWidth: 820)
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .background(AppSurface.backgroundGradient.ignoresSafeArea())
@@ -1425,5 +1425,34 @@ extension View {
                     .strokeBorder(AppSurface.panelStroke(highlighted: highlighted), lineWidth: 1)
             }
             .shadow(color: AppSurface.panelShadow(highlighted: highlighted), radius: highlighted ? 22 : 14, x: 0, y: highlighted ? 10 : 7)
+    }
+
+    func appReadablePage(
+        compactMaxWidth: CGFloat,
+        regularMaxWidth: CGFloat? = nil,
+        alignment: Alignment = .center
+    ) -> some View {
+        modifier(
+            AppReadablePageModifier(
+                compactMaxWidth: compactMaxWidth,
+                regularMaxWidth: regularMaxWidth ?? compactMaxWidth,
+                alignment: alignment
+            )
+        )
+    }
+}
+
+private struct AppReadablePageModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    let compactMaxWidth: CGFloat
+    let regularMaxWidth: CGFloat
+    let alignment: Alignment
+
+    func body(content: Content) -> some View {
+        content.frame(
+            maxWidth: horizontalSizeClass == .regular ? regularMaxWidth : compactMaxWidth,
+            alignment: alignment
+        )
     }
 }
