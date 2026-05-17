@@ -39,7 +39,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Support URL: `https://blakecrosley.com/captains-log/support` is live and includes the support contact path `blake@941apps.com`.
 - Privacy Policy URL: `https://blakecrosley.com/captains-log/privacy` is live and includes the privacy contact path `blake@941apps.com`. Legal review is still recommended before App Review submission.
 - The in-app Privacy & Data screen links to the published Privacy Policy and Support pages so users and App Review can reach the same public documents from inside the app.
-- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload. The May 17, 2026 audit output in `/tmp/captainslog-appstore-audit-screens` passed a visual breadcrumb/clipping check, but the final marketing order still needs human selection.
+- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh`, verify with `Scripts/app_store_preflight.sh <screenshot-dir>`, then run `Scripts/package_app_store_screenshots.sh <screenshot-dir>` to create numbered iPhone and iPad upload folders. The recommended order is dashboard, Work Map, journal detail, repository access, AI provider settings, then Privacy & Data. The May 17, 2026 audit output in `/tmp/captainslog-repo-search-audit` passed preflight after the repository search placement polish, but final marketing acceptance still needs human review.
 
 ### Privacy
 
@@ -80,7 +80,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 ### Next
 
 - A final pass on a real large GitHub account is still recommended before submission.
-- Final App Store screenshot ordering and marketing selection still need human review on iPhone and iPad exports.
+- Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
 
 ## Official References
