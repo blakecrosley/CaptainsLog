@@ -182,6 +182,15 @@ struct WorkOverviewView: View {
                 }
                 .frame(width: 360, alignment: .top)
             }
+
+            if let selectedSummary {
+                DashboardJournalPreviewCard(
+                    summary: selectedSummary,
+                    metric: displayMetric,
+                    snapshot: selectedWorkSnapshot,
+                    onOpen: onShowDayDetail
+                )
+            }
         }
     }
 
@@ -2275,6 +2284,88 @@ private struct SelectedDayAnnotationRow: View {
 
     private var statusColor: Color {
         summary == nil ? AppSurface.secondaryText : AppSurface.accent
+    }
+}
+
+private struct DashboardJournalPreviewCard: View {
+    let summary: DailyJournalSummaryRecord
+    let metric: WorkDisplayMetric
+    let snapshot: DayWorkSnapshot
+    let onOpen: @MainActor @Sendable () -> Void
+
+    var body: some View {
+        Button {
+            onOpen()
+        } label: {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                HStack(alignment: .firstTextBaseline, spacing: Kit941.Spacing.md) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Journal")
+                            .kit941Font(.caption, weight: .semibold)
+                            .foregroundStyle(AppSurface.accent)
+                        Text(summary.title)
+                            .kit941Font(.title, weight: .semibold)
+                            .foregroundStyle(AppSurface.primaryText)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: Kit941.Spacing.md)
+
+                    Text(metricSummary)
+                        .kit941Font(.caption, weight: .semibold)
+                        .foregroundStyle(AppSurface.secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+
+                Text(summary.narrative)
+                    .kit941Font(.body)
+                    .foregroundStyle(AppSurface.primaryText)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+
+                if !previewBullets.isEmpty {
+                    HStack(alignment: .top, spacing: Kit941.Spacing.lg) {
+                        ForEach(Array(previewBullets.enumerated()), id: \.offset) { index, bullet in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("\(index + 1)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(AppSurface.accent)
+                                    .frame(width: 18, height: 18)
+                                    .background(AppSurface.accent.opacity(0.14), in: Circle())
+                                Text(bullet)
+                                    .kit941Font(.caption)
+                                    .foregroundStyle(AppSurface.secondaryText)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            .padding(Kit941.Spacing.lg)
+            .appPanel()
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open journal for \(summary.title)")
+    }
+
+    private var previewBullets: [String] {
+        Array(summary.bullets.prefix(3))
+    }
+
+    private var metricSummary: String {
+        switch metric {
+        case .changes:
+            if snapshot.displayValue > 0 {
+                return "\(snapshot.displayValue.formatted()) \(snapshot.displayUnit)"
+            }
+            return "\(snapshot.commitCount.formatted()) commits"
+        case .commits:
+            let unit = snapshot.commitCount == 1 ? "commit" : "commits"
+            return "\(snapshot.commitCount.formatted()) \(unit)"
+        }
     }
 }
 
