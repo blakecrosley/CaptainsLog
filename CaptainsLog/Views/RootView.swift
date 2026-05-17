@@ -28,6 +28,10 @@ struct RootView: View {
     @State private var generationError: String?
     @State private var isGeneratingSummary = false
     @State private var identityAliasesText = ""
+    #if DEBUG
+    @State private var didPresentDebugScreenshotRoute = false
+    @State private var debugScreenshotSheetRoute: DebugScreenshotRoute?
+    #endif
     @AppStorage(WorkIdentityPreferences.scopeKey) private var workIdentityScopeRaw = WorkIdentityScope.allSelectedRepos.rawValue
     @AppStorage("work.displayMetric") private var workDisplayMetricRaw = WorkDisplayMetric.changes.rawValue
 
@@ -220,6 +224,11 @@ struct RootView: View {
                 .sheet(isPresented: $isShowingRepositorySettings) {
                     repositorySettingsSheet
                 }
+                #if DEBUG
+                .fullScreenCover(item: $debugScreenshotSheetRoute) { route in
+                    debugScreenshotSheet(for: route)
+                }
+                #endif
                 .navigationDestination(isPresented: $isShowingDayDetail) {
                     dayDetailPage
                 }
@@ -243,6 +252,7 @@ struct RootView: View {
                 reloadCommitSnapshot()
                 #if DEBUG
                 if prepareDebugFixtureIfNeeded() {
+                    presentDebugScreenshotRouteIfNeeded()
                     return
                 }
                 #endif
@@ -711,6 +721,57 @@ struct RootView: View {
         )
     }
 
+    #if DEBUG
+    @ViewBuilder
+    private func debugScreenshotSheet(for route: DebugScreenshotRoute) -> some View {
+        NavigationStack {
+            switch route {
+            case .repositories:
+                RepositorySelectionView(
+                    repositories: repositoryPanelRepositories,
+                    appInstallURL: appModel.githubRepositoryApprovalURL,
+                    onRefreshRepos: {},
+                    onInstallApp: {}
+                )
+            case .ai:
+                AISettingsView(credentialRevision: $aiCredentialRevision)
+            case .privacy:
+                PrivacyDataView(
+                    isSignedIn: appModel.isSignedIn,
+                    activeLogin: activeLogin,
+                    selectedRepositoryCount: githubRepositories.filter(\.isSelected).count,
+                    importedCommitCount: commits.count,
+                    journalCount: summaries.count,
+                    hasCloudAIKey: hasCloudAIKey,
+                    preferredProviderName: preferredAIProvider.displayName,
+                    onClearImportedHistory: clearImportedHistory
+                )
+            case .dayDetail:
+                EmptyView()
+            }
+        }
+    }
+
+    @MainActor
+    private func presentDebugScreenshotRouteIfNeeded() {
+        guard !didPresentDebugScreenshotRoute,
+              let route = DebugScreenshotRoute.current else {
+            return
+        }
+
+        didPresentDebugScreenshotRoute = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            switch route {
+            case .dayDetail:
+                isShowingDayDetail = true
+            case .repositories, .ai, .privacy:
+                debugScreenshotSheetRoute = route
+            }
+        }
+    }
+    #endif
+
     private func startForegroundLatestSync() {
         Task(priority: .utility) {
             await syncLatestForForegroundIfNeeded()
@@ -953,6 +1014,24 @@ struct RootView: View {
         }
     }
 }
+
+#if DEBUG
+enum DebugScreenshotRoute: String, Identifiable {
+    case dayDetail = "day-detail"
+    case repositories
+    case ai
+    case privacy
+
+    var id: String { rawValue }
+
+    static var current: DebugScreenshotRoute? {
+        guard let route = ProcessInfo.processInfo.environment["CAPTAINS_LOG_SCREENSHOT_ROUTE"] else {
+            return nil
+        }
+        return DebugScreenshotRoute(rawValue: route)
+    }
+}
+#endif
 
 private struct RootWorkData {
     let metrics: WorkMetrics

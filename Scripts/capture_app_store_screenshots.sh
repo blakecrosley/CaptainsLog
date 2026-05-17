@@ -46,7 +46,9 @@ capture_dashboard() {
     local device_id="$1"
     local slug="$2"
     local app_path="$3"
-    local output_path="$OUTPUT_DIR/${slug}-dashboard.png"
+    local screen_slug="${4:-dashboard}"
+    local route="${5:-}"
+    local output_path="$OUTPUT_DIR/${slug}-${screen_slug}.png"
 
     boot_device "$device_id"
     xcrun simctl uninstall "$device_id" "$BUNDLE_ID" >/dev/null 2>&1 || true
@@ -59,12 +61,31 @@ capture_dashboard() {
         --wifiBars 3 \
         --cellularBars 4 >/dev/null 2>&1 || true
 
-    SIMCTL_CHILD_CAPTAINS_LOG_UI_FIXTURE=1 \
-        xcrun simctl launch --terminate-running-process "$device_id" "$BUNDLE_ID" >/dev/null
+    if [[ -n "$route" ]]; then
+        SIMCTL_CHILD_CAPTAINS_LOG_UI_FIXTURE=1 \
+        SIMCTL_CHILD_CAPTAINS_LOG_SCREENSHOT_ROUTE="$route" \
+            xcrun simctl launch --terminate-running-process "$device_id" "$BUNDLE_ID" >/dev/null
+    else
+        SIMCTL_CHILD_CAPTAINS_LOG_UI_FIXTURE=1 \
+            xcrun simctl launch --terminate-running-process "$device_id" "$BUNDLE_ID" >/dev/null
+    fi
 
-    sleep "${SCREENSHOT_DELAY_SECONDS:-2}"
+    sleep "${SCREENSHOT_DELAY_SECONDS:-3}"
     xcrun simctl io "$device_id" screenshot "$output_path" >/dev/null
     printf '%s\n' "$output_path"
+}
+
+capture_screenshot_set() {
+    local device_id="$1"
+    local slug="$2"
+    local app_path="$3"
+
+    capture_dashboard "$device_id" "$slug" "$app_path" "dashboard"
+    capture_dashboard "$device_id" "$slug" "$app_path" "work-map" "work-map"
+    capture_dashboard "$device_id" "$slug" "$app_path" "journal" "day-detail"
+    capture_dashboard "$device_id" "$slug" "$app_path" "repositories" "repositories"
+    capture_dashboard "$device_id" "$slug" "$app_path" "ai" "ai"
+    capture_dashboard "$device_id" "$slug" "$app_path" "privacy" "privacy"
 }
 
 phone_id="$(device_id_for_name "$PHONE_NAME")"
@@ -105,5 +126,5 @@ if [[ ! -d "$app_path" ]]; then
     exit 1
 fi
 
-capture_dashboard "$phone_id" "iphone-17-pro-max" "$app_path"
-capture_dashboard "$ipad_id" "ipad-pro-13" "$app_path"
+capture_screenshot_set "$phone_id" "iphone-17-pro-max" "$app_path"
+capture_screenshot_set "$ipad_id" "ipad-pro-13" "$app_path"

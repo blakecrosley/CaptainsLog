@@ -96,6 +96,10 @@ struct WorkOverviewView: View {
     @State private var isShowingWorkAnalytics = false
     @State private var isShowingActivityMap = false
     @State private var isShowingSyncStatus = false
+    #if DEBUG
+    @State private var didPresentDebugScreenshotRoute = false
+    @State private var isShowingDebugActivityMap = false
+    #endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: Kit941.Spacing.xl) {
@@ -149,6 +153,19 @@ struct WorkOverviewView: View {
             )
             .presentationDetents([.large])
         }
+        #if DEBUG
+        .fullScreenCover(isPresented: $isShowingDebugActivityMap) {
+            WorkMapDetailSheet(
+                selectedDate: $selectedDate,
+                workMetrics: workMetrics,
+                repositoryCoverage: repositorySnapshot.coverage,
+                metric: displayMetric
+            )
+        }
+        .onAppear {
+            presentDebugScreenshotRouteIfNeeded()
+        }
+        #endif
     }
 
     private var trend: WorkTrendSummary {
@@ -254,6 +271,22 @@ struct WorkOverviewView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(label)
     }
+
+    #if DEBUG
+    @MainActor
+    private func presentDebugScreenshotRouteIfNeeded() {
+        guard !didPresentDebugScreenshotRoute,
+              ProcessInfo.processInfo.environment["CAPTAINS_LOG_SCREENSHOT_ROUTE"] == "work-map" else {
+            return
+        }
+
+        didPresentDebugScreenshotRoute = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            isShowingDebugActivityMap = true
+        }
+    }
+    #endif
 }
 
 private struct SyncStatusButton: View {

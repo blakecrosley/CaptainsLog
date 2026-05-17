@@ -9,7 +9,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - GitHub Device Flow and API calls go directly to GitHub. OAuth/device URLs and API URLs are in `GitHubAPIClient`.
 - Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
 - Tokens and cloud AI keys are stored on-device in Keychain.
-- The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad dashboard screenshots with a neutral fixture identity; final detail-screen exports still need to be captured.
+- The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data.
 - A local generic iOS archive succeeds and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`. The latest archive was signed with an Apple Development profile, so App Store distribution export/upload is still unverified.
 
 ## App Store Connect Checklist
@@ -31,7 +31,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Keywords: candidate copy is in `Docs/AppStoreMetadata.md`; avoid company or app names in the keyword field.
 - Support URL: required before submission.
 - Privacy Policy URL: required for iOS and macOS apps.
-- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh`, then add work map detail, journal detail, repo selection, AI key settings, and Privacy & Data captures.
+- Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload.
 
 ### Privacy
 

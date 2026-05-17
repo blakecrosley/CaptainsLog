@@ -154,7 +154,7 @@ Background processing indexes older Git history in batches. The app remains usab
 
 ## Screenshot Set
 
-Run `Scripts/capture_app_store_screenshots.sh` for repeatable dashboard captures, then capture the remaining iPhone and iPad screenshots from the same neutral fixture state before submission:
+Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state:
 
 1. Dashboard with account header, week strip, primary metric, and work map.
 2. Work map detail showing a selected month or year.
