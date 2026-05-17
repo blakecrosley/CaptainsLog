@@ -49,6 +49,22 @@ private enum DemoFixtureIdentity {
     static let repositoryName = "work-journal"
     static let repositoryFullName = "captains-log-demo/work-journal"
     static let url = URL(string: "https://github.com")!
+
+    static let companionRepositories: [DemoFixtureRepository] = [
+        DemoFixtureRepository(id: 941_001, name: "ios-client", isPrivate: true, isSelected: true, pushedDayOffset: 0),
+        DemoFixtureRepository(id: 941_002, name: "metrics-lab", isPrivate: false, isSelected: true, pushedDayOffset: 1),
+        DemoFixtureRepository(id: 941_003, name: "journal-prompts", isPrivate: true, isSelected: true, pushedDayOffset: 2),
+        DemoFixtureRepository(id: 941_004, name: "docs-site", isPrivate: false, isSelected: false, pushedDayOffset: 5),
+        DemoFixtureRepository(id: 941_005, name: "archive-tools", isPrivate: true, isSelected: false, pushedDayOffset: 12)
+    ]
+}
+
+private struct DemoFixtureRepository {
+    let id: Int64
+    let name: String
+    let isPrivate: Bool
+    let isSelected: Bool
+    let pushedDayOffset: Int
 }
 
 private enum DiffStatsBackfillOrder {
@@ -1104,6 +1120,8 @@ final class AppModel: ObservableObject {
 
         let repo = try demoRepository(modelContext: modelContext, includeFixtureDetails: includeFixtureDetails)
         if includeFixtureDetails {
+            try seedFixtureRepositoryList(modelContext: modelContext)
+
             let demoViewer = GitHubViewer(
                 login: DemoFixtureIdentity.login,
                 nodeID: DemoFixtureIdentity.nodeID,
@@ -2445,6 +2463,43 @@ final class AppModel: ObservableObject {
         )
         modelContext.insert(repo)
         return repo
+    }
+
+    private func seedFixtureRepositoryList(modelContext: ModelContext) throws {
+        let calendar = Calendar.current
+        for fixture in DemoFixtureIdentity.companionRepositories {
+            let fixtureID = fixture.id
+            var descriptor = FetchDescriptor<GitRepositoryRecord>(
+                predicate: #Predicate { $0.id == fixtureID }
+            )
+            descriptor.fetchLimit = 1
+
+            let repository: GitRepositoryRecord
+            if let existing = try modelContext.fetch(descriptor).first {
+                repository = existing
+            } else {
+                let fullName = "\(DemoFixtureIdentity.repositoryOwner)/\(fixture.name)"
+                repository = GitRepositoryRecord(
+                    id: fixture.id,
+                    ownerLogin: DemoFixtureIdentity.repositoryOwner,
+                    name: fixture.name,
+                    fullName: fullName,
+                    accountLogin: DemoFixtureIdentity.login,
+                    isPrivate: fixture.isPrivate,
+                    isSelected: fixture.isSelected,
+                    htmlURL: URL(string: "https://github.com/\(fullName)") ?? DemoFixtureIdentity.url
+                )
+                modelContext.insert(repository)
+            }
+
+            repository.accountLogin = DemoFixtureIdentity.login
+            repository.isSelected = fixture.isSelected
+            repository.lastSyncedAt = Date()
+            repository.pushedAt = calendar.date(byAdding: .day, value: -fixture.pushedDayOffset, to: Date())
+            repository.historyBackfillCompletedAt = Date()
+            repository.historyBackfillLowerBound = calendar.date(byAdding: .year, value: -1, to: Date())
+            repository.historyBackfillLastError = nil
+        }
     }
 
     private func fetchCommit(id: String, modelContext: ModelContext) throws -> GitCommitRecord? {

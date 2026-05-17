@@ -68,7 +68,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 
 ### Next
 
-- Repository management still needs final on-device review for long real account lists, search, select all, and the GitHub access CTA.
+- Repository management now has fixture-reviewed search, bulk selection, selected/hidden filtering, and GitHub access CTAs. A final pass on a real large GitHub account is still recommended before submission.
 - Final App Store screenshot selection still needs human review on iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
 

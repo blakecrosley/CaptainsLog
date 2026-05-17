@@ -590,6 +590,38 @@ struct AppActionRow: View {
     }
 }
 
+private enum RepositoryListFilter: String, CaseIterable, Identifiable {
+    case all
+    case selected
+    case unselected
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .selected: "Selected"
+        case .unselected: "Hidden"
+        }
+    }
+
+    var emptyHeadline: String {
+        switch self {
+        case .all: "No repositories found"
+        case .selected: "No selected repositories"
+        case .unselected: "No hidden repositories"
+        }
+    }
+
+    var emptyDescription: String {
+        switch self {
+        case .all: "Try a different repository name."
+        case .selected: "Select repositories to include them in Captain's Log."
+        case .unselected: "Clear a repository to hide it from the app."
+        }
+    }
+}
+
 struct RepositorySelectionView: View {
     let repositories: [GitRepositoryRecord]
     let appInstallURL: URL?
@@ -597,6 +629,7 @@ struct RepositorySelectionView: View {
     let onInstallApp: @MainActor @Sendable () -> Void
 
     @State private var searchText = ""
+    @State private var listFilter: RepositoryListFilter = .all
 
     var body: some View {
         ScrollView {
@@ -615,50 +648,51 @@ struct RepositorySelectionView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .searchable(text: $searchText, prompt: "Find repository")
-        .toolbar {
-            #if os(iOS)
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button("Select All") { setAll(true) }
-                Spacer()
-                Button("Select None") { setAll(false) }
-            }
-            #else
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button("Select All") { setAll(true) }
-                Button("Select None") { setAll(false) }
-            }
-            #endif
-        }
     }
 
     private var summaryCard: some View {
         Kit941.Card {
             VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(selectionSummary)
-                            .kit941Font(.title, weight: .semibold)
-                        Text(repositoryAvailability)
-                            .kit941Font(.caption)
-                            .foregroundStyle(AppSurface.secondaryText)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(selectionSummary)
+                        .kit941Font(.title, weight: .semibold)
+                    Text(repositoryAvailability)
+                        .kit941Font(.caption)
+                        .foregroundStyle(AppSurface.secondaryText)
+                }
+
+                Picker("Repository filter", selection: $listFilter) {
+                    ForEach(RepositoryListFilter.allCases) { filter in
+                        Text(filter.title).tag(filter)
                     }
+                }
+                .pickerStyle(.segmented)
 
-                    Spacer(minLength: Kit941.Spacing.md)
-
+                HStack(spacing: Kit941.Spacing.sm) {
+                    RepositoryBulkButton(
+                        title: "Select all available",
+                        systemImage: "checkmark.circle",
+                        action: { setAll(true) }
+                    )
+                    RepositoryBulkButton(
+                        title: "Clear all",
+                        systemImage: "xmark.circle",
+                        action: { setAll(false) }
+                    )
                 }
 
                 if appInstallURL != nil {
                     AppActionRow(
-                        title: "Choose Repositories",
-                        description: "Open GitHub to add or remove repository access for Captain's Log.",
+                        title: "Open GitHub Access",
+                        description: "Add or remove the repositories this app is allowed to read.",
                         systemImage: "arrow.up.right.square",
                         action: onInstallApp
                     )
                 }
 
                 AppActionRow(
-                    title: "Refresh Repository List",
-                    description: "Use this after changing access in GitHub.",
+                    title: "Update List from GitHub",
+                    description: "Reload repository access after changes in GitHub.",
                     systemImage: "person.crop.circle.badge.checkmark",
                     action: onRefreshRepos
                 )
@@ -672,28 +706,56 @@ struct RepositorySelectionView: View {
             Kit941.StatusView(
                 style: .empty,
                 symbol: "magnifyingglass",
-                headline: "No repositories found",
-                description: "Try a different repository name."
+                headline: LocalizedStringKey(listFilter.emptyHeadline),
+                description: LocalizedStringKey(listFilter.emptyDescription)
             )
         } else {
-            VStack(spacing: 0) {
-                ForEach(filteredRepositories) { repo in
-                    RepositoryToggleRow(repository: repo)
-                    if repo.id != filteredRepositories.last?.id {
-                        Divider()
+            VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(listTitle)
+                        .kit941Font(.label, weight: .semibold)
+                        .foregroundStyle(AppSurface.primaryText)
+
+                    Spacer(minLength: Kit941.Spacing.sm)
+
+                    Text("\(filteredRepositories.count.formatted()) shown")
+                        .kit941Font(.caption, weight: .semibold)
+                        .foregroundStyle(AppSurface.secondaryText)
+                        .monospacedDigit()
+                }
+                .padding(.horizontal, Kit941.Spacing.xs)
+
+                LazyVStack(spacing: 0) {
+                    ForEach(filteredRepositories) { repo in
+                        RepositoryToggleRow(repository: repo)
+                        if repo.id != filteredRepositories.last?.id {
+                            Divider()
+                                .overlay(AppSurface.divider.opacity(0.55))
+                        }
                     }
                 }
+                .appPanel()
             }
-            .appPanel()
         }
     }
 
     private var filteredRepositories: [GitRepositoryRecord] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else {
-            return repositories
+        let scopedRepositories = repositories.filter { repository in
+            switch listFilter {
+            case .all:
+                return true
+            case .selected:
+                return repository.isSelected
+            case .unselected:
+                return !repository.isSelected
+            }
         }
-        return repositories.filter { repository in
+
+        guard !query.isEmpty else {
+            return scopedRepositories
+        }
+        return scopedRepositories.filter { repository in
             repository.fullName.localizedCaseInsensitiveContains(query)
         }
     }
@@ -714,10 +776,49 @@ struct RepositorySelectionView: View {
         return "\(repositories.count.formatted()) \(unit) available from GitHub"
     }
 
+    private var listTitle: String {
+        switch listFilter {
+        case .all:
+            return searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "All repositories" : "Search results"
+        case .selected:
+            return "Selected repositories"
+        case .unselected:
+            return "Not selected"
+        }
+    }
+
     private func setAll(_ isSelected: Bool) {
         for repository in repositories {
             repository.isSelected = isSelected
         }
+    }
+}
+
+private struct RepositoryBulkButton: View {
+    let title: String
+    let systemImage: String
+    let action: @MainActor @Sendable () -> Void
+
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            Label(title, systemImage: systemImage)
+                .kit941Font(.caption, weight: .semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .padding(.horizontal, Kit941.Spacing.sm)
+                .background(AppSurface.mutedFill(opacity: 0.74), in: RoundedRectangle(cornerRadius: Kit941.Radius.sm, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Kit941.Radius.sm, style: .continuous)
+                        .strokeBorder(AppSurface.panelStroke(), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(AppSurface.primaryText)
+        .accessibilityIdentifier("repositoryBulk.\(title)")
     }
 }
 
