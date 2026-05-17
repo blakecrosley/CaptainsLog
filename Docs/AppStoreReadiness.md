@@ -10,7 +10,8 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
 - Tokens and cloud AI keys are stored on-device in Keychain.
 - The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data.
-- A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`. The latest archive was signed with an Apple Development profile, so App Store distribution export/upload is still unverified.
+- A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`.
+- A local App Store Connect export succeeds with automatic signing. The exported IPA is signed by `Apple Distribution: Christopher Crosley (M4WTLM6RAQ)`, uses `get-task-allow=false`, includes symbols, and keeps the privacy manifest in the app bundle. Upload to App Store Connect/TestFlight is still unverified.
 - The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes.
 
 ## App Store Connect Checklist
@@ -21,7 +22,8 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Confirm automatic signing uses team `M4WTLM6RAQ`.
 - Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
 - Archive the iOS target and confirm the privacy manifest is included in the archive.
-- Export or upload with App Store distribution signing. The local archive check used `Apple Development: Christopher Crosley (5U69CE2KAT)` and `get-task-allow=true`, which is not the final App Store signing state.
+- Export with App Store distribution signing before upload. The May 17, 2026 local export used `method=app-store-connect`, `destination=export`, automatic signing, and produced `/tmp/CaptainsLog-AppStoreExport/Captain's Log.ipa` with `get-task-allow=false`.
+- Upload the exported build to App Store Connect/TestFlight and verify processing status.
 
 ### Product Page
 
