@@ -75,16 +75,25 @@ local_check() {
     [[ -f "$info_plist" ]] || fail "Info.plist missing from IPA app"
     [[ -f "$privacy_manifest" ]] || fail "PrivacyInfo.xcprivacy missing from IPA app"
 
-    local bundle_id version build encryption get_task_allow
+    local bundle_id version build encryption get_task_allow executable_name executable_path
     bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info_plist")"
     version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")"
     build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$info_plist")"
     encryption="$(/usr/libexec/PlistBuddy -c 'Print :ITSAppUsesNonExemptEncryption' "$info_plist")"
     get_task_allow="$(codesign -d --entitlements :- "$app_path" 2>/dev/null | plutil -extract get-task-allow raw -o - - 2>/dev/null || true)"
+    executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$info_plist")"
+    executable_path="$app_path/$executable_name"
 
     [[ "$bundle_id" == "$BUNDLE_ID" ]] || fail "Unexpected bundle id: $bundle_id"
     [[ "$encryption" == "false" ]] || fail "Unexpected ITSAppUsesNonExemptEncryption=$encryption"
     [[ "$get_task_allow" == "false" ]] || fail "Expected get-task-allow=false, got ${get_task_allow:-missing}"
+    [[ -f "$executable_path" ]] || fail "App executable missing from IPA app: $executable_path"
+
+    local release_fixture_hits
+    if release_fixture_hits="$(strings "$executable_path" | rg "CAPTAINS_LOG_DEBUG_OPENAI_API_KEY|REPS_DEBUG_OPENAI_API_KEY|CAPTAINS_LOG_SCREENSHOT_ROUTE|CAPTAINS_LOG_UI_FIXTURE|sk-captainslog-screenshot-demo26")"; then
+        fail "Release app executable contains debug screenshot/auth fixture strings:
+$(printf '%s\n' "$release_fixture_hits" | sed -n '1,12p')"
+    fi
 
     local exported_commit git_dirty kit941_commit kit941_dirty
     if [[ -f "$export_manifest" ]]; then
@@ -126,6 +135,7 @@ local_check() {
     printf 'Privacy manifest: present\n'
     printf 'Non-exempt encryption: %s\n' "$encryption"
     printf 'get-task-allow: %s\n' "$get_task_allow"
+    printf 'Release fixture strings: absent\n'
 }
 
 auth_args=()
