@@ -24,7 +24,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Confirm automatic signing uses team `M4WTLM6RAQ`.
 - Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
 - Confirm export compliance in App Store Connect matches the binary: this build declares no non-exempt encryption in Info.plist and only uses Apple system networking/TLS. The May 17, 2026 archive at `/tmp/CaptainsLog-ExportCompliance.xcarchive` confirmed `ITSAppUsesNonExemptEncryption=false` in the archived app bundle.
-- Archive the iOS target and confirm the privacy manifest is included in the archive.
+- Run `Scripts/export_app_store_ipa.sh` to archive the iOS target, export an App Store Connect IPA, and confirm bundle ID, version/build, privacy manifest presence, and `ITSAppUsesNonExemptEncryption=false`.
 - Export with App Store distribution signing before upload. The May 17, 2026 local export used `method=app-store-connect`, `destination=export`, automatic signing, and produced `/tmp/CaptainsLog-AppStoreExport/Captain's Log.ipa` with `get-task-allow=false`.
 - Upload the exported build to App Store Connect/TestFlight and verify processing status.
 

@@ -3,6 +3,7 @@
 # Swift Package Manager and local build products
 .build/
 .swiftpm/
+Artifacts/
 
 # Xcode user and derived state
 DerivedData/
