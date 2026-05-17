@@ -6,7 +6,6 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Latest pushed repo commit: `a2166bc795d0195621d13493dd2c9d3f6987d051`
 - Exported app commit: `dead7833759fb33a8e40f61f00274a8766ac8bd8`
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
@@ -21,6 +20,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 Last local audit: May 17, 2026.
 
 - `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed: metadata limits, policy/support URL reachability, privacy manifest, export-compliance flag, bundle/build settings, marketing icon, and all iPhone/iPad screenshot dimensions.
+- `Scripts/privacy_required_reason_audit.sh` is included in preflight and passed for the app target plus local `Kit941` package source.
 - `Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` exported the current IPA from commit `dead7833759fb33a8e40f61f00274a8766ac8bd8` with `Git dirty at export: false`.
 - `Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passed: bundle `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `ITSAppUsesNonExemptEncryption=false`, and `get-task-allow=false`.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.

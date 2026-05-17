@@ -209,6 +209,12 @@ else
     [[ "$accessed_reason" == "CA92.1" ]] && pass "Privacy manifest UserDefaults reason CA92.1" || fail "Unexpected UserDefaults reason: $accessed_reason"
 fi
 
+if "$ROOT_DIR/Scripts/privacy_required_reason_audit.sh"; then
+    pass "Required reason API audit"
+else
+    fail "Required reason API audit"
+fi
+
 settings_file="$(mktemp -t captainslog-build-settings.XXXXXX)"
 trap 'rm -f "$settings_file"' EXIT
 xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -destination "generic/platform=iOS" -showBuildSettings > "$settings_file"
