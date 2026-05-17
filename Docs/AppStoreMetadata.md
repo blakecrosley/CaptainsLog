@@ -86,6 +86,12 @@ Age rating notes:
 No mature content, social posting, user-to-user communication, commerce, gambling, medical content, location use, or unrestricted web browsing is present in the app code today. Complete the App Store Connect questionnaire from the final binary before submission.
 ```
 
+Export compliance note:
+
+```text
+This build declares ITSAppUsesNonExemptEncryption=false. The app uses Apple system networking/TLS for GitHub and optional AI provider API calls, and does not include custom cryptography. Reconfirm this answer if custom encryption or security functionality is added later.
+```
+
 ## Version Information
 
 Promotional text:

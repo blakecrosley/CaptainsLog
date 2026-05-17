@@ -9,8 +9,10 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - GitHub Device Flow and API calls go directly to GitHub. OAuth/device URLs and API URLs are in `GitHubAPIClient`.
 - Optional cloud AI calls go directly to OpenAI or Anthropic only when the user attaches a provider key.
 - Tokens and cloud AI keys are stored on-device in Keychain.
+- The app does not import CryptoKit, CommonCrypto, or custom cryptography APIs. Current network calls use system `URLSession` over HTTPS for GitHub, OpenAI, Anthropic, and the published support/privacy links.
+- `CaptainsLog/App/CaptainsLog-iOS-Info.plist` sets `ITSAppUsesNonExemptEncryption` to `false` for App Store Connect export-compliance prompts. Revisit this if custom encryption, VPN, secure messaging, file encryption, or other cryptographic functionality is added.
 - The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data.
-- A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, and `AppIcon76x76@2x~ipad.png`.
+- A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, `AppIcon76x76@2x~ipad.png`, and `ITSAppUsesNonExemptEncryption=false`.
 - A local App Store Connect export succeeds with automatic signing. The exported IPA is signed by `Apple Distribution: Christopher Crosley (M4WTLM6RAQ)`, uses `get-task-allow=false`, includes symbols, and keeps the privacy manifest in the app bundle. Upload to App Store Connect/TestFlight is still unverified.
 - The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes.
 
@@ -21,6 +23,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Create the App Store Connect app record with bundle ID `com.blakecrosley.captainslog`.
 - Confirm automatic signing uses team `M4WTLM6RAQ`.
 - Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
+- Confirm export compliance in App Store Connect matches the binary: this build declares no non-exempt encryption in Info.plist and only uses Apple system networking/TLS. The May 17, 2026 archive at `/tmp/CaptainsLog-ExportCompliance.xcarchive` confirmed `ITSAppUsesNonExemptEncryption=false` in the archived app bundle.
 - Archive the iOS target and confirm the privacy manifest is included in the archive.
 - Export with App Store distribution signing before upload. The May 17, 2026 local export used `method=app-store-connect`, `destination=export`, automatic signing, and produced `/tmp/CaptainsLog-AppStoreExport/Captain's Log.ipa` with `get-task-allow=false`.
 - Upload the exported build to App Store Connect/TestFlight and verify processing status.
