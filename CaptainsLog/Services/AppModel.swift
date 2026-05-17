@@ -1042,8 +1042,22 @@ final class AppModel: ObservableObject {
             throw StorageError.missingModelContext
         }
 
-        let repo = try demoRepository(modelContext: modelContext)
+        let repo = try demoRepository(modelContext: modelContext, includeFixtureDetails: includeFixtureDetails)
         if includeFixtureDetails {
+            let demoViewer = GitHubViewer(
+                login: "blakecrosley",
+                nodeID: "fixture-blakecrosley",
+                name: "Blake Crosley",
+                avatarURL: nil,
+                htmlURL: URL(string: "https://github.com/blakecrosley")!
+            )
+            try upsertAccount(demoViewer, isActive: true, modelContext: modelContext)
+            let session = GitHubOAuthSession(accessToken: "captains-log-fixture-token")
+            token = session.accessToken
+            oauthSession = session
+            viewer = demoViewer
+            authState = .signedIn(demoViewer)
+
             repo.lastSyncedAt = Date()
             repo.pushedAt = Date()
             repo.historyBackfillCompletedAt = Date()
@@ -1078,7 +1092,7 @@ final class AppModel: ObservableObject {
                     record = GitCommitRecord(
                         sha: sha,
                         repositoryFullName: repo.fullName,
-                        authorLogin: "demo",
+                        authorLogin: includeFixtureDetails ? "blakecrosley" : "demo",
                         message: subjects[(offset + index) % subjects.count],
                         authoredAt: calendar.date(byAdding: .hour, value: index + 9, to: calendar.startOfDay(for: date)) ?? date,
                         htmlURL: URL(string: "https://github.com/captains-log/demo/commit/\(sha)")
@@ -2346,8 +2360,11 @@ final class AppModel: ObservableObject {
         return try !modelContext.fetch(descriptor).isEmpty
     }
 
-    private func demoRepository(modelContext: ModelContext) throws -> GitRepositoryRecord {
-        let demoID: Int64 = -941
+    private func demoRepository(
+        modelContext: ModelContext,
+        includeFixtureDetails: Bool = false
+    ) throws -> GitRepositoryRecord {
+        let demoID: Int64 = includeFixtureDetails ? 941_000 : -941
         var descriptor = FetchDescriptor<GitRepositoryRecord>(
             predicate: #Predicate { $0.id == demoID }
         )
@@ -2358,12 +2375,13 @@ final class AppModel: ObservableObject {
 
         let repo = GitRepositoryRecord(
             id: demoID,
-            ownerLogin: "captains-log",
-            name: "demo",
-            fullName: "captains-log/demo",
-            isPrivate: false,
+            ownerLogin: includeFixtureDetails ? "blakecrosley" : "captains-log",
+            name: includeFixtureDetails ? "CaptainsLog" : "demo",
+            fullName: includeFixtureDetails ? "blakecrosley/CaptainsLog" : "captains-log/demo",
+            accountLogin: includeFixtureDetails ? "blakecrosley" : nil,
+            isPrivate: includeFixtureDetails,
             isSelected: true,
-            htmlURL: URL(string: "https://github.com")
+            htmlURL: URL(string: includeFixtureDetails ? "https://github.com/blakecrosley/CaptainsLog" : "https://github.com")
         )
         modelContext.insert(repo)
         return repo
