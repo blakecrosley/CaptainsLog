@@ -16,7 +16,7 @@ For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`.
 - The repo contains an app icon asset catalog. `Scripts/capture_app_store_screenshots.sh` captures repeatable iPhone and iPad screenshots with a neutral fixture identity for dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data. The screenshot fixture seeds a fake debug-only OpenAI key so the AI settings and privacy screens show the intended attached-key state without exposing a real secret.
 - A local generic iOS archive succeeds with Xcode 26.5 and includes `PrivacyInfo.xcprivacy`, `Assets.car`, `AppIcon60x60@2x.png`, `AppIcon76x76@2x~ipad.png`, and `ITSAppUsesNonExemptEncryption=false`.
 - A local App Store Connect export succeeds with automatic signing. The current May 17, 2026 export produced `/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa`, writes `/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt` with the exported git commit and dirty-tree state, uses `get-task-allow=false`, includes bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, `PrivacyInfo.xcprivacy`, and `ITSAppUsesNonExemptEncryption=false`. Upload to App Store Connect/TestFlight is still unverified.
-- A current Debug build succeeds for the connected iPhone 17 Pro Max and installs through `xcrun devicectl`. Launch still needs an unlocked-device rerun; the latest launch attempt was denied because the physical device was locked.
+- A current Debug build succeeds for the connected iPhone 17 Pro Max, installs through `xcrun devicectl`, and launches with bundle ID `com.blakecrosley.captainslog`.
 - The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes. The May 17, 2026 output in `/tmp/captainslog-key-state-audit` shows the AI settings attached-key state with a fake demo key and packages into `/tmp/captainslog-key-state-packaged`.
 
 ## App Store Connect Checklist
@@ -83,7 +83,6 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 
 ### Next
 
-- Unlock the connected iPhone 17 Pro Max and rerun the physical launch smoke pass.
 - A final pass on a real large GitHub account is still recommended before submission.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
