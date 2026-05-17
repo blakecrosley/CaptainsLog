@@ -189,6 +189,8 @@ Avoid screenshots that show real private repository names unless the repository 
 
 This is a conservative working draft, not a final legal answer.
 
+Rationale: Apple's App Privacy Details guidance (`https://developer.apple.com/app-store/app-privacy-details/`) says data collected solely for app functionality still needs to be declared, while data processed only on device is not "collected" for App Store privacy answers. Captain's Log stores imported GitHub history locally, but it also authenticates with GitHub and can send selected commit evidence to OpenAI or Anthropic when the user attaches a cloud key. Use the conservative disclosure below unless legal review provides a narrower final answer.
+
 Data types likely involved for App Functionality:
 
 - User ID: GitHub login/account identifier when signed in.
@@ -203,5 +205,3 @@ Likely properties:
 - Shared with third-party AI: only when the user attaches a cloud AI key and generates a journal entry.
 
 Clipboard note: the GitHub sign-in screen copies the short-lived device code to the system pasteboard only when the user taps "Copy & Open GitHub". The app does not read from the pasteboard.
-
-Before submission, confirm whether GitHub API traffic should be represented as App Store "collection" or as user-initiated service traffic under Apple's collection definition. If uncertain, use the conservative disclosure above.

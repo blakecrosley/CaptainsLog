@@ -126,6 +126,12 @@ Use the conservative privacy draft in `Docs/AppStoreMetadata.md`:
 
 Also disclose the user-initiated pasteboard write from GitHub device sign-in if App Store Connect asks about clipboard behavior. Captain's Log writes the short-lived device code only when the user taps "Copy & Open GitHub" and does not read from the pasteboard.
 
+Reasoning from Apple's App Privacy Details guidance (`https://developer.apple.com/app-store/app-privacy-details/`):
+
+- Data collected solely for app functionality still needs to be declared.
+- Data processed only on device is not "collected" for App Store privacy answers.
+- Captain's Log imports and stores GitHub history locally, but GitHub sign-in/API access and optional cloud AI generation mean the conservative App Functionality disclosure is the safer submission answer.
+
 Legal review is still recommended before final submission.
 
 ## App Review Notes
