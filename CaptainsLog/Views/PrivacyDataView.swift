@@ -151,22 +151,25 @@ struct PrivacyDataView: View {
     private var publicLinksCard: some View {
         Kit941.Card {
             VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                Text("Published Policies")
+                Text("Policies & Support")
                     .kit941Font(.title, weight: .semibold)
                     .foregroundStyle(AppSurface.primaryText)
 
-                AppActionRow(
+                PolicyLinkRow(
                     title: "Privacy Policy",
-                    description: "Open the published policy used for App Store Connect.",
+                    description: "Read what data Captain's Log uses and where it is stored.",
                     systemImage: "doc.text.magnifyingglass",
                     action: {
                         openURL(Self.privacyPolicyURL)
                     }
                 )
 
-                AppActionRow(
+                Divider()
+                    .overlay(AppSurface.divider.opacity(0.55))
+
+                PolicyLinkRow(
                     title: "Support",
-                    description: "Open the support page with the app contact path.",
+                    description: "Get help with GitHub access, local history, or AI keys.",
                     systemImage: "questionmark.bubble",
                     action: {
                         openURL(Self.supportURL)
@@ -179,10 +182,10 @@ struct PrivacyDataView: View {
     private var reviewNoteCard: some View {
         Kit941.Card {
             VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
-                Text("App Review Note")
+                Text("Why GitHub Sign-In?")
                     .kit941Font(.label, weight: .semibold)
                     .foregroundStyle(AppSurface.primaryText)
-                Text("GitHub sign-in is used because Captain's Log is a GitHub client. Users sign in to access their repository content, not to create a separate social account.")
+                Text("Captain's Log connects to GitHub only so you can choose repositories and import your commit history. It does not create a separate social account.")
                     .kit941Font(.caption)
                     .foregroundStyle(AppSurface.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -228,6 +231,48 @@ struct PrivacyDataView: View {
             clearHistoryMessage = error.localizedDescription
             clearHistoryIsError = true
         }
+    }
+}
+
+private struct PolicyLinkRow: View {
+    let title: String
+    let description: String
+    let systemImage: String
+    let action: @MainActor @Sendable () -> Void
+
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            HStack(alignment: .center, spacing: Kit941.Spacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppSurface.accent)
+                    .frame(width: 30, height: 30)
+                    .background(AppSurface.accent.opacity(0.10), in: Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .kit941Font(.label, weight: .semibold)
+                        .foregroundStyle(AppSurface.primaryText)
+                    Text(description)
+                        .kit941Font(.caption)
+                        .foregroundStyle(AppSurface.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: Kit941.Spacing.sm)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppSurface.secondaryText)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityHint(description)
     }
 }
 
