@@ -636,9 +636,9 @@ struct RepositorySelectionView: View {
             VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("\(selectedCount) selected")
+                        Text(selectionSummary)
                             .kit941Font(.title, weight: .semibold)
-                        Text("\(repositories.count) repositories available from GitHub")
+                        Text(repositoryAvailability)
                             .kit941Font(.caption)
                             .foregroundStyle(AppSurface.secondaryText)
                     }
@@ -649,16 +649,16 @@ struct RepositorySelectionView: View {
 
                 if appInstallURL != nil {
                     AppActionRow(
-                        title: "Approve Access",
-                        description: "Open GitHub to add or remove repository access.",
+                        title: "Choose Repositories",
+                        description: "Open GitHub to add or remove repository access for Captain's Log.",
                         systemImage: "arrow.up.right.square",
                         action: onInstallApp
                     )
                 }
 
                 AppActionRow(
-                    title: "GitHub Access",
-                    description: "Refresh the repository list after approving or removing access in GitHub.",
+                    title: "Refresh Repository List",
+                    description: "Use this after changing access in GitHub.",
                     systemImage: "person.crop.circle.badge.checkmark",
                     action: onRefreshRepos
                 )
@@ -700,6 +700,18 @@ struct RepositorySelectionView: View {
 
     private var selectedCount: Int {
         repositories.filter(\.isSelected).count
+    }
+
+    private var selectionSummary: String {
+        if repositories.isEmpty {
+            return "No repositories"
+        }
+        return "\(selectedCount.formatted()) of \(repositories.count.formatted()) selected"
+    }
+
+    private var repositoryAvailability: String {
+        let unit = repositories.count == 1 ? "repository" : "repositories"
+        return "\(repositories.count.formatted()) \(unit) available from GitHub"
     }
 
     private func setAll(_ isSelected: Bool) {
