@@ -34,6 +34,7 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Keywords: candidate copy is in `Docs/AppStoreMetadata.md`; avoid company or app names in the keyword field.
 - Support URL: `https://blakecrosley.com/captains-log/support` is live and includes the support contact path `blake@941apps.com`.
 - Privacy Policy URL: `https://blakecrosley.com/captains-log/privacy` is live and includes the privacy contact path `blake@941apps.com`. Legal review is still recommended before App Review submission.
+- The in-app Privacy & Data screen links to the published Privacy Policy and Support pages so users and App Review can reach the same public documents from inside the app.
 - Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload. The May 17, 2026 audit output in `/tmp/captainslog-appstore-audit-screens` passed a visual breadcrumb/clipping check, but the final marketing order still needs human selection.
 
 ### Privacy
@@ -69,6 +70,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Journal detail now reads like a daily note first, with numbered memorable points, tags, model/source metadata, and commits/diffs available as supporting evidence.
 - Screenshot mode has stable fixture routes for dashboard, Work Map, journal detail, repository access, AI provider settings, and Privacy & Data.
 - Repository management has fixture-reviewed search, bulk selection, selected/hidden filtering, and GitHub access CTAs.
+- Privacy & Data includes direct published Privacy Policy and Support links.
 - The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs.
 
 ### Next

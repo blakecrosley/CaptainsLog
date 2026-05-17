@@ -2,6 +2,8 @@ import SwiftUI
 import Kit941
 
 struct PrivacyDataView: View {
+    @Environment(\.openURL) private var openURL
+
     let isSignedIn: Bool
     let activeLogin: String?
     let selectedRepositoryCount: Int
@@ -20,6 +22,7 @@ struct PrivacyDataView: View {
             VStack(alignment: .leading, spacing: Kit941.Spacing.lg) {
                 summaryCard
                 dataFlowCard
+                publicLinksCard
                 controlsCard
                 reviewNoteCard
             }
@@ -145,6 +148,34 @@ struct PrivacyDataView: View {
         }
     }
 
+    private var publicLinksCard: some View {
+        Kit941.Card {
+            VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                Text("Published Policies")
+                    .kit941Font(.title, weight: .semibold)
+                    .foregroundStyle(AppSurface.primaryText)
+
+                AppActionRow(
+                    title: "Privacy Policy",
+                    description: "Open the published policy used for App Store Connect.",
+                    systemImage: "doc.text.magnifyingglass",
+                    action: {
+                        openURL(Self.privacyPolicyURL)
+                    }
+                )
+
+                AppActionRow(
+                    title: "Support",
+                    description: "Open the support page with the app contact path.",
+                    systemImage: "questionmark.bubble",
+                    action: {
+                        openURL(Self.supportURL)
+                    }
+                )
+            }
+        }
+    }
+
     private var reviewNoteCard: some View {
         Kit941.Card {
             VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
@@ -184,6 +215,9 @@ struct PrivacyDataView: View {
         }
         return "Journal generation uses the on-device Apple model when available."
     }
+
+    private static let privacyPolicyURL = URL(string: "https://blakecrosley.com/captains-log/privacy")!
+    private static let supportURL = URL(string: "https://blakecrosley.com/captains-log/support")!
 
     private func clearImportedHistory() {
         do {
