@@ -18,6 +18,7 @@ For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`. For App
 - A local App Store Connect export succeeds with automatic signing. The current May 17, 2026 export produced `/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa` from CaptainsLog commit `df7452f295c32f986b62f510dea8275217891365` and Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2`, writes `/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt` with dirty-tree state for both source inputs, uses `get-task-allow=false`, includes bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, `PrivacyInfo.xcprivacy`, and `ITSAppUsesNonExemptEncryption=false`. Upload to App Store Connect/TestFlight is still unverified.
 - A current Debug build succeeds for the connected iPhone 17 Pro Max running iOS 26.4.2, installs through `xcrun devicectl`, and launches with bundle ID `com.blakecrosley.captainslog`.
 - The latest screenshot audit generated 12 clean PNGs with no previous-app breadcrumb: iPhone 17 Pro Max at `1320x2868` and iPad Pro 13 at `2064x2752`, matching Apple's accepted 6.9-inch iPhone and 13-inch iPad portrait screenshot sizes. The May 17, 2026 output in `/tmp/captainslog-key-state-audit` opens the dashboard on a fuller fixture week, shows the AI settings attached-key state with a fake demo key, uses adaptive iPad layouts for Work Map, AI provider, and Privacy & Data detail pages, adds a selected-day journal preview to the iPad dashboard, and packages into `/tmp/captainslog-key-state-packaged`.
+- A connected-device store audit now exists at `Scripts/audit_device_store.sh`. The May 17, 2026 run copied the app's local SwiftData store from Blake's iPhone 17 Pro Max, passed SQLite integrity, and reported aggregate coverage only: 104 selected repositories, 12,468 commits from 2012-08-16 through 2026-05-17, 12,468/12,468 commits with diff stats, 0 diff-stat errors, 67,479,776 known changed lines, and 137/137 active days from 2026-01-01 through 2026-05-17. This verifies local device-store coverage, not external GitHub API parity.
 
 ## App Store Connect Checklist
 
@@ -86,10 +87,11 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Privacy & Data includes direct published Privacy Policy and Support links.
 - The May 17, 2026 screenshot audit covered iPhone and iPad dashboard, Work Map, journal, repositories, AI provider settings, and Privacy & Data. No `Kit941 Playground` breadcrumb or repository toggle clipping was visible in the checked PNGs, the dashboard now opens on a fuller fixture week and richer 52-week Work Map, the iPad dashboard fills the portrait frame with a selected-day journal preview, the AI provider screenshot shows the attached-key UI instead of an empty disabled form, and the iPad detail screenshots use wider/two-column layouts where the content naturally splits.
 - Debug-only UI performance probes are compiled out of the exported release executable; direct IPA string inspection did not find the heartbeat or slow-metrics probe messages.
+- The real-account device store can be aggregate-audited without exposing commit messages or repository names by running `Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit`.
 
 ### Next
 
-- A final pass on a real large GitHub account is still recommended before submission.
+- A final manual tap-through on the real large GitHub account is still recommended before submission, even though local device-store coverage now has aggregate evidence.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
 - Reconcile `blakecrosley.com` PR 15. The live Captain's Log Privacy Policy and Support pages currently pass the active-analytics preflight check, but the site source PR remains open and should either be merged or closed once the production source of truth is confirmed.

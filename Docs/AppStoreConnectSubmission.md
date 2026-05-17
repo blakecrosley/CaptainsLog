@@ -30,6 +30,7 @@ Last local audit: May 17, 2026.
 - Direct IPA string inspection found no debug UI performance probe strings in the exported release executable.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted against the current IPA after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
 - `xcodebuild build -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -destination 'id=00008150-00166D690EF0401C'` built the current Debug app for Blake's iPhone 17 Pro Max, then `xcrun devicectl device install app` installed bundle `com.blakecrosley.captainslog` and `xcrun devicectl device process launch` launched it successfully with process id `6545`.
+- `Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit` copied the connected iPhone app store and passed SQLite integrity. Aggregate-only output reported 1 account, 104 selected repositories, 12,468 commits from 2012-08-16 through 2026-05-17, 12,468/12,468 commits with diff stats, 0 diff-stat errors, 67,479,776 known changed lines, and 137/137 active days from 2026-01-01 through 2026-05-17. This is local device-store coverage evidence, not an external GitHub API parity proof.
 - Current Git status after the local audit: clean against `origin/main`.
 - Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
 - The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. At export, Kit941 was clean and aligned with `origin/main`.
@@ -47,7 +48,7 @@ Last local audit: May 17, 2026.
 | Upload path ready | `Scripts/upload_app_store_ipa.sh` | Local IPA check passes, requires a clean-tree export manifest by default, rejects release builds containing debug screenshot/auth fixture strings, and validate/upload/status require App Store Connect credentials; current validate attempt is blocked by missing API key and issuer env vars | Script ready, external credentials open |
 | Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders | Locally ready, human marketing acceptance open |
 | Physical device smoke | `xcodebuild`, `xcrun devicectl` | Current Debug build installed on the connected iPhone 17 Pro Max running iOS 26.4.2 and launched successfully with bundle ID `com.blakecrosley.captainslog` | Build/install/launch verified |
-| Real data confidence | App runtime with a large GitHub account | Not rerun after latest App Store prep | Open |
+| Real data confidence | `Scripts/audit_device_store.sh`, connected iPhone app container | Device-store audit copied the real app database from Blake's iPhone 17 Pro Max and verified aggregate coverage: 104 selected repositories, 12,468 commits, 100% diff-stat coverage in the local store, and no empty days in 2026 through May 17 | Device store verified; final human tap-through/API parity open |
 
 ## Local Commands Before Upload
 
@@ -57,6 +58,14 @@ Run these from the repo root:
 Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
+
+For a real-account data sanity check on the connected iPhone:
+
+```sh
+Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit
+```
+
+This copies only the app's local data container to the requested temp folder and reports aggregate counts, date coverage, and diff-stat coverage. Do not paste raw commit messages, file paths, or repository names into App Review notes.
 
 `local-check` intentionally requires the sibling `ExportManifest.txt` created by `Scripts/export_app_store_ipa.sh`, fails dirty-tree exports by default, and fails if the submitted executable contains debug screenshot/auth fixture hooks. Only bypass the manifest/dirty-state checks for legacy IPA inspection:
 
@@ -187,4 +196,4 @@ If App Review needs a live account, create a purpose-built GitHub account with s
 - Make the final screenshot marketing decision.
 - Complete legal/privacy review.
 - Reconcile `blakecrosley.com` PR 15. The live Captain's Log Privacy Policy and Support pages currently pass the active-analytics preflight check, but the site source PR remains open and should either be merged or closed once the production source of truth is confirmed.
-- Run one real large-account QA pass before submitting for review.
+- Do one final human tap-through on the real large-account install before submitting for review. The device-store aggregate audit now verifies local coverage, but it does not prove App Store reviewer-visible UX quality or GitHub API parity by itself.
