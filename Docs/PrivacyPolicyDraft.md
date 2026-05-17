@@ -1,6 +1,6 @@
 # Captain's Log Privacy Policy
 
-Draft status: publish at `https://blakecrosley.com/captains-log/privacy` after adding final contact information and legal review.
+Draft status: published at `https://blakecrosley.com/captains-log/privacy` with final contact information. Legal review is still recommended before App Store Connect submission.
 
 Effective date: May 17, 2026
 
@@ -74,7 +74,7 @@ Captain's Log is a developer tool and is not directed to children.
 For privacy or support questions, contact:
 
 ```text
-[support email]
+blake@941apps.com
 ```
 
 ## Changes

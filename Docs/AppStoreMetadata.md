@@ -1,6 +1,6 @@
 # Captain's Log App Store Metadata
 
-Draft for English (U.S.) App Store Connect fields. This is paste-ready except for live URL verification, support contact details, and the final review-test account decision.
+Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision.
 
 ## Source Constraints
 
@@ -64,7 +64,7 @@ Privacy Policy URL:
 https://blakecrosley.com/captains-log/privacy
 ```
 
-Do not submit until this URL is live and matches `Docs/PrivacyPolicyDraft.md` or a legally reviewed replacement.
+Verified live on May 17, 2026. Before submission, use the published copy or a legally reviewed replacement.
 
 Support URL:
 
@@ -72,7 +72,7 @@ Support URL:
 https://blakecrosley.com/captains-log/support
 ```
 
-Do not submit until this URL is live and includes a real support contact path.
+Verified live on May 17, 2026 with a real support contact path.
 
 Copyright:
 

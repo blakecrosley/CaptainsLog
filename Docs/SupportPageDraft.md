@@ -1,6 +1,6 @@
 # Captain's Log Support Page
 
-Draft status: publish at `https://blakecrosley.com/captains-log/support` after adding final contact information.
+Draft status: published at `https://blakecrosley.com/captains-log/support` with final contact information.
 
 Captain's Log is a private GitHub work journal for iPhone and iPad.
 
@@ -9,10 +9,10 @@ Captain's Log is a private GitHub work journal for iPhone and iPad.
 For app issues, feedback, feature requests, or privacy questions, contact:
 
 ```text
-[support email]
+blake@941apps.com
 ```
 
-App Store Connect requires the Support URL to lead to actual contact information. Replace the placeholder above with a real support email address, contact form, legal address, or phone number as appropriate before submission.
+App Store Connect requires the Support URL to lead to actual contact information.
 
 ## Common Questions
 

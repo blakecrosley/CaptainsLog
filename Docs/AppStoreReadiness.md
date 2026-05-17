@@ -29,8 +29,8 @@ This note tracks the current iOS App Store Connect blockers and the decisions st
 - Primary category recommendation: Developer Tools.
 - Description: candidate copy is in `Docs/AppStoreMetadata.md`; explain the product as a private GitHub history journal, not a productivity scorekeeper.
 - Keywords: candidate copy is in `Docs/AppStoreMetadata.md`; avoid company or app names in the keyword field.
-- Support URL: required before submission. Draft page content is in `Docs/SupportPageDraft.md`; it still needs a real contact path and live URL verification.
-- Privacy Policy URL: required for iOS and macOS apps. Draft policy content is in `Docs/PrivacyPolicyDraft.md`; it still needs final contact information, legal review, and live URL verification.
+- Support URL: `https://blakecrosley.com/captains-log/support` is live and includes the support contact path `blake@941apps.com`.
+- Privacy Policy URL: `https://blakecrosley.com/captains-log/privacy` is live and includes the privacy contact path `blake@941apps.com`. Legal review is still recommended before App Review submission.
 - Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh` and review the exported dashboard, Work Map, journal detail, repository access, AI provider, and Privacy & Data captures before upload.
 
 ### Privacy
@@ -70,7 +70,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 
 - Repository management still needs final on-device review for long real account lists, search, select all, and the GitHub access CTA.
 - Final App Store screenshot selection still needs human review on iPhone and iPad exports.
-- Support and privacy URLs must be live and verified before App Store Connect submission.
+- Legal review of the published privacy copy is still recommended before App Store Connect submission.
 
 ## Official References
 
