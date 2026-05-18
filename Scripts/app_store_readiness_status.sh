@@ -32,6 +32,8 @@ external_blockers=0
 ipa_missing=0
 export_manifest_missing=0
 distribution_identity_available=0
+macos_app_identity_available=0
+macos_installer_identity_available=0
 xcode_auth_env_ready=0
 
 pass() {
@@ -548,10 +550,17 @@ if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuil
     xcode_major="$(printf '%s\n' "$xcode_first_line" | sed -E 's/^Xcode ([0-9]+).*/\1/')"
     if ! [[ "$xcode_major" =~ ^[0-9]+$ ]] || (( xcode_major < 26 )); then
         fail "$xcode_first_line is older than Xcode 26 required for 2026 App Store upload"
-    elif printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
-        pass "$xcode_first_line satisfies Xcode 26+ and iOS 26+ SDK requirements"
     else
-        fail "$xcode_first_line does not list an iOS 26 or newer SDK required for 2026 App Store upload"
+        if printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
+            pass "$xcode_first_line satisfies Xcode 26+ and iOS 26+ SDK requirements"
+        else
+            fail "$xcode_first_line does not list an iOS 26 or newer SDK required for 2026 App Store upload"
+        fi
+        if printf '%s\n' "$xcode_sdks" | rg -q 'macosx(2[6-9]|[3-9][0-9])([.]|$)'; then
+            pass "$xcode_first_line satisfies macOS 26+ SDK requirements"
+        else
+            fail "$xcode_first_line does not list a macOS 26 or newer SDK required for native Mac App Store export"
+        fi
     fi
 else
     fail "xcodebuild version or SDK list unavailable"
@@ -561,7 +570,9 @@ if xcode_auth_env_ready_for_status; then
     xcode_auth_env_ready=1
 fi
 
-if security find-identity -v -p codesigning 2>/dev/null | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
+identity_output="$(security find-identity -v -p codesigning 2>/dev/null || true)"
+
+if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
     distribution_identity_available=1
     pass "App Store distribution signing identity for team ${TEAM_ID} available in local keychain"
 elif (( xcode_auth_env_ready == 1 )); then
@@ -569,6 +580,26 @@ elif (( xcode_auth_env_ready == 1 )); then
     warn "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; export will rely on xcodebuild automatic signing"
 else
     external "App Store export signing is not ready; provide either an Apple Distribution/iOS Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
+fi
+
+if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|Mac App Distribution|3rd Party Mac Developer Application):.*\\(${TEAM_ID}\\)\""; then
+    macos_app_identity_available=1
+    pass "Mac App Store application signing identity for team ${TEAM_ID} available in local keychain"
+elif (( xcode_auth_env_ready == 1 )); then
+    pass "App Store Connect API-key auth inputs are present for native Mac provisioning updates"
+    warn "Mac App Store application signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild automatic signing"
+else
+    external "Mac App Store application signing is not ready; provide an Apple Distribution/Mac App Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
+fi
+
+if printf '%s\n' "$identity_output" | rg -q "\"(Mac Installer Distribution|3rd Party Mac Developer Installer):.*\\(${TEAM_ID}\\)\""; then
+    macos_installer_identity_available=1
+    pass "Mac App Store installer signing identity for team ${TEAM_ID} available in local keychain"
+elif (( xcode_auth_env_ready == 1 )); then
+    pass "App Store Connect API-key auth inputs are present for native Mac package export"
+    warn "Mac App Store installer signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild automatic signing"
+else
+    external "Mac App Store installer signing is not ready; provide a Mac Installer Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
 fi
 
 printf '\nLocal artifact checks\n'
@@ -845,6 +876,12 @@ elif (( xcode_auth_env_ready == 1 )); then
     pass "xcodebuild App Store Connect API-key auth inputs are present for export_app_store_ipa.sh"
 fi
 
+if (( (macos_app_identity_available == 0 || macos_installer_identity_available == 0) && xcode_auth_env_ready == 0 )); then
+    external "xcodebuild App Store Connect API-key auth is not configured; without local Mac App Store application and installer signing identities, export_macos_app_store_pkg.sh cannot regenerate the native Mac package"
+elif (( xcode_auth_env_ready == 1 )); then
+    pass "xcodebuild App Store Connect API-key auth inputs are present for export_macos_app_store_pkg.sh"
+fi
+
 external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
 external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
@@ -864,7 +901,9 @@ Next local action:
 2. Make one App Store export-signing path available: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ, or APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates.
 3. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
-4. Rerun Scripts/app_store_readiness_status.sh.
+4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
+5. Rerun Scripts/app_store_readiness_status.sh.
 NEXT_LOCAL
     fi
     exit 1
@@ -880,13 +919,15 @@ Next external actions:
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
 3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
-4. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
-5. Export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID. Xcode 26.5 altool --list-providers does not support API-key authentication, so obtain it from App Store Connect, Transporter, or a manually authenticated altool session.
-6. Run:
+4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
+5. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
+6. Export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID. Xcode 26.5 altool --list-providers does not support API-key authentication, so obtain it from App Store Connect, Transporter, or a manually authenticated altool session.
+7. Run:
    Scripts/upload_app_store_ipa.sh app-record
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-7. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
-8. Complete legal/privacy review and final real-account tap-through before submitting.
+8. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+9. Complete legal/privacy review and final real-account tap-through before submitting.
 NEXT_STEPS
 fi
