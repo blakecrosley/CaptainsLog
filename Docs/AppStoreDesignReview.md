@@ -36,6 +36,16 @@ The iPad set is acceptable for v1. Some screens intentionally preserve calm whit
 
 The May 18 contact-sheet spot-check found that the iPad thumbnails make the lower whitespace look more severe than the full-size screenshots. The full-size iPad dashboard still reads as a complete adaptive layout, while the Work Map detail remains the main composition to approve or reject during the final human screenshot pass.
 
+## May 18 Design-Skill Spot-Check
+
+Reviewed against the local `.impeccable.md` direction and the `frontend-design`, `critique`, and `polish` skills:
+
+- Anti-pattern verdict: passes for v1. The packet no longer reads as neon/cyberpunk, AI-gradient, generic SaaS dashboard, or card-stack demo UI.
+- Information hierarchy: acceptable. The iPhone dashboard starts with account, selected week, Work Map, and the selected-period metric; detail screens move evidence and settings into focused pages instead of flooding the dashboard.
+- Progressive disclosure: acceptable. Dashboard, Work Map, journal, repository access, AI provider, and Privacy & Data screenshots each say one clear thing.
+- Remaining taste risk: iPad screenshots are calm and spacious. This is defensible for a developer journal, but final App Store preview should still judge whether the whitespace feels intentional at actual upload scale.
+- Recommendation: no more local UI work before first TestFlight unless human screenshot approval finds clipped text, exposed private data, confusing disabled controls, active sync progress, or an unfinished iPad composition.
+
 ## What Passes
 
 - The screenshots do not present Captain's Log as a loud SaaS dashboard.
