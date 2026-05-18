@@ -20,5 +20,6 @@ xcuserdata/
 # Local credentials and environment
 .env
 .env.*
+private_keys/
 *.p8
 *.mobileprovision

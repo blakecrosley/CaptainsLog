@@ -179,6 +179,21 @@ else
     fail "IPA missing: $IPA_PATH"
 fi
 
+repo_private_keys=()
+while IFS= read -r path; do
+    repo_private_keys+=("$path")
+done < <(find "$ROOT_DIR" \
+    -path "$ROOT_DIR/.git" -prune -o \
+    \( -name "private_keys" -type d -o -name "*.p8" -type f \) \
+    -print)
+
+if (( ${#repo_private_keys[@]} == 0 )); then
+    pass "no App Store private keys found inside repo"
+else
+    fail "App Store private key material must stay outside the repo:
+$(printf '%s\n' "${repo_private_keys[@]}" | sed -n '1,12p')"
+fi
+
 if [[ -f "$EXPORT_MANIFEST" ]]; then
     pass "export manifest exists"
 else
