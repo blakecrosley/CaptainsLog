@@ -203,7 +203,7 @@ final class AppModel: ObservableObject {
             }
             try KeychainTokenStore.saveSession(validSession, login: loadedViewer.login)
             authState = .signedIn(loadedViewer)
-            syncLogger.info("Loaded GitHub session for \(loadedViewer.login, privacy: .public)")
+            syncLogger.info("Loaded GitHub session for \(loadedViewer.login, privacy: .private)")
         } catch {
             if handleExpiredGitHubSessionError(error, operation: "Load GitHub session") {
                 return
@@ -212,7 +212,7 @@ final class AppModel: ObservableObject {
             token = nil
             viewer = nil
             authState = .failed(error.localizedDescription)
-            syncLogger.error("Failed to load GitHub session: \(error.localizedDescription, privacy: .public)")
+            syncLogger.error("Failed to load GitHub session: \(error.localizedDescription, privacy: .private)")
         }
     }
 
@@ -252,7 +252,7 @@ final class AppModel: ObservableObject {
 
             try KeychainTokenStore.saveSession(validSession, login: loadedViewer.login)
             authState = .signedIn(loadedViewer)
-            syncLogger.info("Restored GitHub session for \(loadedViewer.login, privacy: .public)")
+            syncLogger.info("Restored GitHub session for \(loadedViewer.login, privacy: .private)")
             return true
         } catch {
             if handleExpiredGitHubSessionError(error, operation: "Restore GitHub session") {
@@ -263,7 +263,7 @@ final class AppModel: ObservableObject {
             viewer = nil
             syncMessage = "GitHub session failed: \(error.localizedDescription)"
             authState = .failed(error.localizedDescription)
-            syncLogger.error("Failed to restore GitHub session: \(error.localizedDescription, privacy: .public)")
+            syncLogger.error("Failed to restore GitHub session: \(error.localizedDescription, privacy: .private)")
             return false
         }
     }
@@ -656,7 +656,7 @@ final class AppModel: ObservableObject {
                 if handleUnauthorizedGitHubError(error, operation: "Latest commit repository refresh") {
                     return false
                 }
-                syncLogger.warning("Latest commit sync continued without fresh repository metadata: \(error.localizedDescription, privacy: .public)")
+                syncLogger.warning("Latest commit sync continued without fresh repository metadata: \(error.localizedDescription, privacy: .private)")
             }
 
             let selected = try selectedRepositories(modelContext: modelContext)
@@ -689,7 +689,7 @@ final class AppModel: ObservableObject {
                 forceLookbackWindow: true
             )
         } catch {
-            syncLogger.error("Latest commit sync failed while checking selected repositories: \(error.localizedDescription, privacy: .public)")
+            syncLogger.error("Latest commit sync failed while checking selected repositories: \(error.localizedDescription, privacy: .private)")
             return false
         }
     }

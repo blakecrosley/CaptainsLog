@@ -29,7 +29,7 @@ enum BackgroundHistoryIndexer {
             logger.info("Scheduled background history index")
             return true
         } catch {
-            logger.error("Failed to schedule background history index: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to schedule background history index: \(error.localizedDescription, privacy: .private)")
             return false
         }
         #else
@@ -72,7 +72,7 @@ enum BackgroundHistoryIndexer {
                 return true
             }
         } catch {
-            logger.error("Failed to inspect background history backlog: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to inspect background history backlog: \(error.localizedDescription, privacy: .private)")
             return false
         }
 
@@ -85,7 +85,7 @@ enum BackgroundHistoryIndexer {
                 cancelPending()
             }
         } catch {
-            logger.error("Failed to inspect remaining background history backlog: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to inspect remaining background history backlog: \(error.localizedDescription, privacy: .private)")
         }
 
         return !Task.isCancelled

@@ -749,7 +749,7 @@ struct RootView: View {
             generationError = nil
         } catch {
             generationError = error.localizedDescription
-            rootViewLogger.error("Failed to prepare UI fixture: \(error.localizedDescription, privacy: .public)")
+            rootViewLogger.error("Failed to prepare UI fixture: \(error.localizedDescription, privacy: .private)")
         }
         return true
     }
@@ -822,7 +822,7 @@ struct RootView: View {
             )
             #endif
         } catch {
-            rootViewLogger.error("Failed to reload commit snapshot: \(error.localizedDescription, privacy: .public)")
+            rootViewLogger.error("Failed to reload commit snapshot: \(error.localizedDescription, privacy: .private)")
         }
     }
 
