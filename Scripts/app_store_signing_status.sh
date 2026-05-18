@@ -72,7 +72,11 @@ printf '\nProvisioning profiles\n'
 profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
 if [[ -d "$profile_dir" ]]; then
     profile_count="$(find "$profile_dir" -maxdepth 1 -type f -name '*.mobileprovision' | wc -l | tr -d ' ')"
-    pass "provisioning profile directory exists: $profile_count profile(s)"
+    if [[ "$profile_count" == "0" ]]; then
+        warn "provisioning profile directory exists but contains 0 profile(s); Xcode may download or create profiles after account signing is configured"
+    else
+        pass "provisioning profile directory exists: $profile_count profile(s)"
+    fi
 else
     warn "provisioning profile directory missing: $profile_dir"
 fi
