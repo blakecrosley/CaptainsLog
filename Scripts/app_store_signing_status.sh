@@ -151,6 +151,17 @@ check_xcode_auth_env() {
         return
     fi
 
+    local expected_p8_name
+    expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
+    if [[ "$(basename "$APP_STORE_CONNECT_P8_FILE")" == "$expected_p8_name" ]]; then
+        pass "App Store Connect .p8 filename matches APP_STORE_CONNECT_API_KEY"
+    elif [[ "${CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME:-0}" == "1" ]]; then
+        warn "App Store Connect .p8 filename is not $expected_p8_name; continuing because CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1"
+    else
+        fail "APP_STORE_CONNECT_P8_FILE basename should be $expected_p8_name for APP_STORE_CONNECT_API_KEY. Set CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 only after manually verifying the key file belongs to this key ID."
+        return
+    fi
+
     xcode_auth_env_ready=1
     pass "xcodebuild App Store Connect API-key auth inputs are present for provisioning updates"
 }
