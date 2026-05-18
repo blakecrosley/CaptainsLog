@@ -233,6 +233,16 @@ check_api_credentials() {
     fi
 }
 
+assert_app_record_output_contains_bundle() {
+    local output="$1"
+
+    if printf '%s\n' "$output" | rg -q --fixed-strings "$BUNDLE_ID"; then
+        return 0
+    fi
+
+    fail "App Store Connect app record not found for bundle id $BUNDLE_ID. Create the app record or verify APP_STORE_CONNECT_PROVIDER_PUBLIC_ID."
+}
+
 credential_guard_self_test() {
     local temp_dir test_key test_issuer good_p8 bad_p8
     temp_dir="$(mktemp -d)"
@@ -334,6 +344,14 @@ credential_guard_self_test() {
         check_api_credentials
     }
 
+    good_app_record_output() {
+        assert_app_record_output_contains_bundle "{\"data\":[{\"bundleId\":\"$BUNDLE_ID\"}]}"
+    }
+
+    bad_app_record_output() {
+        assert_app_record_output_contains_bundle '{"data":[]}'
+    }
+
     expect_pass() {
         local label="$1"
         shift
@@ -364,6 +382,8 @@ credential_guard_self_test() {
     expect_fail ".p8 path inside another git repo" p8_inside_other_git_repo
     expect_fail "non-private-key .p8 file" bad_p8_header
     expect_fail "missing default .p8 file" no_p8_available
+    expect_pass "app-record output containing bundle id" good_app_record_output
+    expect_fail "app-record output missing bundle id" bad_app_record_output
 
     printf 'Credential guard self-test passed\n'
 }
@@ -438,7 +458,14 @@ run_app_record() {
         args+=(--filter-apple-id "$APP_STORE_CONNECT_APPLE_ID")
     fi
 
-    xcrun altool "${args[@]}"
+    local output
+    if ! output="$(xcrun altool "${args[@]}" 2>&1)"; then
+        printf '%s\n' "$output" >&2
+        return 1
+    fi
+
+    printf '%s\n' "$output"
+    assert_app_record_output_contains_bundle "$output"
 }
 
 run_upload() {
