@@ -94,6 +94,14 @@ MESSAGE
     printf 'xcodebuild will use App Store Connect API-key authentication for provisioning updates.\n'
 }
 
+run_xcodebuild() {
+    if (( ${#xcode_auth_args[@]} > 0 )); then
+        xcodebuild "$@" "${xcode_auth_args[@]}"
+    else
+        xcodebuild "$@"
+    fi
+}
+
 has_identity() {
     local pattern="$1"
     security find-identity -v -p codesigning 2>/dev/null | rg -q "$pattern"
@@ -207,23 +215,21 @@ PLIST
 
 printf 'Staging macOS archive/export in %s. Existing output will be replaced only after export validation succeeds.\n' "$staging_dir"
 
-xcodebuild \
+run_xcodebuild \
     -project "$PROJECT_PATH" \
     -scheme "$SCHEME" \
     -configuration Release \
     -destination "generic/platform=macOS" \
     -archivePath "$staged_archive_path" \
     -allowProvisioningUpdates \
-    "${xcode_auth_args[@]}" \
     archive
 
-xcodebuild \
+run_xcodebuild \
     -exportArchive \
     -archivePath "$staged_archive_path" \
     -exportPath "$staged_export_path" \
     -exportOptionsPlist "$export_options" \
-    -allowProvisioningUpdates \
-    "${xcode_auth_args[@]}"
+    -allowProvisioningUpdates
 
 app_path="$staged_archive_path/Products/Applications/Captain's Log.app"
 info_plist="$app_path/Contents/Info.plist"
