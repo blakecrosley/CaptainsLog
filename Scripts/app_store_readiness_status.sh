@@ -316,6 +316,51 @@ $(printf '%s\n' "$token_hits" | sed -n '1,12p')"
     fi
 }
 
+printf_platform_target_status() {
+    local project_list
+    local ios_settings
+
+    printf '\nPlatform availability\n'
+
+    if ios_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-iOS -configuration Release -showBuildSettings 2>/dev/null)"; then
+        if printf '%s\n' "$ios_settings" | rg -q 'TARGETED_DEVICE_FAMILY = 1,2'; then
+            pass "iPhone and iPad enabled through TARGETED_DEVICE_FAMILY=1,2"
+        else
+            fail "iOS target is not configured as a universal iPhone/iPad app"
+        fi
+
+        if printf '%s\n' "$ios_settings" | rg -q 'SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES'; then
+            pass "Apple Vision Pro compatible iPhone/iPad availability is supported by build settings"
+        else
+            fail "iOS target does not report SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD=YES"
+        fi
+    else
+        fail "unable to read CaptainsLog-iOS Release build settings for platform availability"
+    fi
+
+    if project_list="$(xcodebuild -list -project "$ROOT_DIR/CaptainsLog.xcodeproj" 2>/dev/null)"; then
+        if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+CaptainsLog-macOS$'; then
+            warn "native macOS target exists, but first release still requires Mac signing/export, screenshots, TestFlight, and human QA before Mac App Store availability"
+        else
+            pass "no native macOS target found"
+        fi
+
+        if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+.*(watchOS|Watch|tvOS|TV).*$'; then
+            fail "watchOS/tvOS-looking target or scheme found; update platform release guidance before App Store submission"
+        else
+            pass "no Apple Watch or Apple TV app target or scheme found"
+        fi
+    else
+        fail "unable to list Xcode targets for platform availability"
+    fi
+
+    if rg -q 'platform:[[:space:]]+(watchOS|tvOS)' "$ROOT_DIR/project.yml"; then
+        fail "project.yml contains watchOS/tvOS platform entries; update platform release guidance before App Store submission"
+    else
+        pass "project.yml has no watchOS/tvOS app targets"
+    fi
+}
+
 printf "Captain's Log App Store readiness status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
@@ -568,6 +613,8 @@ else
     fail "App Store preflight failed"
 fi
 
+printf_platform_target_status
+
 printf '\nIPA local check\n'
 if [[ ! -f "$IPA_PATH" ]]; then
     warn "IPA local check skipped until a current IPA exists"
@@ -636,7 +683,7 @@ elif (( xcode_auth_env_ready == 1 )); then
 fi
 
 external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
-external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability, Apple Silicon Mac availability, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
+external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
 external "complete human screenshot marketing acceptance"
 external "complete legal/privacy review"
@@ -667,7 +714,7 @@ if (( external_blockers > 0 )); then
 
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
-2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability, Apple Silicon Mac availability, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
+2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
 3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
