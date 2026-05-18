@@ -27,6 +27,8 @@ Official references:
 - Accessibility Nutrition Labels overview: https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/
 - Manage Accessibility Nutrition Labels: https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels/
 - EU Digital Services Act trader requirements: https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements/
+- Declare regulated medical device status: https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status/
+- Set a tax category: https://developer.apple.com/help/app-store-connect/manage-app-information/set-a-tax-category
 
 ## App Information
 
@@ -109,6 +111,8 @@ These fields are not all pasteable text fields, but they should be decided befor
 | Pricing | Free | Captain's Log has no in-app purchases or subscriptions in this build. Revisit if paid features are added. |
 | App Availability | All countries or regions where the App Store can distribute the app, unless legal review narrows this | The app has no known region-specific content, commerce, medical, gambling, or location behavior. |
 | EU Digital Services Act Trader Status | Legal/business-owner decision required before EU availability | Apple requires a trader/non-trader declaration. If distributing in the EU as a trader, Apple may display provided address, phone, and email contact information on the App Store product page. Enter any private contact details only in App Store Connect. |
+| Regulated Medical Device Status | No / not applicable | Captain's Log is a developer tool, does not use HealthKit, does not access health data, is not in Health & Fitness or Medical, and has no medical or treatment information in the current binary. |
+| Tax Category | App Store software | Apple assigns this default if unchanged. Use it unless tax/legal review identifies a more specific category. |
 | Distribution Methods | Public App Store distribution | Do not set up private/custom distribution for the first public review unless the release strategy changes. |
 | Content Rights | Legal/product decision required; conservative answer is that the app accesses user-authorized GitHub repository content | The app does not ship third-party media, but it displays repository names, commit messages, paths, and diffs obtained from GitHub after user authorization. Confirm the exact App Store Connect answer before submission. |
 | Age Rating | Complete the questionnaire from the final binary; expected low-risk developer-tool profile | No mature, medical, gambling, contest, commerce, advertising, location, chat, or embedded browser behavior was found in the current app surface. Treat GitHub repository history as user-supplied content if the questionnaire asks about user-generated content. |

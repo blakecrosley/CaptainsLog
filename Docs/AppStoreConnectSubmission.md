@@ -50,6 +50,8 @@ Checked against Apple documentation on May 18, 2026.
 - Apple says to answer age-rating questions from the app's content and capabilities. Its values and definitions include capabilities such as user-generated content and unrestricted web access, plus content categories such as medical information, mature themes, violence, gambling, contests, and advertising. This matches the manual age-rating draft in `Docs/AppStoreMetadata.md`.
 - Apple says pricing and availability determine where and when an app is available and at what price, and that a price must be set before App Review submission. This matches the manual first-submission value in `Docs/AppStoreMetadata.md`: free app, public distribution, broadly available unless legal review narrows it.
 - Apple says developers must disclose whether they are a trader under the EU Digital Services Act to distribute apps in the EU, and that trader contact information can be displayed on EU App Store product pages. This matches the manual legal/business-owner decision in `Docs/AppStoreMetadata.md`.
+- Apple says regulated medical device declarations are required for apps with Health & Fitness or Medical categories, frequent medical/treatment information, or qualifying medical-device behavior. Captain's Log does not meet those criteria in the current binary, so the draft answer is no/not applicable.
+- Apple says apps are assigned the App Store software tax category by default if unchanged. Captain's Log has no in-app purchases or subscriptions in this build, so this packet keeps that default unless tax/legal review changes it.
 - Apple says Accessibility Nutrition Labels are voluntary to start, appear on product pages for supported OS versions, and will show "Support not yet indicated" until support is added. This packet treats accessibility labels as optional first-release product-page work, not a hard local readiness blocker.
 - Apple says App Review information includes a contact name, email, phone number, notes, and demo account information if login is required. This matches the remaining human-only App Review contact and safe GitHub demo-account gate below.
 - Apple says each App Store version can be released manually, automatically after approval, or automatically no earlier than a specified date. The recommended first-submission value is manual release so approval does not automatically publish version 1.0.
@@ -68,6 +70,8 @@ Sources:
 - https://developer.apple.com/help/app-store-connect/reference/pricing-and-availability/app-pricing-and-availability
 - https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price
 - https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements/
+- https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status/
+- https://developer.apple.com/help/app-store-connect/manage-app-information/set-a-tax-category
 - https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/
 - https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels/
 - https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
@@ -150,6 +154,8 @@ Before submitting for review, also fill the non-copy manual choices from `Docs/A
 - Pricing: free.
 - Availability: all countries or regions unless legal review narrows distribution.
 - EU Digital Services Act trader status: confirm the legal/business-owner answer before EU availability; enter any trader contact information only in App Store Connect.
+- Regulated medical device status: no / not applicable for the current developer-tool binary.
+- Tax category: keep App Store software unless tax/legal review changes it.
 - Distribution: public App Store.
 - Version release: manual release.
 - Age rating: complete the questionnaire from the final binary using `Docs/AppStoreMetadata.md` as the conservative draft.
@@ -269,7 +275,7 @@ Use this table as the final owner checklist. A gate is closed only when the evid
 | Gate | Action | Evidence that closes it |
 | --- | --- | --- |
 | App Store Connect app record | Create or confirm the iOS app record with bundle ID `com.blakecrosley.captainslog`, SKU `captainslog-ios`, primary language English (U.S.), and team `M4WTLM6RAQ`. | `Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` lists the app by bundle ID, and the Apple ID is captured as `APP_STORE_CONNECT_APPLE_ID` for status checks. |
-| Manual App Store Connect fields | Enter pricing, availability, EU DSA trader status, distribution, version-release option, age-rating questionnaire, content-rights answer, license choice, Made for Kids answer, App Review contact, and demo-account details using `Docs/AppStoreMetadata.md`. | App Store Connect shows the app version ready to add for review with no missing metadata warnings, and private contact/demo/trader contact details exist only in App Store Connect. |
+| Manual App Store Connect fields | Enter pricing, availability, EU DSA trader status, regulated medical device status if shown, tax category if shown, distribution, version-release option, age-rating questionnaire, content-rights answer, license choice, Made for Kids answer, App Review contact, and demo-account details using `Docs/AppStoreMetadata.md`. | App Store Connect shows the app version ready to add for review with no missing metadata warnings, and private contact/demo/trader contact details exist only in App Store Connect. |
 | App Store Connect API credentials | Create or select an App Store Connect API key with upload permission, then set `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE`. Keep the `.p8` outside the repo. | `Scripts/app_store_readiness_status.sh` shows API key/issuer and `.p8` as set; `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passes. |
 | Build upload | Run `Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` after validate passes. | Upload command succeeds and returns either a delivery ID or a build visible in App Store Connect. |
 | TestFlight processing | Run `Scripts/upload_app_store_ipa.sh status "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` with either `APP_STORE_CONNECT_DELIVERY_ID` or `APP_STORE_CONNECT_APPLE_ID`. | Build status is processed/available in App Store Connect or TestFlight, with version `1.0.0` build `1`. |
