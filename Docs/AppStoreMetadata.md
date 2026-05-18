@@ -195,11 +195,12 @@ Background processing indexes older Git history in batches. The app remains usab
 
 ## Screenshot Set
 
-Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state, then verify and package them with:
+Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state, then verify, package, and generate the human review page/contact sheet with:
 
 ```sh
 Scripts/app_store_preflight.sh <screenshot-dir>
 Scripts/package_app_store_screenshots.sh <screenshot-dir>
+Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review
 ```
 
 1. Dashboard with account header, week strip, primary metric, and work map.
@@ -216,7 +217,9 @@ Packaged upload folders should contain six ordered images for each family:
 - `iphone-6.9/01-dashboard.png` through `06-privacy-data.png`.
 - `ipad-13/01-dashboard.png` through `06-privacy-data.png`.
 
-Latest packaged output: `/tmp/captainslog-key-state-packaged`.
+Latest packaged output: `/tmp/captainslog-key-state-packaged`. Latest human review output: `/tmp/captainslog-appstore-review`.
+
+The packaging and contact-sheet scripts stage their output before replacing the current folders, so a failed regeneration should leave the last reviewed package and contact sheet intact.
 
 Avoid screenshots that show real private repository names unless the repository is intentionally public and safe to market.
 
