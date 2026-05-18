@@ -1,6 +1,6 @@
 # Captain's Log App Store Connect Submission Packet
 
-This is the handoff checklist for the first TestFlight/App Store Connect submission. It points to the current verified artifacts and keeps the remaining external work explicit.
+This is the evidence packet for the first TestFlight/App Store Connect submission. Use `Docs/AppStoreConnectRunbook.md` as the short operator sequence during the actual App Store Connect session.
 
 ## Current Local State
 
