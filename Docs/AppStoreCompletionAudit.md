@@ -21,7 +21,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 
 | Requirement | Artifact or command | Current evidence | Status |
 | --- | --- | --- | --- |
-| Prepare for App Store Connect | `Docs/AppStoreConnectRunbook.md`, `Docs/AppStoreConnectSubmission.md`, `Docs/AppStoreReadiness.md` | Runbook, evidence packet, metadata, privacy answers, screenshot packet, export helper, upload helper, and readiness script exist. Readiness distinguishes linked Kit941 package-source drift from upstream drift outside the compiled package. | Partially complete |
+| Prepare for App Store Connect | `Docs/AppStoreConnectRunbook.md`, `Docs/AppStoreConnectSubmission.md`, `Docs/AppStoreReadiness.md` | Runbook, evidence packet, metadata, privacy answers, screenshot packet, export helper, upload helper, and readiness script exist. Readiness verifies CaptainsLog and linked Kit941 source cleanliness and upstream sync before submission work. | Partially complete |
 | Clean up UI | `/tmp/captainslog-appstore-review/contact-sheet.png`, `/tmp/captainslog-key-state-audit`, `Docs/AppStoreDesignReview.md` | Screenshot packet shows dashboard, Work Map, journal, repositories, AI providers, and Privacy & Data on iPhone and iPad. No sync bar, debug labels, simulator chrome, or real private account data were visible in the reviewed artifacts. | Locally acceptable, human approval open |
 | Make design review happy | `.impeccable.md`, `Docs/AppStoreDesignReview.md` | Design context says quiet, precise, journal-like, Apple-native, with Work Map as the identity surface. Design review score is 33/40 and recommends no major new features before first TestFlight unless human screenshot approval finds a concrete issue. | Locally acceptable |
 | Metadata and manual App Store fields | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, URLs, review notes, screenshot order, price/distribution/release recommendations, and manual App Store Connect choices are documented. | Paste-ready, App Store entry open |
@@ -36,7 +36,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 | Distribution signing | `Scripts/app_store_signing_status.sh`, `security find-identity -v -p codesigning`, `Scripts/export_app_store_ipa.sh`, and readiness script | Current keychain has Apple Development and Developer ID Application identities, but no Apple Distribution/iOS Distribution identity. Xcode has local provisioning profiles available in its UserData profile directory, but distribution export remains blocked until an Apple Distribution/iOS Distribution identity is installed. Export now stops immediately with setup guidance unless `CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1` is set. | Blocked |
 | Validate/upload/status | `Scripts/upload_app_store_ipa.sh validate`, `upload`, `status` | Cannot run until a current IPA exists and App Store Connect credentials are set. | Blocked |
 | Final App Store Connect entry | App Store Connect web UI | Manual fields, regional prompts, EU DSA trader status, tax category if shown, demo/review contact, screenshot upload, and build selection are not verifiable locally. | Human/App Store gate |
-| Linked package source custody | `Scripts/app_store_readiness_status.sh`, `git -C ../941Kit status --short --branch` | Kit941 package source is clean, and the local Kit941 branch is ahead of `origin/main` only for `Playground/PlaygroundApp.swift`, outside `Package.swift`, `Package.resolved`, and `Sources/Kit941`. This does not dirty the compiled export, but it remains visible as a traceability warning. | Warning |
+| Linked package source custody | `Scripts/app_store_readiness_status.sh`, `git -C ../941Kit status --short --branch`, `git -C ../941Kit rev-parse --short=12 HEAD` | Kit941 package source is clean, synced with `origin/main`, and currently at `69dcc9be7d06`. | Complete locally |
 | Final product QA | Real account on device | Existing device-store audit verified local aggregate coverage, but final real-account tap-through remains open. | Human/device gate |
 
 ## Latest Readiness Result
@@ -44,7 +44,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 `Scripts/app_store_readiness_status.sh` from clean `main` currently:
 
 - Passes command availability, Xcode/iOS SDK check, source cleanliness, screenshot packet checks, preflight, required-reason audit, and credential-guard self-test.
-- Warns that Kit941 has upstream drift outside the linked package source.
+- Confirms both CaptainsLog and Kit941 are clean and synced with upstream.
 - Reports no App Store private keys inside the repo.
 - Fails local readiness because the current IPA and export manifest are missing, so IPA local-check cannot run.
 - Reports external blockers for distribution signing, App Store Connect API credentials, app record confirmation, manual App Store Connect fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.

@@ -8,7 +8,8 @@ This is the evidence packet for the first TestFlight/App Store Connect submissio
 - Branch: `main`
 - Current app-resource baseline commit: `638fee384b1c03f49770f1581f470f28a5259f37`
 - Last successful exported app commit: `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` (stale after the app icon resource update)
-- Last successful exported Kit941 commit: `9330d58ca0e14d8133250a9051599fecafea03b2`
+- Current linked Kit941 commit: `69dcc9be7d064c752691bcde3778feb680d5dad1`
+- Last successful exported Kit941 commit: `9330d58ca0e14d8133250a9051599fecafea03b2` (stale with the last successful exported app commit)
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
 - Team ID used by export scripts: `M4WTLM6RAQ`
@@ -39,7 +40,7 @@ Latest local readiness check: May 18, 2026. The screenshot packet and connected-
 - `Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit` copied the connected iPhone app store and passed SQLite integrity. Aggregate-only output reported 1 account, 104 selected repositories, 12,468 commits from 2012-08-16 through 2026-05-17, 12,468/12,468 commits with diff stats, 0 diff-stat errors, 67,479,776 known changed lines, and 137/137 active days from 2026-01-01 through 2026-05-17. This is local device-store coverage evidence, not an external GitHub API parity proof.
 - Current source status is rechecked by `Scripts/app_store_readiness_status.sh` before each export attempt.
 - Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
-- The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. Current readiness distinguishes upstream drift in compiled package source from the existing `Playground/PlaygroundApp.swift` drift outside the linked package.
+- The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. Current readiness shows Kit941 clean and synced; future linked package-source drift is still reported before export/submission work.
 
 ## Official Docs Cross-Check
 
@@ -111,7 +112,7 @@ Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
 
-`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet and review page, clean source state, linked Kit941 package source, preflight, release local check, and upload credential guard self-test. It also distinguishes compiled Kit941 package-source drift from unrelated upstream drift outside the linked package, then lists external blockers such as missing App Store Connect credentials, manual App Store Connect fields, TestFlight processing, legal review, and final human screenshot acceptance.
+`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet and review page, clean source state, linked Kit941 package source, preflight, release local check, and upload credential guard self-test. It also reports any CaptainsLog or linked Kit941 source drift, then lists external blockers such as missing App Store Connect credentials, manual App Store Connect fields, TestFlight processing, legal review, and final human screenshot acceptance.
 
 `Scripts/upload_app_store_ipa.sh credential-guard-self-test` uses fake throwaway values and temporary files to verify that the upload helper accepts valid-looking credential inputs and rejects malformed key IDs, malformed issuers, missing `.p8` files, repo-local `.p8` paths, and non-private-key `.p8` contents without calling App Store Connect.
 
@@ -294,5 +295,5 @@ Use this table as the final owner checklist. A gate is closed only when the evid
 | TestFlight processing | Run `Scripts/upload_app_store_ipa.sh status "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` with either `APP_STORE_CONNECT_DELIVERY_ID` or `APP_STORE_CONNECT_APPLE_ID`. | Build status is processed/available in App Store Connect or TestFlight, with version `1.0.0` build `1`. |
 | Screenshot marketing approval | Open `/tmp/captainslog-appstore-review/contact-sheet.png` and check it against `/tmp/captainslog-appstore-review/README.md`. | Human approval that both device families are legible, private-data safe, quiet/journal-like, and free of debug UI, clipped controls, simulator chrome, and active sync progress. |
 | Legal/privacy review | Review the published Privacy Policy, Support page, App Store privacy answers, and optional AI provider disclosures. | Legal/product approval to submit the current privacy answers and published policy URLs, or specific edits applied and rechecked by preflight. |
-| Linked package source traceability | Push or intentionally accept any clean local CaptainsLog/Kit941 package-source commits before the final release build. | `Scripts/app_store_readiness_status.sh` shows CaptainsLog synced with upstream and either Kit941 synced with upstream or Kit941 upstream drift limited to files outside `Package.swift`, `Package.resolved`, and `Sources/Kit941`. If compiled package source is unsynced, the export manifest must record the exact local commit and the release owner must explicitly accept that state. |
+| Linked package source traceability | Push or intentionally accept any clean local CaptainsLog/Kit941 package-source commits before the final release build. | `Scripts/app_store_readiness_status.sh` shows CaptainsLog and Kit941 synced with upstream. If compiled package source is ever unsynced, the export manifest must record the exact local commit and the release owner must explicitly accept that state. |
 | Final real-account tap-through | On the real large-account install, open dashboard, Work Map, journal detail, repositories, AI providers, Privacy & Data, and run or observe sync without UI lockup. | Human tap-through confirms reviewer-visible UX quality and data plausibility. The device-store aggregate audit is supporting evidence only; it does not prove GitHub API parity or UX quality by itself. |
