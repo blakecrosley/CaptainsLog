@@ -110,7 +110,7 @@ Evidence that closes this step: readiness shows API key/issuer and `.p8` as vali
 
 ## 5. Validate, Upload, And Check Processing
 
-Use the current IPA:
+After `Scripts/app_store_readiness_status.sh` passes and the current IPA exists, validate and upload it:
 
 ```sh
 Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
