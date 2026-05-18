@@ -63,6 +63,13 @@ is_app_source_path() {
     esac
 }
 
+absolute_path() {
+    local path="$1"
+    local dir
+    dir="$(cd "$(dirname "$path")" && pwd -P)"
+    printf '%s/%s\n' "$dir" "$(basename "$path")"
+}
+
 printf "Captain's Log App Store readiness status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
@@ -222,12 +229,53 @@ fi
 printf '\nExternal gates\n'
 if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
     pass "App Store Connect API key and issuer are set"
+    if [[ "$APP_STORE_CONNECT_API_KEY" =~ ^[A-Za-z0-9]{10}$ ]]; then
+        pass "App Store Connect API key shape looks valid"
+    else
+        fail "App Store Connect API key should be a 10-character key ID"
+    fi
+
+    if [[ "$APP_STORE_CONNECT_API_ISSUER" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+        pass "App Store Connect issuer shape looks valid"
+    else
+        fail "App Store Connect issuer should be a UUID"
+    fi
 else
     external "App Store Connect API key and issuer are not set; validate/upload/status remain blocked"
 fi
 
 if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" && -f "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
     pass "App Store Connect .p8 key file is set"
+    p8_path="$(absolute_path "$APP_STORE_CONNECT_P8_FILE")"
+    case "$p8_path" in
+        "$ROOT_DIR"/*)
+            fail "App Store Connect .p8 key file must live outside the repo"
+            ;;
+        *)
+            pass "App Store Connect .p8 key file is outside the repo"
+            ;;
+    esac
+
+    if [[ -r "$p8_path" ]]; then
+        pass "App Store Connect .p8 key file is readable"
+    else
+        fail "App Store Connect .p8 key file is not readable"
+    fi
+
+    if rg -q -- "-----BEGIN PRIVATE KEY-----" "$p8_path"; then
+        pass "App Store Connect .p8 key file has a private-key header"
+    else
+        fail "App Store Connect .p8 key file does not look like an App Store Connect private key"
+    fi
+
+    if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" ]]; then
+        expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
+        if [[ "$(basename "$p8_path")" == "$expected_p8_name" ]]; then
+            pass "App Store Connect .p8 filename matches the API key ID"
+        else
+            warn "App Store Connect .p8 filename is not $expected_p8_name; --p8-file-path may still work, but verify carefully"
+        fi
+    fi
 else
     external "App Store Connect .p8 key file is not set"
 fi

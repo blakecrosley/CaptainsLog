@@ -138,6 +138,8 @@ export APP_STORE_CONNECT_API_ISSUER="..."
 export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
+`Scripts/app_store_readiness_status.sh` validates that the API key looks like a 10-character key ID, the issuer looks like a UUID, and the `.p8` file is readable, outside the repo, and has a private-key header. It does not print private-key contents.
+
 Then validate, upload, and check processing:
 
 ```sh
