@@ -52,7 +52,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 
 `Scripts/app_store_readiness_status.sh` from clean local `main` currently:
 
-- Passes command availability, Xcode/iOS SDK check, screenshot packet checks, screenshot text audit, preflight, required-reason audit, and credential-guard self-test.
+- Passes command availability, Xcode iOS 26+ and macOS 26+ SDK checks, screenshot packet checks, screenshot text audit, preflight, required-reason audit, and credential-guard self-test.
 - Confirms CaptainsLog and Kit941 are clean and synced with `origin/main`.
 - Reports platform availability directly: iPhone/iPad enabled through `TARGETED_DEVICE_FAMILY=1,2`, compatible Vision Pro support enabled through `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD=YES`, native Mac target present with automatic signing build settings but not Mac App Store ready, no Apple Watch or Apple TV target/scheme, and the latest Vision, macOS smoke, and macOS screenshot artifacts when present.
 - Reports no App Store private keys inside the repo.
@@ -64,7 +64,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 - Fails local readiness with 2 issues because the current IPA and export manifest are missing; readiness skips IPA local-check until a current IPA exists so the missing IPA is not counted twice.
 - A current clean export attempt fails before IPA creation with `App Store distribution signing identity for team M4WTLM6RAQ was not found in the local keychain`, confirming the missing IPA cannot be fixed locally until either Xcode account/distribution signing or App Store Connect API-key provisioning auth is configured.
 - Reports 4 candidate App Store Connect `.p8` files outside the repo and requires explicit `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE` selection before export/upload auth.
-- Reports external blockers for export signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields including platform availability, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+- Reports external blockers for iOS distribution signing, Mac App Store application signing, Mac App Store installer signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields including platform availability, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 ## Next Action
 
