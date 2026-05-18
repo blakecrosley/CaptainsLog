@@ -30,6 +30,27 @@ check_image_size() {
     fi
 }
 
+check_image_size_any() {
+    local path="$1"
+    shift
+
+    if [[ ! -f "$path" ]]; then
+        fail "Missing screenshot: $path"
+    fi
+
+    local width height expected
+    width="$(sips -g pixelWidth "$path" 2>/dev/null | awk '/pixelWidth/ { print $2 }')"
+    height="$(sips -g pixelHeight "$path" 2>/dev/null | awk '/pixelHeight/ { print $2 }')"
+
+    for expected in "$@"; do
+        if [[ "${width}x${height}" == "$expected" ]]; then
+            return
+        fi
+    done
+
+    fail "$(basename "$path") is ${width:-unknown}x${height:-unknown}; expected one of: $*"
+}
+
 copy_slot() {
     local family_dir="$1"
     local source_name="$2"
@@ -38,6 +59,17 @@ copy_slot() {
     local expected_height="$5"
 
     check_image_size "$INPUT_DIR/$source_name" "$expected_width" "$expected_height"
+    cp "$INPUT_DIR/$source_name" "$family_dir/$target_name"
+    printf '[ok] %s -> %s\n' "$source_name" "$target_name"
+}
+
+copy_slot_any_size() {
+    local family_dir="$1"
+    local source_name="$2"
+    local target_name="$3"
+    shift 3
+
+    check_image_size_any "$INPUT_DIR/$source_name" "$@"
     cp "$INPUT_DIR/$source_name" "$family_dir/$target_name"
     printf '[ok] %s -> %s\n' "$source_name" "$target_name"
 }
@@ -67,17 +99,17 @@ copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-repositories.png" "
 copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-ai.png" "05-ai-providers.png" 1320 2868
 copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-privacy.png" "06-privacy-data.png" 1320 2868
 
-copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-dashboard.png" "01-dashboard.png" 2064 2752
-copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-work-map.png" "02-work-map.png" 2064 2752
-copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-journal.png" "03-journal.png" 2064 2752
-copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-repositories.png" "04-repositories.png" 2064 2752
-copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-ai.png" "05-ai-providers.png" 2064 2752
-copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-privacy.png" "06-privacy-data.png" 2064 2752
+copy_slot_any_size "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-dashboard.png" "01-dashboard.png" 2064x2752 2752x2064
+copy_slot_any_size "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-work-map.png" "02-work-map.png" 2064x2752 2752x2064
+copy_slot_any_size "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-journal.png" "03-journal.png" 2064x2752 2752x2064
+copy_slot_any_size "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-repositories.png" "04-repositories.png" 2064x2752 2752x2064
+copy_slot_any_size "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-ai.png" "05-ai-providers.png" 2064x2752 2752x2064
+copy_slot_any_size "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-privacy.png" "06-privacy-data.png" 2064x2752 2752x2064
 
 cat > "$STAGED_OUTPUT_DIR/README.md" <<'README'
 # Captain's Log Screenshot Upload Order
 
-Use the same order for the 6.9-inch iPhone and 13-inch iPad screenshot sets.
+Use the same order for the 6.9-inch iPhone and 13-inch iPad screenshot sets. The iPad set may be portrait or landscape, but keep orientation consistent across all six iPad screenshots.
 
 1. `01-dashboard.png` - Shows the core daily overview, week strip, metric lens, and Work Map.
 2. `02-work-map.png` - Makes the contribution-style history surface the visual identity.

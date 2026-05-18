@@ -137,6 +137,32 @@ check_png_size() {
     fi
 }
 
+check_png_size_any() {
+    local path="$1"
+    local label="$2"
+    shift 2
+    local width
+    local height
+    local expected
+
+    if [[ ! -f "$path" ]]; then
+        fail "$label missing: $path"
+        return
+    fi
+
+    width="$(sips -g pixelWidth "$path" 2>/dev/null | awk '/pixelWidth/ { print $2 }')"
+    height="$(sips -g pixelHeight "$path" 2>/dev/null | awk '/pixelHeight/ { print $2 }')"
+
+    for expected in "$@"; do
+        if [[ "${width}x${height}" == "$expected" ]]; then
+            pass "$label dimensions: ${width}x${height}"
+            return
+        fi
+    done
+
+    fail "$label dimensions: ${width:-unknown}x${height:-unknown}, expected one of: $*"
+}
+
 default_p8_path_for_key() {
     local api_key="$1"
     local expected_name="AuthKey_${api_key}.p8"
@@ -309,7 +335,7 @@ if [[ -d "$PACKAGED_DIR/iphone-6.9" && -d "$PACKAGED_DIR/ipad-13" ]]; then
     )
     for screen in "${packaged_screens[@]}"; do
         check_png_size "$PACKAGED_DIR/iphone-6.9/$screen" 1320 2868 "iphone-6.9/$screen"
-        check_png_size "$PACKAGED_DIR/ipad-13/$screen" 2064 2752 "ipad-13/$screen"
+        check_png_size_any "$PACKAGED_DIR/ipad-13/$screen" "ipad-13/$screen" 2064x2752 2752x2064
     done
 else
     fail "packaged screenshot folders missing under $PACKAGED_DIR"

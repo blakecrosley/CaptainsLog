@@ -170,6 +170,30 @@ check_image_size() {
     fi
 }
 
+check_image_size_any() {
+    local path="$1"
+    local label="$2"
+    shift 2
+
+    if [[ ! -f "$path" ]]; then
+        fail "$label missing: $path"
+        return
+    fi
+
+    local width height expected
+    width="$(sips -g pixelWidth "$path" 2>/dev/null | awk '/pixelWidth/ { print $2 }')"
+    height="$(sips -g pixelHeight "$path" 2>/dev/null | awk '/pixelHeight/ { print $2 }')"
+
+    for expected in "$@"; do
+        if [[ "${width}x${height}" == "$expected" ]]; then
+            pass "$label dimensions: ${width}x${height}"
+            return
+        fi
+    done
+
+    fail "$label dimensions: ${width:-unknown}x${height:-unknown}, expected one of: $*"
+}
+
 check_image_no_alpha() {
     local path="$1"
     local label="$2"
@@ -350,7 +374,7 @@ else
     for screen in "${expected_screens[@]}"; do
         case "$screen" in
             iphone-17-pro-max-*) check_image_size "$SCREENSHOT_DIR/$screen" 1320 2868 "$screen" ;;
-            ipad-pro-13-*) check_image_size "$SCREENSHOT_DIR/$screen" 2064 2752 "$screen" ;;
+            ipad-pro-13-*) check_image_size_any "$SCREENSHOT_DIR/$screen" "$screen" 2064x2752 2752x2064 ;;
         esac
     done
 fi
