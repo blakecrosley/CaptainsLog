@@ -127,14 +127,25 @@ struct WorkOverviewView: View {
             .presentationDetents([.large])
         }
         #if DEBUG
-        .fullScreenCover(isPresented: $isShowingDebugActivityMap) {
-            WorkMapDetailSheet(
-                selectedDate: $selectedDate,
-                workMetrics: workMetrics,
-                repositoryCoverage: repositorySnapshot.coverage,
-                metric: displayMetric
-            )
-        }
+        #if os(iOS)
+            .fullScreenCover(isPresented: $isShowingDebugActivityMap) {
+                WorkMapDetailSheet(
+                    selectedDate: $selectedDate,
+                    workMetrics: workMetrics,
+                    repositoryCoverage: repositorySnapshot.coverage,
+                    metric: displayMetric
+                )
+            }
+        #else
+            .sheet(isPresented: $isShowingDebugActivityMap) {
+                WorkMapDetailSheet(
+                    selectedDate: $selectedDate,
+                    workMetrics: workMetrics,
+                    repositoryCoverage: repositorySnapshot.coverage,
+                    metric: displayMetric
+                )
+            }
+        #endif
         .onAppear {
             presentDebugScreenshotRouteIfNeeded()
         }

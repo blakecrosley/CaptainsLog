@@ -225,9 +225,15 @@ struct RootView: View {
                     repositorySettingsSheet
                 }
                 #if DEBUG
-                .fullScreenCover(item: $debugScreenshotSheetRoute) { route in
-                    debugScreenshotSheet(for: route)
-                }
+                #if os(iOS)
+                    .fullScreenCover(item: $debugScreenshotSheetRoute) { route in
+                        debugScreenshotSheet(for: route)
+                    }
+                #else
+                    .sheet(item: $debugScreenshotSheetRoute) { route in
+                        debugScreenshotSheet(for: route)
+                    }
+                #endif
                 #endif
                 .navigationDestination(isPresented: $isShowingDayDetail) {
                     dayDetailPage
