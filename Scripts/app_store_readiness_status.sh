@@ -192,6 +192,36 @@ default_p8_path_for_key() {
     return 1
 }
 
+default_p8_candidate_count() {
+    local dirs=(
+        "$HOME/private_keys"
+        "$HOME/.private_keys"
+        "$HOME/.appstoreconnect/private_keys"
+    )
+
+    if [[ -n "${API_PRIVATE_KEYS_DIR:-}" ]]; then
+        dirs+=("$API_PRIVATE_KEYS_DIR")
+    fi
+
+    local dir candidate abs_path count
+    count=0
+    for dir in "${dirs[@]}"; do
+        [[ -d "$dir" ]] || continue
+        while IFS= read -r candidate; do
+            [[ -f "$candidate" ]] || continue
+            abs_path="$(absolute_path "$candidate")"
+            case "$abs_path" in
+                "$ROOT_DIR"/*)
+                    continue
+                    ;;
+            esac
+            count=$((count + 1))
+        done < <(find "$dir" -maxdepth 1 -type f -name "AuthKey_*.p8" 2>/dev/null)
+    done
+
+    printf '%s\n' "$count"
+}
+
 check_p8_path() {
     local p8_path="$1"
     local source_label="$2"
@@ -584,7 +614,12 @@ if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
 elif [[ -n "${APP_STORE_CONNECT_API_KEY:-}" ]] && default_p8_path="$(default_p8_path_for_key "$APP_STORE_CONNECT_API_KEY")"; then
     check_p8_path "$default_p8_path" "altool default private key search path"
 else
-    external "App Store Connect .p8 key file is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
+    p8_candidate_count="$(default_p8_candidate_count)"
+    if (( p8_candidate_count > 0 )); then
+        external "App Store Connect candidate .p8 private-key files are staged outside the repo in altool default private-key search paths, but no selected APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER are set"
+    else
+        external "App Store Connect .p8 key file is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
+    fi
 fi
 
 if (( distribution_identity_available == 0 && xcode_auth_env_ready == 0 )); then
