@@ -48,6 +48,7 @@ Checked against Apple documentation on May 18, 2026.
 - Apple's screenshot specification allows one to ten `.jpeg`, `.jpg`, or `.png` screenshots. The current packaged set has six PNGs per family. The iPhone 6.9-inch portrait size `1320 x 2868` and iPad 13-inch portrait size `2064 x 2752` are accepted sizes in Apple's table.
 - Apple says to answer age-rating questions from the app's content and capabilities. Its values and definitions include capabilities such as user-generated content and unrestricted web access, plus content categories such as medical information, mature themes, violence, gambling, contests, and advertising. This matches the manual age-rating draft in `Docs/AppStoreMetadata.md`.
 - Apple says pricing and availability determine where and when an app is available and at what price, and that a price must be set before App Review submission. This matches the manual first-submission value in `Docs/AppStoreMetadata.md`: free app, public distribution, broadly available unless legal review narrows it.
+- Apple says Accessibility Nutrition Labels are voluntary to start, appear on product pages for supported OS versions, and will show "Support not yet indicated" until support is added. This packet treats accessibility labels as optional first-release product-page work, not a hard local readiness blocker.
 - Apple says App Review information includes a contact name, email, phone number, notes, and demo account information if login is required. This matches the remaining human-only App Review contact and safe GitHub demo-account gate below.
 - Apple says each App Store version can be released manually, automatically after approval, or automatically no earlier than a specified date. The recommended first-submission value is manual release so approval does not automatically publish version 1.0.
 - Apple says App Store privacy information is required for new apps and updates. This matches the open legal/privacy review gate and the paste-ready privacy questionnaire in `Docs/AppStorePrivacyAnswers.md`.
@@ -63,6 +64,8 @@ Sources:
 - https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions
 - https://developer.apple.com/help/app-store-connect/reference/pricing-and-availability/app-pricing-and-availability
 - https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price
+- https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/
+- https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels/
 - https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
 - https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/
 - https://developer.apple.com/app-store/app-privacy-details/
@@ -145,6 +148,7 @@ Before submitting for review, also fill the non-copy manual choices from `Docs/A
 - Distribution: public App Store.
 - Version release: manual release.
 - Age rating: complete the questionnaire from the final binary using `Docs/AppStoreMetadata.md` as the conservative draft.
+- Accessibility Nutrition Labels: optional for first release unless App Store Connect requires them; enter support only after per-device testing of common tasks.
 - Made for Kids: no.
 - License agreement: Apple Standard EULA unless legal review provides a custom EULA.
 - Content Rights: confirm the final legal/product answer because the app displays user-authorized GitHub repository content.

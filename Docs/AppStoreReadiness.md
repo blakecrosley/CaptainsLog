@@ -49,6 +49,7 @@ For the final handoff sequence, use `Docs/AppStoreConnectSubmission.md`. For App
 - Privacy Policy URL: `https://blakecrosley.com/captains-log/privacy` is live and includes the privacy contact path `blake@941apps.com`. Legal review is still recommended before App Review submission.
 - The in-app Privacy & Data screen links to the published Privacy Policy and Support pages so users and App Review can reach the same public documents from inside the app.
 - Manual App Store Connect choices are documented in `Docs/AppStoreMetadata.md`: price the first submission as free, use public App Store distribution, choose manual release for version 1.0, complete the age-rating questionnaire from the final binary, use Apple's standard EULA unless legal provides a custom one, mark Made for Kids as no, and enter private App Review contact/demo-account details only inside App Store Connect. Confirm the final content-rights answer before submission because the app displays user-authorized GitHub repository content.
+- Accessibility Nutrition Labels are optional product-page metadata for the first release unless App Store Connect requires them at submission time. Do not publish support claims for VoiceOver, Voice Control, Larger Text, Dark Interface, Differentiate Without Color Alone, Sufficient Contrast, or Reduced Motion until common tasks have been tested on each claimed device family.
 - Screenshots: Apple requires at least one and up to ten screenshots per device family. Run `Scripts/capture_app_store_screenshots.sh`, verify with `Scripts/app_store_preflight.sh <screenshot-dir>`, then run `Scripts/package_app_store_screenshots.sh <screenshot-dir>` to create numbered iPhone and iPad upload folders. The recommended order is dashboard, Work Map, journal detail, repository access, AI provider settings, then Privacy & Data. The May 17, 2026 audit output in `/tmp/captainslog-key-state-audit` passed preflight after the iPad dashboard journal preview and Work Map height polish, but final marketing acceptance still needs human review.
 
 ### Privacy
@@ -99,6 +100,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 
 - A final manual tap-through on the real large GitHub account is still recommended before submission, even though local device-store coverage now has aggregate evidence.
 - Manual App Store Connect fields still need to be entered and checked for missing-metadata warnings in App Store Connect.
+- Accessibility Nutrition Labels can remain not yet indicated for the first release, but a per-device accessibility evaluation should happen before publishing any support claims.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports. The readiness script checks that the contact sheet, review page, and review checklist exist, but a person still needs to approve that the screenshots are private-data safe, free of debug UI and clipped controls, and not generic analytics-dashboard work.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
 - `Docs/AppStoreConnectSubmission.md` contains the closeout table for the remaining external gates, including the exact evidence needed to close each gate.
@@ -110,6 +112,8 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - App Store Connect API: https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api
 - Set app age rating: https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating/
 - Age rating values and definitions: https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions
+- Accessibility Nutrition Labels overview: https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/
+- Manage Accessibility Nutrition Labels: https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels/
 - App privacy details: https://developer.apple.com/app-store/app-privacy-details/
 - Manage app privacy: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/
 - App information fields: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information

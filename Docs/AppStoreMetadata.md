@@ -24,6 +24,8 @@ Official references:
 - Version release option: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/
 - App privacy details: https://developer.apple.com/app-store/app-privacy-details/
 - App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Accessibility Nutrition Labels overview: https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/
+- Manage Accessibility Nutrition Labels: https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels/
 
 ## App Information
 
@@ -108,6 +110,7 @@ These fields are not all pasteable text fields, but they should be decided befor
 | Distribution Methods | Public App Store distribution | Do not set up private/custom distribution for the first public review unless the release strategy changes. |
 | Content Rights | Legal/product decision required; conservative answer is that the app accesses user-authorized GitHub repository content | The app does not ship third-party media, but it displays repository names, commit messages, paths, and diffs obtained from GitHub after user authorization. Confirm the exact App Store Connect answer before submission. |
 | Age Rating | Complete the questionnaire from the final binary; expected low-risk developer-tool profile | No mature, medical, gambling, contest, commerce, advertising, location, chat, or embedded browser behavior was found in the current app surface. Treat GitHub repository history as user-supplied content if the questionnaire asks about user-generated content. |
+| Accessibility Nutrition Labels | Optional for the first release unless App Store Connect requires it at submission time | Do not publish support claims until common tasks are tested per device. Candidate areas to evaluate later: VoiceOver, Voice Control, Larger Text, Dark Interface, Differentiate Without Color Alone, Sufficient Contrast, and Reduced Motion. Captions and Audio Descriptions are not applicable because this build has no video or audio content. |
 | Made for Kids | No | The app is a developer tool for GitHub repository history, not a Kids category app. |
 | License Agreement | Apple Standard EULA | Use Apple's standard license unless legal review provides a custom EULA. |
 | Version Release Option | Manual release | Keeps the first App Store release from going live automatically after approval. TestFlight distribution is separate from App Store release. |
