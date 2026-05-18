@@ -41,12 +41,11 @@ In App Store Connect, create or confirm:
 Evidence that closes this step:
 
 ```sh
-Scripts/upload_app_store_ipa.sh providers
 export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID="..."
 Scripts/upload_app_store_ipa.sh app-record
 ```
 
-Run the evidence command after API credentials are configured in step 4. If App Store Connect gives an Apple ID for this app, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
+Run the evidence command after API credentials are configured in step 4 and `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` is set. If App Store Connect gives an Apple ID for this app, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
 
 ## 2. Enter Product Metadata
 
@@ -159,13 +158,7 @@ Scripts/app_store_readiness_status.sh
 
 The export script uses the same API key, issuer, and `.p8` env vars for `xcodebuild` provisioning updates, so the same private-key custody rules apply: keep the `.p8` outside this repo and outside any git working tree.
 
-Then contact App Store Connect to list providers:
-
-```sh
-Scripts/upload_app_store_ipa.sh providers
-```
-
-Use the provider output to set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` for the team that owns `com.blakecrosley.captainslog`, then rerun `Scripts/app_store_readiness_status.sh`. Evidence that closes this step: readiness shows API key/issuer, provider public ID, and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
+Then set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` for the team that owns `com.blakecrosley.captainslog`. Xcode 26.5 `altool --list-providers` does not support API-key authentication, so obtain this value from App Store Connect, Transporter, or a manually authenticated altool session, then rerun `Scripts/app_store_readiness_status.sh`. Evidence that closes this step: readiness shows API key/issuer, provider public ID, and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
 
 ## 5. Validate, Upload, And Check Processing
 

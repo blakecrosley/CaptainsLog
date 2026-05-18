@@ -20,14 +20,14 @@ usage() {
     cat <<'USAGE'
 Usage:
   Scripts/upload_app_store_ipa.sh local-check [ipa]
-  Scripts/upload_app_store_ipa.sh providers
+  Scripts/upload_app_store_ipa.sh providers  # reports API-key provider listing limitation
   Scripts/upload_app_store_ipa.sh app-record
   Scripts/upload_app_store_ipa.sh validate [ipa]
   Scripts/upload_app_store_ipa.sh upload [ipa]
   Scripts/upload_app_store_ipa.sh status [ipa]
   Scripts/upload_app_store_ipa.sh credential-guard-self-test
 
-Authentication for providers/app-record/validate/upload/status:
+Authentication for app-record/validate/upload/status:
   APP_STORE_CONNECT_API_KEY       App Store Connect API key ID.
   APP_STORE_CONNECT_API_ISSUER    App Store Connect issuer UUID.
 
@@ -35,7 +35,11 @@ Optional:
   APP_STORE_CONNECT_P8_FILE       Direct path to AuthKey_<key>.p8.
   APP_STORE_CONNECT_PROVIDER_PUBLIC_ID
                                   Required for app-record because altool --list-apps
-                                  requires a provider public ID.
+                                  requires a provider public ID. Xcode 26.5
+                                  altool --list-providers does not support
+                                  API-key authentication, so obtain this value
+                                  from App Store Connect, Transporter, or a
+                                  manually authenticated altool session.
   APP_STORE_CONNECT_DELIVERY_ID   Use for status after upload.
   APP_STORE_CONNECT_APPLE_ID      App Apple ID for status when delivery ID is unavailable;
                                   also narrows app-record checks when set.
@@ -440,7 +444,7 @@ build_auth_args() {
 }
 
 require_provider_public_id() {
-    [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]] || fail "Set APP_STORE_CONNECT_PROVIDER_PUBLIC_ID before using app-record. Run Scripts/upload_app_store_ipa.sh providers to list providers."
+    [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]] || fail "Set APP_STORE_CONNECT_PROVIDER_PUBLIC_ID before using app-record. Xcode 26.5 altool --list-providers does not support API-key authentication; obtain the provider public ID from App Store Connect, Transporter, or a manually authenticated altool session."
 }
 
 ipa_version() {
@@ -465,11 +469,7 @@ run_validate() {
 }
 
 run_providers() {
-    build_auth_args 0
-    xcrun altool \
-        --list-providers \
-        "${auth_args[@]}" \
-        --output-format "$ALTOOL_OUTPUT_FORMAT"
+    fail "Xcode 26.5 altool --list-providers does not support API-key authentication. Obtain APP_STORE_CONNECT_PROVIDER_PUBLIC_ID from App Store Connect, Transporter, or a manually authenticated altool session, then run app-record."
 }
 
 run_app_record() {

@@ -652,7 +652,7 @@ fi
 if [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then
     pass "App Store Connect provider public ID is set"
 else
-    external "App Store Connect provider public ID is not set; run Scripts/upload_app_store_ipa.sh providers after setting API credentials, then export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID before app-record"
+    external "App Store Connect provider public ID is not set; Xcode 26.5 altool --list-providers does not support API-key authentication, so obtain the provider public ID from App Store Connect, Transporter, or a manually authenticated altool session before app-record"
 fi
 
 if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
@@ -718,7 +718,7 @@ Next external actions:
 3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
-5. Run Scripts/upload_app_store_ipa.sh providers, then export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID.
+5. Export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID. Xcode 26.5 altool --list-providers does not support API-key authentication, so obtain it from App Store Connect, Transporter, or a manually authenticated altool session.
 6. Run:
    Scripts/upload_app_store_ipa.sh app-record
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
