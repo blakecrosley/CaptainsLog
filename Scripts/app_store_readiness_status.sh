@@ -527,7 +527,7 @@ printf_platform_target_status() {
         if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+.*(watchOS|Watch|tvOS|TV).*$'; then
             fail "watchOS/tvOS-looking target or scheme found; update platform release guidance before App Store submission"
         else
-            pass "no Apple Watch or Apple TV app target or scheme found"
+            warn "Captain's Log has no Apple Watch or Apple TV app target or scheme; those platforms are not ready"
         fi
     else
         fail "unable to list Xcode targets for platform availability"
@@ -536,7 +536,7 @@ printf_platform_target_status() {
     if rg -q 'platform:[[:space:]]+(watchOS|tvOS)' "$ROOT_DIR/project.yml"; then
         fail "project.yml contains watchOS/tvOS platform entries; update platform release guidance before App Store submission"
     else
-        pass "project.yml has no watchOS/tvOS app targets"
+        warn "project.yml has no watchOS/tvOS app targets for Captain's Log"
     fi
 
     check_reference_project_platform_precedent "Return" "$RETURN_REFERENCE_PROJECT" "ReturnWatch Watch App" "ReturnTV"
