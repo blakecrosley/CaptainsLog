@@ -159,6 +159,7 @@ need_command sqlite3
 need_command unzip
 need_command rg
 need_command magick
+need_command security
 need_xcrun_tool altool
 
 if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuild -showsdks 2>/dev/null)"; then
@@ -170,6 +171,12 @@ if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuil
     fi
 else
     fail "xcodebuild version or SDK list unavailable"
+fi
+
+if security find-identity -v -p codesigning 2>/dev/null | rg -q '"(Apple Distribution|iOS Distribution):'; then
+    pass "App Store distribution signing identity available in local keychain"
+else
+    external "App Store distribution signing identity is not available in the local keychain; a current IPA export may require signing in to Xcode or installing the distribution certificate"
 fi
 
 printf '\nLocal artifact checks\n'
@@ -409,12 +416,14 @@ if (( external_blockers > 0 )); then
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-3. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, then either set APP_STORE_CONNECT_P8_FILE or place AuthKey_<key>.p8 in an altool default private key folder outside this repo.
-4. Run:
+3. Make App Store distribution signing available to Xcode, then regenerate the current IPA if readiness reports it missing or stale:
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+4. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, then either set APP_STORE_CONNECT_P8_FILE or place AuthKey_<key>.p8 in an altool default private key folder outside this repo.
+5. Run:
    Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-5. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
-6. Complete legal/privacy review and final real-account tap-through before submitting.
+6. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+7. Complete legal/privacy review and final real-account tap-through before submitting.
 NEXT_STEPS
 fi

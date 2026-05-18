@@ -46,10 +46,16 @@ if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_dirty" == "tr
 fi
 
 mkdir -p "$OUTPUT_DIR"
-rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
+staging_dir="$(mktemp -d "$OUTPUT_DIR/.export-staging.XXXXXX")"
+staged_archive_path="$staging_dir/$(basename "$ARCHIVE_PATH")"
+staged_export_path="$staging_dir/$(basename "$EXPORT_PATH")"
+cleanup_staging() {
+    rm -rf "$staging_dir"
+}
+trap cleanup_staging EXIT
 
 export_options="$(mktemp -t captainslog-export-options.XXXXXX.plist)"
-trap 'rm -f "$export_options"' EXIT
+trap 'rm -f "$export_options"; cleanup_staging' EXIT
 
 cat > "$export_options" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -72,25 +78,27 @@ cat > "$export_options" <<PLIST
 </plist>
 PLIST
 
+printf 'Staging archive/export in %s. Existing output will be replaced only after export validation succeeds.\n' "$staging_dir"
+
 xcodebuild \
     -project "$PROJECT_PATH" \
     -scheme "$SCHEME" \
     -configuration Release \
     -destination "generic/platform=iOS" \
-    -archivePath "$ARCHIVE_PATH" \
+    -archivePath "$staged_archive_path" \
     archive
 
 xcodebuild \
     -exportArchive \
-    -archivePath "$ARCHIVE_PATH" \
-    -exportPath "$EXPORT_PATH" \
+    -archivePath "$staged_archive_path" \
+    -exportPath "$staged_export_path" \
     -exportOptionsPlist "$export_options" \
     -allowProvisioningUpdates
 
-app_path="$ARCHIVE_PATH/Products/Applications/Captain's Log.app"
+app_path="$staged_archive_path/Products/Applications/Captain's Log.app"
 info_plist="$app_path/Info.plist"
 privacy_manifest="$app_path/PrivacyInfo.xcprivacy"
-ipa_path="$(find "$EXPORT_PATH" -maxdepth 1 -name "*.ipa" -print -quit)"
+staged_ipa_path="$(find "$staged_export_path" -maxdepth 1 -name "*.ipa" -print -quit)"
 
 if [[ ! -d "$app_path" ]]; then
     printf 'Archived app not found: %s\n' "$app_path" >&2
@@ -102,8 +110,8 @@ if [[ ! -f "$privacy_manifest" ]]; then
     exit 1
 fi
 
-if [[ -z "$ipa_path" || ! -f "$ipa_path" ]]; then
-    printf 'Exported IPA not found in: %s\n' "$EXPORT_PATH" >&2
+if [[ -z "$staged_ipa_path" || ! -f "$staged_ipa_path" ]]; then
+    printf 'Exported IPA not found in: %s\n' "$staged_export_path" >&2
     exit 1
 fi
 
@@ -122,6 +130,13 @@ if [[ "$uses_non_exempt_encryption" != "false" ]]; then
     printf 'Unexpected export compliance flag: ITSAppUsesNonExemptEncryption=%s\n' "$uses_non_exempt_encryption" >&2
     exit 1
 fi
+
+rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
+mv "$staged_archive_path" "$ARCHIVE_PATH"
+mv "$staged_export_path" "$EXPORT_PATH"
+
+app_path="$ARCHIVE_PATH/Products/Applications/Captain's Log.app"
+ipa_path="$(find "$EXPORT_PATH" -maxdepth 1 -name "*.ipa" -print -quit)"
 
 {
     printf "Captain's Log App Store Export\n"

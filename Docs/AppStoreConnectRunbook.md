@@ -14,6 +14,14 @@ Proceed only if the summary says local readiness passed. The expected remaining 
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
+If readiness reports a missing or stale IPA, make App Store distribution signing available in Xcode, then run:
+
+```sh
+CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+```
+
+The export script stages archive/export output and replaces the current IPA folder only after export validation succeeds.
+
 ## 1. Create Or Confirm The App Record
 
 In App Store Connect, create or confirm:
