@@ -152,7 +152,7 @@ Evidence that closes this step: upload succeeds and build `1.0.0 (1)` is process
 
 ## 6. Upload Screenshots
 
-If the screenshot set needs to be regenerated, run the capture, preflight, package, and contact-sheet commands from `Docs/AppStoreConnectSubmission.md`. The package and review scripts stage output first, then replace the current upload/review folders only after generation succeeds, so a failed regeneration should leave the last reviewed screenshots intact.
+If the screenshot set needs to be regenerated, run the capture, preflight, package, contact-sheet, and screenshot text-audit commands from `Docs/AppStoreConnectSubmission.md`. The package and review scripts stage output first, then replace the current upload/review folders only after generation succeeds, so a failed regeneration should leave the last reviewed screenshots intact.
 
 Use the packaged folders:
 

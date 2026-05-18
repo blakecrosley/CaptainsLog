@@ -201,6 +201,7 @@ Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad ca
 Scripts/app_store_preflight.sh <screenshot-dir>
 Scripts/package_app_store_screenshots.sh <screenshot-dir>
 Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review
+Scripts/audit_app_store_screenshot_text.sh /tmp/captainslog-key-state-packaged
 ```
 
 1. Dashboard with account header, week strip, primary metric, and work map.
@@ -210,7 +211,7 @@ Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-pa
 5. AI provider settings with an attached demo key state.
 6. Privacy & Data screen.
 
-Latest audit: on May 17, 2026, the script generated 12 PNGs in `/tmp/captainslog-key-state-audit`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb, the repository access screen did not clip toggles, the AI settings screen showed an attached demo key state, and `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed.
+Latest audit: on May 18, 2026, the scripts generated 12 PNGs in `/tmp/captainslog-key-state-audit`: six iPhone 17 Pro Max screenshots at `1320x2868` and six iPad Pro 13 screenshots at `2064x2752`. The checked screenshots did not show the previous-app breadcrumb, the repository access screen did not clip toggles, the AI settings screen showed an attached demo key state, `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed, and `Scripts/audit_app_store_screenshot_text.sh /tmp/captainslog-key-state-packaged` found no rejected App Store text.
 
 Packaged upload folders should contain six ordered images for each family:
 

@@ -200,6 +200,7 @@ need_command rg
 need_command magick
 need_command security
 need_xcrun_tool altool
+need_xcrun_tool swift
 
 if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuild -showsdks 2>/dev/null)"; then
     xcode_first_line="$(printf '%s\n' "$xcode_version" | sed -n '1p')"
@@ -296,6 +297,12 @@ if [[ -f "$SCREENSHOT_REVIEW_DIR/review.html" ]]; then
     fi
 else
     fail "screenshot review page missing: $SCREENSHOT_REVIEW_DIR/review.html"
+fi
+
+if "$ROOT_DIR/Scripts/audit_app_store_screenshot_text.sh" "$PACKAGED_DIR"; then
+    pass "screenshot text audit"
+else
+    fail "screenshot text audit failed"
 fi
 
 printf '\nSource cleanliness\n'
