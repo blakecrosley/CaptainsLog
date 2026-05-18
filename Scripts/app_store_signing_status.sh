@@ -69,16 +69,29 @@ if printf '%s\n' "$identity_output" | rg -q '"Developer ID Application:'; then
 fi
 
 printf '\nProvisioning profiles\n'
-profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-if [[ -d "$profile_dir" ]]; then
-    profile_count="$(find "$profile_dir" -maxdepth 1 -type f -name '*.mobileprovision' | wc -l | tr -d ' ')"
-    if [[ "$profile_count" == "0" ]]; then
-        warn "provisioning profile directory exists but contains 0 profile(s); Xcode may download or create profiles after account signing is configured"
+profile_dirs=(
+    "$HOME/Library/MobileDevice/Provisioning Profiles"
+    "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+)
+profile_total=0
+for profile_dir in "${profile_dirs[@]}"; do
+    if [[ -d "$profile_dir" ]]; then
+        profile_count="$(find "$profile_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) | wc -l | tr -d ' ')"
+        profile_total=$((profile_total + profile_count))
+        if [[ "$profile_count" == "0" ]]; then
+            warn "profile directory exists but contains 0 profile(s): $profile_dir"
+        else
+            pass "profile directory exists: $profile_count profile(s) in $profile_dir"
+        fi
     else
-        pass "provisioning profile directory exists: $profile_count profile(s)"
+        warn "profile directory missing: $profile_dir"
     fi
+done
+
+if (( profile_total == 0 )); then
+    warn "no local provisioning profiles found; Xcode may download or create profiles after account signing is configured"
 else
-    warn "provisioning profile directory missing: $profile_dir"
+    pass "local provisioning profiles available: $profile_total total"
 fi
 
 printf '\nNext step\n'
