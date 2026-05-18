@@ -446,7 +446,9 @@ else
 fi
 
 printf '\nIPA local check\n'
-if "$ROOT_DIR/Scripts/upload_app_store_ipa.sh" local-check "$IPA_PATH"; then
+if [[ ! -f "$IPA_PATH" ]]; then
+    warn "IPA local check skipped until a current IPA exists"
+elif "$ROOT_DIR/Scripts/upload_app_store_ipa.sh" local-check "$IPA_PATH"; then
     pass "IPA local check"
 else
     fail "IPA local check failed"

@@ -50,7 +50,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 - Confirms both CaptainsLog and Kit941 are clean and synced with upstream.
 - Reports no App Store private keys inside the repo.
 - Uses staged screenshot package/review scripts so failed screenshot regeneration does not erase the last reviewed artifacts.
-- Fails local readiness because the current IPA and export manifest are missing, so IPA local-check cannot run.
+- Fails local readiness because the current IPA and export manifest are missing; readiness now skips IPA local-check until a current IPA exists so the missing IPA is not counted twice.
 - A bypassed signing-precheck export attempt archived the generic iOS build, but the App Store export failed with `No Accounts` and `No signing certificate "iOS Distribution" found`, confirming the missing IPA cannot be fixed locally until Xcode account/distribution signing is configured.
 - Reports external blockers for distribution signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
