@@ -20,6 +20,8 @@ xcuserdata/
 # Local credentials and environment
 .env
 .env.*
+AppStoreConnectEnv.local.sh
+Docs/AppStoreConnectEnv.local.sh
 private_keys/
 *.p8
 *.mobileprovision
