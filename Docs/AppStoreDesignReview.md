@@ -42,11 +42,11 @@ A later May 18 repository pass split the iPad repository access screen into a le
 
 A later May 18 browser-rendered spot-check opened `/tmp/captainslog-appstore-review/review.html` in Yurei and inspected the generated `contact-sheet.png`. The review page rendered the expected title, counts, screenshot sequence, and approval checklist. The contact sheet showed the neutral `captains-log-demo` fixture, repository access, AI provider, Privacy & Data, and iPad rows without obvious private repository names, live keys, simulator chrome, debug labels, active sync bars, or clipped controls. This is supporting local evidence only; final App Store preview approval remains a human gate.
 
-## May 18 Design-Skill Spot-Check
+## May 18 Design-Skill And Cave Spot-Check
 
 Reviewed against the local `.impeccable.md` direction and the `frontend-design`, `critique`, and `polish` skills:
 
-- Cave availability: `$cave` was requested as the preferred design-review lens, but no Cave tool or connector is available in the current Codex tool registry. This review is therefore the local substitute, and human screenshot approval remains the final taste gate.
+- Cave status: `$cave` was requested as the preferred design-review lens. Tool discovery did not expose Cave, but the local Cave skill was found at `/Users/blakecrosley/.agents/skills/cave/SKILL.md` and run against the App Store screenshot/release evidence. It emitted the ignored private plan `.codex/plans/cave-plan-app-store-gate.md` plus `/tmp/codex-cave-session/` evidence, and `scripts/emission-gate` passed with 4 cuts, 2 disagreements, 14 citations, no banned-token hits, no missing sections, and no missing session files. Cave's verdict matches this document: do not add features before TestFlight, keep the current screenshot set unless human preview rejects it, and close release gates first.
 - Anti-pattern verdict: passes for v1. The packet no longer reads as neon/cyberpunk, AI-gradient, generic SaaS dashboard, or card-stack demo UI.
 - Information hierarchy: acceptable. The iPhone dashboard starts with account, selected week, Work Map, and the selected-period metric; detail screens move evidence and settings into focused pages instead of flooding the dashboard.
 - Progressive disclosure: acceptable. Dashboard, Work Map, journal, repository access, AI provider, and Privacy & Data screenshots each say one clear thing.
