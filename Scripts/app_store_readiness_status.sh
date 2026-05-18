@@ -81,6 +81,19 @@ absolute_path() {
     printf '%s/%s\n' "$dir" "$(basename "$path")"
 }
 
+branch_sync_warning() {
+    local label="$1"
+    local repo_dir="$2"
+    local branch_line
+    branch_line="$(git -C "$repo_dir" status --short --branch 2>/dev/null | sed -n '1p')"
+
+    if printf '%s\n' "$branch_line" | rg -q '\[(ahead|behind|gone|diverged)'; then
+        warn "$label branch is not in sync with upstream: $branch_line"
+    else
+        pass "$label branch synced with upstream"
+    fi
+}
+
 default_p8_path_for_key() {
     local api_key="$1"
     local expected_name="AuthKey_${api_key}.p8"
@@ -258,6 +271,7 @@ else
     fail "CaptainsLog git tree is dirty:
 $repo_status"
 fi
+branch_sync_warning "CaptainsLog" "$ROOT_DIR"
 
 if [[ -d "$KIT941_DIR/.git" ]]; then
     kit_status="$(git -C "$KIT941_DIR" status --short)"
@@ -278,6 +292,7 @@ $kit_status"
 $kit_blocking_changes"
         fi
     fi
+    branch_sync_warning "Kit941" "$KIT941_DIR"
 else
     warn "Kit941 git tree not found at $KIT941_DIR"
 fi
