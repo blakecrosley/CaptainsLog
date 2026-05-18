@@ -200,7 +200,7 @@ Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad ca
 
 ```sh
 Scripts/app_store_preflight.sh <screenshot-dir>
-Scripts/package_app_store_screenshots.sh <screenshot-dir>
+Scripts/package_app_store_screenshots.sh <screenshot-dir> /tmp/captainslog-key-state-packaged
 Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review
 Scripts/audit_app_store_screenshot_text.sh /tmp/captainslog-key-state-packaged
 ```
