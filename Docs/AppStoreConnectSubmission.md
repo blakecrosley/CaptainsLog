@@ -19,7 +19,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 ## Current Verification Evidence
 
-Last local audit: May 17, 2026.
+Latest local readiness check: May 18, 2026. The exported IPA, screenshot packet, and connected-device store audit were produced on May 17, 2026 and remain current because later commits only changed App Store documentation and readiness scripts.
 
 - `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit` passed: metadata limits, policy/support URL reachability, privacy manifest, export-compliance flag, bundle/build settings, marketing icon, and all iPhone/iPad screenshot dimensions.
 - `xcodebuild test -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -destination 'id=00119EA5-FDF1-4F0B-A47F-5ADB10AD6BA3' -only-testing:CaptainsLogTests` passed 69 unit tests with 0 failures.
@@ -33,6 +33,7 @@ Last local audit: May 17, 2026.
 - Direct IPA string inspection found no debug UI performance probe strings in the exported release executable.
 - `Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted on May 18, 2026 and is blocked before querying App Store Connect until `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER` are set.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted against the current IPA after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
+- `Scripts/app_store_readiness_status.sh` passed on May 18, 2026 from clean `origin/main`. It now also verifies that no App Store Connect `.p8` private-key material is inside the repository and reports the remaining external App Store Connect gates.
 - `xcodebuild build -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -destination 'id=00008150-00166D690EF0401C'` previously built a Debug app for Blake's iPhone 17 Pro Max, then `xcrun devicectl device install app` installed bundle `com.blakecrosley.captainslog` and `xcrun devicectl device process launch` launched it successfully with process id `6545`.
 - `Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit` copied the connected iPhone app store and passed SQLite integrity. Aggregate-only output reported 1 account, 104 selected repositories, 12,468 commits from 2012-08-16 through 2026-05-17, 12,468/12,468 commits with diff stats, 0 diff-stat errors, 67,479,776 known changed lines, and 137/137 active days from 2026-01-01 through 2026-05-17. This is local device-store coverage evidence, not an external GitHub API parity proof.
 - Current Git status after the local audit: clean against `origin/main`.
