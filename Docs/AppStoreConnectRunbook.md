@@ -114,11 +114,16 @@ Verify the local credential guard without contacting Apple:
 
 ```sh
 Scripts/upload_app_store_ipa.sh credential-guard-self-test
-Scripts/upload_app_store_ipa.sh providers
 Scripts/app_store_readiness_status.sh
 ```
 
-Use the provider output to set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` for the team that owns `com.blakecrosley.captainslog`. Evidence that closes this step: readiness shows API key/issuer, provider public ID, and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
+Then contact App Store Connect to list providers:
+
+```sh
+Scripts/upload_app_store_ipa.sh providers
+```
+
+Use the provider output to set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` for the team that owns `com.blakecrosley.captainslog`, then rerun `Scripts/app_store_readiness_status.sh`. Evidence that closes this step: readiness shows API key/issuer, provider public ID, and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
 
 ## 5. Validate, Upload, And Check Processing
 
