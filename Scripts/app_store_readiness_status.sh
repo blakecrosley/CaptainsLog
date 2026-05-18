@@ -327,7 +327,7 @@ else
 fi
 
 external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
-external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including EU DSA trader status, regulated medical device status, and tax category if App Store Connect shows them"
+external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
 external "complete human screenshot marketing acceptance"
 external "complete legal/privacy review"
@@ -346,7 +346,7 @@ if (( external_blockers > 0 )); then
     cat <<'NEXT_STEPS'
 
 Next external actions:
-1. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including EU DSA trader status, regulated medical device status, and tax category if App Store Connect shows them.
+1. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
 2. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE with the .p8 kept outside this repo.
 3. Run:
    Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
