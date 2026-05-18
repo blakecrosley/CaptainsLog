@@ -15,6 +15,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 - Export manifest: `/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt`
 - Screenshot source: `/tmp/captainslog-key-state-audit`
 - Packaged screenshots: `/tmp/captainslog-key-state-packaged`
+- Design review: `Docs/AppStoreDesignReview.md`
 
 ## Current Verification Evidence
 
@@ -43,7 +44,7 @@ Last local audit: May 17, 2026.
 | --- | --- | --- | --- |
 | Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet | Preflight, archive/export, screenshots, metadata, privacy notes, and upload helper exist; current IPA local check passes from clean CaptainsLog commit `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` and clean Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2` | Locally ready |
 | Clean up UI | Fixture screenshot routes and latest PNG audit | Dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data screenshots generated for iPhone and iPad; iPad dashboard uses the adaptive tablet layout with a selected-day journal preview; Work Map, AI provider, and Privacy & Data iPad screens now use wider/two-column layouts; no dashboard sync bar, repository toggle clipping, or oversized Work Map empty space was visible in the checked PNGs | Locally reviewed |
-| Make design feel coherent | `.impeccable.md`, fixture screenshots | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity | Locally reviewed |
+| Make design feel coherent | `.impeccable.md`, fixture screenshots, `Docs/AppStoreDesignReview.md` | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity; design review scores the current screenshot set 33/40 and recommends no major new features before first TestFlight/App Store Connect pass | Locally reviewed |
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft | Locally ready, legal review open |
 | Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md`, `Docs/AppStorePrivacyAnswers.md` | URLs passed preflight reachability checks; privacy answers map App Store Connect fields to current code evidence | Locally ready, legal review open |
 | Binary export ready | `Scripts/export_app_store_ipa.sh` | Current export produced an IPA with bundle ID `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `get-task-allow=false`, encryption flag `false`, and a sibling export manifest with the exact git commit | Locally ready |
@@ -166,6 +167,8 @@ Use this acceptance bar for the final screenshot marketing decision:
 - Repository and Privacy & Data screenshots make GitHub permissions and data handling understandable.
 - No screenshot shows real private repository names, live tokens, personal email addresses, debug labels, fixture warnings, simulator chrome, clipped controls, or active sync progress.
 - The visual tone stays quiet, precise, and journal-like instead of becoming a generic analytics dashboard.
+
+`Docs/AppStoreDesignReview.md` records the current design verdict and the specific human checks still needed before upload.
 
 ## Physical Device Smoke
 

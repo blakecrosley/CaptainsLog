@@ -1,0 +1,85 @@
+# Captain's Log App Store Design Review
+
+Review date: May 17, 2026
+
+Artifacts reviewed:
+
+- `/tmp/captainslog-appstore-review/review.html`
+- `/tmp/captainslog-appstore-review/contact-sheet.png`
+- `/tmp/captainslog-key-state-packaged/iphone-6.9`
+- `/tmp/captainslog-key-state-packaged/ipad-13`
+
+## Design Context
+
+Captain's Log is for developers who want a quick, private way to understand what they shipped from GitHub history. The product should feel quiet, precise, and journal-like, closer to a trustworthy developer notebook than a generic analytics dashboard or gamified productivity tracker.
+
+The Work Map / histogram should carry the identity. GitHub permissions and local/cloud data boundaries should be understandable without extra explanation.
+
+## Design Verdict
+
+Locally acceptable for the first App Store Connect screenshot pass, pending human approval.
+
+The current set reads as one coherent progression:
+
+1. Dashboard: daily overview, selected week, and Work Map.
+2. Work Map: long-range memory surface.
+3. Journal: readable daily note backed by commit evidence.
+4. Repositories: GitHub access and repo selection.
+5. AI providers: optional bring-your-own-key cloud providers.
+6. Privacy & Data: local-first claims, support, and user controls.
+
+The iPhone set is the stronger marketing set. It is compact, legible, and makes the product shape clear without marketing overlays.
+
+The iPad set is acceptable for v1. Some screens intentionally preserve calm whitespace instead of filling the canvas with extra dashboard furniture. This is a reasonable tradeoff for a developer journal app, but it should still be checked by a person at App Store preview scale before upload.
+
+## What Passes
+
+- The screenshots do not present Captain's Log as a loud SaaS dashboard.
+- The Work Map is visible early and clearly acts as the identity surface.
+- The journal screenshot shows traceability from summary to commit evidence.
+- Repository and Privacy & Data screenshots explain permissions and data handling.
+- AI provider screenshots show cloud AI as optional and key-backed.
+- The fixture identity is neutral and does not appear to expose a real private GitHub account.
+- The latest review artifacts do not show visible sync bars, debug labels, previous-app breadcrumbs, or simulator chrome.
+
+## Remaining Human Checks
+
+Before uploading to App Store Connect, a person should still confirm:
+
+- No screenshot reveals real private repository names, live API keys, personal email addresses, or personal GitHub data.
+- Text remains legible at App Store preview scale on both iPhone and iPad.
+- No visible control is clipped, overlapped, or disabled in a confusing way.
+- The dashboard screenshot communicates the app in under five seconds.
+- The iPad whitespace feels intentional rather than unfinished.
+- The set still feels quiet, precise, and journal-like after viewing the actual App Store upload preview.
+
+## Current Design Score
+
+Score: 33 / 40
+
+| Area | Score | Notes |
+| --- | --- | --- |
+| Product clarity | 4 / 4 | The screenshot sequence explains overview, history, journal, access, AI, and privacy. |
+| Visual hierarchy | 3 / 4 | iPhone hierarchy is strong; iPad is calmer but sometimes spacious. |
+| Cognitive load | 3 / 4 | Dashboard and detail split is much better than earlier dense versions. |
+| Trust and privacy clarity | 4 / 4 | Privacy, local storage, GitHub access, and optional AI are visible. |
+| App Store screenshot strength | 3 / 4 | Good v1 set; final marketing acceptance remains human. |
+| Distinctiveness | 3 / 4 | Work Map gives identity without decorative chrome. |
+| Platform fit | 4 / 4 | Apple-native surfaces and controls feel appropriate. |
+| Polish risk | 3 / 4 | No obvious clipping in the reviewed artifacts; final device preview remains open. |
+| Data story | 3 / 4 | The story is clear enough; real-account data plausibility is separately audited. |
+| Restraint | 3 / 4 | The design stays calm; avoid adding more cards or dashboard modules before submission. |
+
+## Recommendation
+
+Do not add major new features before the first TestFlight/App Store Connect pass. The best next product work is external closeout:
+
+1. App Store Connect app record.
+2. App Store Connect API credentials.
+3. Build validation and upload.
+4. TestFlight processing.
+5. Human screenshot approval using `/tmp/captainslog-appstore-review/review.html`.
+6. Legal/privacy review.
+7. Final real-account tap-through.
+
+Only make UI changes before submission if the final human screenshot review finds clipped text, exposed private data, confusing disabled controls, or an obviously unfinished iPad composition.
