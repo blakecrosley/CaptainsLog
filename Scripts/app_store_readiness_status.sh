@@ -6,6 +6,7 @@ DEFAULT_IPA="/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 SCREENSHOT_DIR="${1:-/tmp/captainslog-key-state-audit}"
 IPA_PATH="${2:-$DEFAULT_IPA}"
 EXPORT_MANIFEST="$(dirname "$IPA_PATH")/ExportManifest.txt"
+ARCHIVE_PATH="$(dirname "$(dirname "$IPA_PATH")")/CaptainsLog.xcarchive"
 PACKAGED_DIR="${CAPTAINS_LOG_PACKAGED_SCREENSHOTS:-/tmp/captainslog-key-state-packaged}"
 SCREENSHOT_REVIEW_DIR="${CAPTAINS_LOG_SCREENSHOT_REVIEW:-/tmp/captainslog-appstore-review}"
 KIT941_DIR="$ROOT_DIR/../941Kit"
@@ -210,6 +211,15 @@ if [[ -f "$IPA_PATH" ]]; then
     pass "IPA exists"
 else
     fail "IPA missing: $IPA_PATH"
+fi
+
+if [[ -d "$ARCHIVE_PATH" && ! -f "$EXPORT_MANIFEST" ]]; then
+    archive_signing_identity="$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:SigningIdentity' "$ARCHIVE_PATH/Info.plist" 2>/dev/null || true)"
+    if [[ -n "$archive_signing_identity" ]]; then
+        fail "archive exists without a matching export manifest and may be stale: $ARCHIVE_PATH signed with $archive_signing_identity"
+    else
+        fail "archive exists without a matching export manifest and may be stale: $ARCHIVE_PATH"
+    fi
 fi
 
 repo_private_keys=()
