@@ -63,10 +63,10 @@ else
 fi
 
 if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
-    if ! security find-identity -v -p codesigning 2>/dev/null | rg -q '"(Apple Distribution|iOS Distribution):'; then
-        cat >&2 <<'MESSAGE'
-App Store distribution signing identity not found in the local keychain.
-Open Xcode Settings > Accounts, sign into the App Store Connect team, and install or create an Apple Distribution certificate before exporting.
+    if ! security find-identity -v -p codesigning 2>/dev/null | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
+        cat >&2 <<MESSAGE
+App Store distribution signing identity for team ${TEAM_ID} was not found in the local keychain.
+Open Xcode Settings > Accounts, sign into the App Store Connect team, and install or create an Apple Distribution certificate for team ${TEAM_ID} before exporting.
 Set CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1 to attempt the export anyway.
 MESSAGE
         exit 1

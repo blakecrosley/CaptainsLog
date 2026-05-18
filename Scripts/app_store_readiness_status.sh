@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEAM_ID="M4WTLM6RAQ"
 DEFAULT_IPA="/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 SCREENSHOT_DIR="${1:-/tmp/captainslog-key-state-audit}"
 IPA_PATH="${2:-$DEFAULT_IPA}"
@@ -266,10 +267,10 @@ else
     fail "xcodebuild version or SDK list unavailable"
 fi
 
-if security find-identity -v -p codesigning 2>/dev/null | rg -q '"(Apple Distribution|iOS Distribution):'; then
-    pass "App Store distribution signing identity available in local keychain"
+if security find-identity -v -p codesigning 2>/dev/null | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
+    pass "App Store distribution signing identity for team ${TEAM_ID} available in local keychain"
 else
-    external "App Store distribution signing identity is not available in the local keychain; a current IPA export may require signing in to Xcode or installing the distribution certificate"
+    external "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; a current IPA export requires signing in to Xcode or installing the distribution certificate for that team"
 fi
 
 printf '\nLocal artifact checks\n'

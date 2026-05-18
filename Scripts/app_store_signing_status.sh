@@ -61,10 +61,13 @@ else
     fail "no code signing identities returned by security"
 fi
 
-if printf '%s\n' "$identity_output" | rg -q '"(Apple Distribution|iOS Distribution):'; then
-    pass "Apple Distribution/iOS Distribution signing identity is available"
+if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
+    pass "Apple Distribution/iOS Distribution signing identity is available for team ${TEAM_ID}"
 else
-    fail "Apple Distribution/iOS Distribution signing identity is missing"
+    if printf '%s\n' "$identity_output" | rg -q '"(Apple Distribution|iOS Distribution):'; then
+        warn "Apple Distribution/iOS Distribution signing identity exists, but not for team ${TEAM_ID}"
+    fi
+    fail "Apple Distribution/iOS Distribution signing identity for team ${TEAM_ID} is missing"
 fi
 
 if printf '%s\n' "$identity_output" | rg -q '"Apple Development:'; then
