@@ -281,6 +281,7 @@ else
 fi
 
 external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
+external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md"
 external "upload build and verify TestFlight processing"
 external "complete human screenshot marketing acceptance"
 external "complete legal/privacy review"
