@@ -23,9 +23,9 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captain
 
 The signing status script checks the local Xcode/App Store upload toolchain and whether an Apple Distribution/iOS Distribution identity is available for team `M4WTLM6RAQ`. A `Developer ID Application` identity is for macOS distribution and does not satisfy the iOS App Store IPA export gate.
 
-The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ` before archiving. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
+The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ` before archiving. If `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE` are all set, it passes those credentials to `xcodebuild` so automatic signing can authenticate with App Store Connect for provisioning updates. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
-If signing status still reports a missing distribution identity, open Xcode > Settings > Accounts, sign into an Apple ID that belongs to team `M4WTLM6RAQ`, select the team, open Manage Certificates, then use `+` > Apple Distribution. If profiles still look stale afterward, use Download Manual Profiles and rerun `Scripts/app_store_signing_status.sh`.
+If signing status still reports a missing distribution identity, either configure the App Store Connect API-key environment variables from `Docs/AppStoreConnectEnv.template.sh` before export, or open Xcode > Settings > Accounts, sign into an Apple ID that belongs to team `M4WTLM6RAQ`, select the team, open Manage Certificates, then use `+` > Apple Distribution. If profiles still look stale afterward, use Download Manual Profiles and rerun `Scripts/app_store_signing_status.sh`.
 
 ## 1. Create Or Confirm The App Record
 
@@ -128,6 +128,8 @@ Verify the local credential guard without contacting Apple:
 Scripts/upload_app_store_ipa.sh credential-guard-self-test
 Scripts/app_store_readiness_status.sh
 ```
+
+The export script uses the same API key, issuer, and `.p8` env vars for `xcodebuild` provisioning updates, so the same private-key custody rules apply: keep the `.p8` outside this repo and outside any git working tree.
 
 Then contact App Store Connect to list providers:
 

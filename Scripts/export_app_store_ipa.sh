@@ -11,6 +11,82 @@ ARCHIVE_PATH="${ARCHIVE_PATH:-$OUTPUT_DIR/CaptainsLog.xcarchive}"
 EXPORT_PATH="${EXPORT_PATH:-$OUTPUT_DIR/Export}"
 EXPORT_MANIFEST="$EXPORT_PATH/ExportManifest.txt"
 KIT941_DIR="$ROOT_DIR/../941Kit"
+xcode_auth_args=()
+
+absolute_path() {
+    local path="$1"
+    realpath "$path"
+}
+
+git_root_for_path() {
+    local path="$1"
+    local dir
+    dir="$(dirname "$path")"
+    git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true
+}
+
+configure_xcode_auth_args() {
+    local has_any_auth_value=0
+    if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" || -n "${APP_STORE_CONNECT_API_ISSUER:-}" || -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
+        has_any_auth_value=1
+    fi
+
+    if (( has_any_auth_value == 0 )); then
+        return
+    fi
+
+    if [[ -z "${APP_STORE_CONNECT_API_KEY:-}" || -z "${APP_STORE_CONNECT_API_ISSUER:-}" || -z "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
+        cat >&2 <<MESSAGE
+Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE together to let xcodebuild authenticate with App Store Connect.
+Use Docs/AppStoreConnectEnv.template.sh as the placeholder-only template.
+MESSAGE
+        exit 1
+    fi
+
+    if ! [[ "$APP_STORE_CONNECT_API_KEY" =~ ^[A-Za-z0-9]{10}$ ]]; then
+        printf 'APP_STORE_CONNECT_API_KEY should be a 10-character key ID.\n' >&2
+        exit 1
+    fi
+
+    if ! [[ "$APP_STORE_CONNECT_API_ISSUER" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+        printf 'APP_STORE_CONNECT_API_ISSUER should be a UUID.\n' >&2
+        exit 1
+    fi
+
+    if [[ ! -f "$APP_STORE_CONNECT_P8_FILE" ]]; then
+        printf 'APP_STORE_CONNECT_P8_FILE does not exist: %s\n' "$APP_STORE_CONNECT_P8_FILE" >&2
+        exit 1
+    fi
+
+    APP_STORE_CONNECT_P8_FILE="$(absolute_path "$APP_STORE_CONNECT_P8_FILE")"
+    local p8_git_root
+    p8_git_root="$(git_root_for_path "$APP_STORE_CONNECT_P8_FILE")"
+    case "$APP_STORE_CONNECT_P8_FILE" in
+        "$ROOT_DIR"/*)
+            printf 'App Store Connect .p8 key file must live outside this repo: %s\n' "$APP_STORE_CONNECT_P8_FILE" >&2
+            exit 1
+            ;;
+    esac
+    if [[ -n "$p8_git_root" ]]; then
+        printf 'App Store Connect .p8 key file must live outside any git working tree: %s\n' "$p8_git_root" >&2
+        exit 1
+    fi
+    if [[ ! -r "$APP_STORE_CONNECT_P8_FILE" ]]; then
+        printf 'App Store Connect .p8 key file is not readable: %s\n' "$APP_STORE_CONNECT_P8_FILE" >&2
+        exit 1
+    fi
+    if ! rg -q -- "-----BEGIN PRIVATE KEY-----" "$APP_STORE_CONNECT_P8_FILE"; then
+        printf 'App Store Connect .p8 key file does not look like an App Store Connect private key: %s\n' "$APP_STORE_CONNECT_P8_FILE" >&2
+        exit 1
+    fi
+
+    xcode_auth_args=(
+        -authenticationKeyPath "$APP_STORE_CONNECT_P8_FILE"
+        -authenticationKeyID "$APP_STORE_CONNECT_API_KEY"
+        -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER"
+    )
+    printf 'xcodebuild will use App Store Connect API-key authentication for provisioning updates.\n'
+}
 
 git_commit="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf 'unknown')"
 git_status="$(git -C "$ROOT_DIR" status --short 2>/dev/null || true)"
@@ -62,14 +138,21 @@ else
     exit 1
 fi
 
+configure_xcode_auth_args
+
 if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
     if ! security find-identity -v -p codesigning 2>/dev/null | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
-        cat >&2 <<MESSAGE
+        if (( ${#xcode_auth_args[@]} > 0 )); then
+            printf 'No local Apple Distribution/iOS Distribution identity for team %s was found; continuing because App Store Connect API-key authentication is configured for xcodebuild provisioning updates.\n' "$TEAM_ID"
+        else
+            cat >&2 <<MESSAGE
 App Store distribution signing identity for team ${TEAM_ID} was not found in the local keychain.
 Open Xcode Settings > Accounts, sign into the App Store Connect team, and install or create an Apple Distribution certificate for team ${TEAM_ID} before exporting.
+Alternatively, set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE so xcodebuild can authenticate for provisioning updates.
 Set CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1 to attempt the export anyway.
 MESSAGE
-        exit 1
+            exit 1
+        fi
     fi
 fi
 
@@ -114,6 +197,8 @@ xcodebuild \
     -configuration Release \
     -destination "generic/platform=iOS" \
     -archivePath "$staged_archive_path" \
+    -allowProvisioningUpdates \
+    "${xcode_auth_args[@]}" \
     archive
 
 xcodebuild \
@@ -121,7 +206,8 @@ xcodebuild \
     -archivePath "$staged_archive_path" \
     -exportPath "$staged_export_path" \
     -exportOptionsPlist "$export_options" \
-    -allowProvisioningUpdates
+    -allowProvisioningUpdates \
+    "${xcode_auth_args[@]}"
 
 app_path="$staged_archive_path/Products/Applications/Captain's Log.app"
 info_plist="$app_path/Info.plist"
