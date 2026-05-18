@@ -329,6 +329,7 @@ $(printf '%s\n' "$token_hits" | sed -n '1,12p')"
 printf_platform_target_status() {
     local project_list
     local ios_settings
+    local macos_settings
 
     printf '\nPlatform availability\n'
 
@@ -351,6 +352,32 @@ printf_platform_target_status() {
     if project_list="$(xcodebuild -list -project "$ROOT_DIR/CaptainsLog.xcodeproj" 2>/dev/null)"; then
         if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+CaptainsLog-macOS$'; then
             warn "native macOS target exists, but first release still requires Mac signing/export, screenshots, TestFlight, and human QA before Mac App Store availability"
+
+            if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
+                if printf '%s\n' "$macos_settings" | rg -q 'PRODUCT_BUNDLE_IDENTIFIER = com[.]blakecrosley[.]captainslog[.]mac'; then
+                    pass "macOS target bundle id is com.blakecrosley.captainslog.mac"
+                else
+                    fail "macOS target bundle id is missing or mismatched"
+                fi
+                if printf '%s\n' "$macos_settings" | rg -q 'CODE_SIGN_STYLE = Automatic'; then
+                    pass "macOS target uses automatic signing"
+                else
+                    fail "macOS target does not use automatic signing"
+                fi
+                if printf '%s\n' "$macos_settings" | rg -q "DEVELOPMENT_TEAM = ${TEAM_ID}"; then
+                    pass "macOS target development team is ${TEAM_ID}"
+                else
+                    fail "macOS target development team is not ${TEAM_ID}"
+                fi
+                if printf '%s\n' "$macos_settings" | rg -q 'ENABLE_HARDENED_RUNTIME = YES'; then
+                    pass "macOS target has hardened runtime enabled"
+                else
+                    fail "macOS target does not have hardened runtime enabled"
+                fi
+            else
+                fail "unable to read CaptainsLog-macOS Release build settings for platform availability"
+            fi
+
             if [[ -x "$ROOT_DIR/Scripts/smoke_macos_launch.sh" ]]; then
                 pass "macOS launch smoke script exists"
             else

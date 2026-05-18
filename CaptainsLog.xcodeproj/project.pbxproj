@@ -359,6 +359,10 @@
 						ProvisioningStyle = Automatic;
 						TestTargetID = F90387FC825665E8C4662E9B;
 					};
+					868191A7FB95C1F892966A94 = {
+						DevelopmentTeam = M4WTLM6RAQ;
+						ProvisioningStyle = Automatic;
+					};
 					B6B68CB240DDDF56A3521DC1 = {
 						DevelopmentTeam = M4WTLM6RAQ;
 						ProvisioningStyle = Automatic;
@@ -536,7 +540,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
@@ -786,7 +792,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";

@@ -64,6 +64,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.mac
         PRODUCT_NAME: "Captain's Log"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: M4WTLM6RAQ
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
