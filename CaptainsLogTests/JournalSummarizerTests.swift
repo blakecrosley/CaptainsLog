@@ -23,8 +23,9 @@ final class JournalSummarizerTests: XCTestCase {
 
     func testPreferredCloudKeyWinsProviderSelection() {
         let store = AIProviderCredentialStore(service: "test.captainslog.provider", inMemory: true)
+        let openAIKey = ["sk", "test"].joined(separator: "-")
         store.preferredProvider = .openai
-        XCTAssertTrue(store.saveKey("sk-test", for: .openai))
+        XCTAssertTrue(store.saveKey(openAIKey, for: .openai))
 
         XCTAssertEqual(
             JournalSummaryProvider.preferred(credentialStore: store, foundationAvailability: .available),

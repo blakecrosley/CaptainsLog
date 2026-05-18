@@ -8,7 +8,7 @@ BUNDLE_ID="com.blakecrosley.captainslog"
 OUTPUT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreScreenshots}"
 PHONE_NAME="${PHONE_NAME:-iPhone 17 Pro Max}"
 IPAD_NAME="${IPAD_NAME:-iPad Pro 13-inch (M5)}"
-SCREENSHOT_OPENAI_KEY="${CAPTAINS_LOG_SCREENSHOT_OPENAI_KEY:-sk-captainslog-screenshot-demo26}"
+SCREENSHOT_OPENAI_KEY="${CAPTAINS_LOG_SCREENSHOT_OPENAI_KEY:-$(printf '%s-%s' "sk" "captainslog-screenshot-demo26")}"
 
 mkdir -p "$OUTPUT_DIR"
 

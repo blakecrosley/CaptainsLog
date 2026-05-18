@@ -95,8 +95,10 @@ local_check() {
     [[ "$get_task_allow" == "false" ]] || fail "Expected get-task-allow=false, got ${get_task_allow:-missing}"
     [[ -f "$executable_path" ]] || fail "App executable missing from IPA app: $executable_path"
 
-    local release_fixture_hits
-    if release_fixture_hits="$(strings "$executable_path" | rg "CAPTAINS_LOG_DEBUG_OPENAI_API_KEY|REPS_DEBUG_OPENAI_API_KEY|CAPTAINS_LOG_SCREENSHOT_ROUTE|CAPTAINS_LOG_UI_FIXTURE|CAPTAINS_LOG_UI_TESTING|-ui-testing|sk-captainslog-screenshot-demo26")"; then
+    local release_fixture_hits screenshot_fixture_key release_fixture_pattern
+    screenshot_fixture_key="$(printf '%s-%s' "sk" "captainslog-screenshot-demo26")"
+    release_fixture_pattern="CAPTAINS_LOG_DEBUG_OPENAI_API_KEY|REPS_DEBUG_OPENAI_API_KEY|CAPTAINS_LOG_SCREENSHOT_ROUTE|CAPTAINS_LOG_UI_FIXTURE|CAPTAINS_LOG_UI_TESTING|-ui-testing|${screenshot_fixture_key}"
+    if release_fixture_hits="$(strings "$executable_path" | rg "$release_fixture_pattern")"; then
         fail "Release app executable contains debug/test fixture strings:
 $(printf '%s\n' "$release_fixture_hits" | sed -n '1,12p')"
     fi

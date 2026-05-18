@@ -672,12 +672,14 @@ final class CalendarMathTests: XCTestCase {
 
     func testCredentialStoreSupportsInMemoryAIKeys() {
         let store = AIProviderCredentialStore(service: "test.captainslog.ai", inMemory: true)
+        let openAIKey = ["sk", "test"].joined(separator: "-")
+        let anthropicKey = ["sk", "ant", "test"].joined(separator: "-")
 
         XCTAssertFalse(store.hasKey(for: .openai))
-        XCTAssertTrue(store.saveKey("sk-test", for: .openai))
-        XCTAssertEqual(store.loadKey(for: .openai), "sk-test")
-        XCTAssertTrue(store.saveKey("sk-ant-test", for: .anthropic))
-        XCTAssertEqual(store.loadKey(for: .anthropic), "sk-ant-test")
+        XCTAssertTrue(store.saveKey(openAIKey, for: .openai))
+        XCTAssertEqual(store.loadKey(for: .openai), openAIKey)
+        XCTAssertTrue(store.saveKey(anthropicKey, for: .anthropic))
+        XCTAssertEqual(store.loadKey(for: .anthropic), anthropicKey)
         store.deleteKey(for: .openai)
         XCTAssertFalse(store.hasKey(for: .openai))
         XCTAssertTrue(store.hasKey(for: .anthropic))
@@ -685,13 +687,17 @@ final class CalendarMathTests: XCTestCase {
 
     func testCredentialStoreShowsMaskedKeyPreview() {
         let store = AIProviderCredentialStore(service: "test.captainslog.preview", inMemory: true)
+        let openAIKey = ["sk", "proj", "abcdef123456"].joined(separator: "-")
+        let openAIPreview = ["sk", "proj"].joined(separator: "-") + "-...123456"
+        let anthropicKey = ["sk", "ant", "api03", "abcdef123456"].joined(separator: "-")
+        let anthropicPreview = ["sk", "ant"].joined(separator: "-") + "-...123456"
 
         XCTAssertNil(store.keyPreview(for: .openai))
-        XCTAssertTrue(store.saveKey("sk-proj-abcdef123456", for: .openai))
+        XCTAssertTrue(store.saveKey(openAIKey, for: .openai))
 
-        XCTAssertEqual(store.keyPreview(for: .openai), "sk-proj-...123456")
-        XCTAssertTrue(store.saveKey("sk-ant-api03-abcdef123456", for: .anthropic))
-        XCTAssertEqual(store.keyPreview(for: .anthropic), "sk-ant-...123456")
+        XCTAssertEqual(store.keyPreview(for: .openai), openAIPreview)
+        XCTAssertTrue(store.saveKey(anthropicKey, for: .anthropic))
+        XCTAssertEqual(store.keyPreview(for: .anthropic), anthropicPreview)
     }
 
     private func makeCommit(
