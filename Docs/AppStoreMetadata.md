@@ -92,6 +92,24 @@ Export compliance note:
 This build declares ITSAppUsesNonExemptEncryption=false. The app uses Apple system networking/TLS for GitHub and optional AI provider API calls, and does not include custom cryptography. Reconfirm this answer if custom encryption or security functionality is added later.
 ```
 
+## Manual App Store Connect Choices
+
+These fields are not all pasteable text fields, but they should be decided before the first App Review submission.
+
+| App Store Connect area | Recommended first submission value | Notes |
+| --- | --- | --- |
+| Pricing | Free | Captain's Log has no in-app purchases or subscriptions in this build. Revisit if paid features are added. |
+| App Availability | All countries or regions where the App Store can distribute the app, unless legal review narrows this | The app has no known region-specific content, commerce, medical, gambling, or location behavior. |
+| Distribution Methods | Public App Store distribution | Do not set up private/custom distribution for the first public review unless the release strategy changes. |
+| Content Rights | Legal/product decision required; conservative answer is that the app accesses user-authorized GitHub repository content | The app does not ship third-party media, but it displays repository names, commit messages, paths, and diffs obtained from GitHub after user authorization. Confirm the exact App Store Connect answer before submission. |
+| Made for Kids | No | The app is a developer tool for GitHub repository history, not a Kids category app. |
+| License Agreement | Apple Standard EULA | Use Apple's standard license unless legal review provides a custom EULA. |
+| Version Release Option | Manual release | Keeps the first App Store release from going live automatically after approval. TestFlight distribution is separate from App Store release. |
+| Phased Release | Off for version 1.0 | Phased release mainly matters for later updates with automatic App Store release. |
+| App Review Contact | Enter a real name, email, and phone in App Store Connect only | Do not commit private contact information here. |
+| Demo Account | Preferred: create a purpose-built GitHub review account with safe demo repositories and enter credentials only in App Store Connect | The app also has "Use Demo Data" for reviewers who do not want to connect GitHub, but a live review account is safer if App Review wants to test GitHub sync. Never commit demo credentials. |
+| App Store Connect Apple ID | Capture after app record creation | Store as `APP_STORE_CONNECT_APPLE_ID` locally for build-status checks; do not commit it unless intentionally documenting a public identifier. |
+
 ## Version Information
 
 Promotional text:
