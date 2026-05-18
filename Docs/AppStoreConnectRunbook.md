@@ -21,7 +21,7 @@ Scripts/app_store_signing_status.sh
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 ```
 
-The export script checks for an Apple Distribution/iOS Distribution signing identity before archiving. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
+The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity before archiving. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
 ## 1. Create Or Confirm The App Record
 

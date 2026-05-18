@@ -45,6 +45,23 @@ if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_dirty" == "tr
     exit 1
 fi
 
+if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuild -showsdks 2>/dev/null)"; then
+    xcode_first_line="$(printf '%s\n' "$xcode_version" | sed -n '1p')"
+    xcode_major="$(printf '%s\n' "$xcode_first_line" | sed -E 's/^Xcode ([0-9]+).*/\1/')"
+    if ! [[ "$xcode_major" =~ ^[0-9]+$ ]] || (( xcode_major < 26 )); then
+        printf '%s is older than Xcode 26 required for 2026 App Store upload.\n' "$xcode_first_line" >&2
+        exit 1
+    fi
+    if ! printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
+        printf '%s does not list an iOS 26 or newer SDK required for 2026 App Store upload.\n' "$xcode_first_line" >&2
+        exit 1
+    fi
+    printf '%s satisfies Xcode 26+ and iOS 26+ SDK requirements.\n' "$xcode_first_line"
+else
+    printf 'xcodebuild version or SDK list unavailable.\n' >&2
+    exit 1
+fi
+
 if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
     if ! security find-identity -v -p codesigning 2>/dev/null | rg -q '"(Apple Distribution|iOS Distribution):'; then
         cat >&2 <<'MESSAGE'
