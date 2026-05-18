@@ -234,6 +234,24 @@ check_p8_path() {
     fi
 }
 
+check_token_shaped_source_literals() {
+    local sk_prefix token_pattern token_hits
+    sk_prefix="$(printf '%s-' "sk")"
+    token_pattern="(?<![A-Za-z0-9_])${sk_prefix}(proj-|ant-)?[A-Za-z0-9][A-Za-z0-9_.=-]{10,}|(?<![A-Za-z0-9_])(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}|(?<![A-Za-z0-9_])github_pat_[A-Za-z0-9_]{20,}"
+
+    if token_hits="$(rg -P -n -I "$token_pattern" \
+        "$ROOT_DIR/CaptainsLog" \
+        "$ROOT_DIR/CaptainsLogTests" \
+        "$ROOT_DIR/CaptainsLogUITests" \
+        "$ROOT_DIR/Docs" \
+        "$ROOT_DIR/Scripts")"; then
+        fail "token-shaped source literals found; use runtime fixtures or external credentials:
+$(printf '%s\n' "$token_hits" | sed -n '1,12p')"
+    else
+        pass "no token-shaped source literals found"
+    fi
+}
+
 printf "Captain's Log App Store readiness status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
@@ -304,6 +322,8 @@ else
     fail "App Store private key material must stay outside the repo:
 $(printf '%s\n' "${repo_private_keys[@]}" | sed -n '1,12p')"
 fi
+
+check_token_shaped_source_literals
 
 if [[ -f "$EXPORT_MANIFEST" ]]; then
     pass "export manifest exists"
