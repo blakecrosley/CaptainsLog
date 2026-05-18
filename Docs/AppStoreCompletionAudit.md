@@ -38,6 +38,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 | Validate/upload/status | `Scripts/upload_app_store_ipa.sh validate`, `upload`, `status` | Cannot run until a current IPA exists and App Store Connect credentials are set. | Blocked |
 | Final App Store Connect entry | App Store Connect web UI | Manual fields, regional prompts, EU DSA trader status, tax category if shown, demo/review contact, screenshot upload, and build selection are not verifiable locally. | Human/App Store gate |
 | Linked package source custody | `Scripts/app_store_readiness_status.sh`, `git -C ../941Kit status --short --branch`, `git -C ../941Kit rev-parse --short=12 HEAD` | Kit941 package source is clean, synced with `origin/main`, and currently at `69dcc9be7d06`. | Complete locally |
+| Current-head simulator tests | `xcodebuild test -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -destination 'id=277C8808-F02C-43A4-8B4A-11BA187F0788' -derivedDataPath /tmp/captainslog-current-head-tests -only-testing:CaptainsLogTests`, `-only-testing:CaptainsLogUITests` | Current `main` passed 69 unit tests and 2 UI tests with 0 failures on an iOS 26.5 simulator. The UI tests cover first-run primary actions, fixture dashboard, Settings, Privacy & Data, and selected-day journal detail. | Complete locally |
 | Final product QA | Real account on device | Existing device-store audit verified local aggregate coverage, but final real-account tap-through remains open. | Human/device gate |
 
 ## Latest Readiness Result
