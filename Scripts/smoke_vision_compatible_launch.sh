@@ -118,6 +118,21 @@ require_ocr_text() {
     fi
 }
 
+require_ocr_text_any() {
+    local label="$1"
+    shift
+    local pattern
+
+    for pattern in "$@"; do
+        if rg -q -i "$pattern" "$OCR_OUTPUT"; then
+            pass "Vision screenshot OCR includes $label"
+            return
+        fi
+    done
+
+    fail "Vision screenshot OCR missing $label"
+}
+
 mkdir -p "$OUTPUT_DIR"
 SCREENSHOT_PATH="$OUTPUT_DIR/vision-compatible-launch.png"
 OCR_OUTPUT="$OUTPUT_DIR/vision-compatible-launch-ocr.txt"
@@ -215,7 +230,7 @@ else
 fi
 
 require_ocr_text "Captain'?s Log" "Captain's Log"
-require_ocr_text "Sign in with GitHub" "Sign in with GitHub"
+require_ocr_text_any "GitHub sign-in action" "Sign in with GitHub" "Authorize this device"
 require_ocr_text "Use Demo Data" "Use Demo Data"
 
 if rg -q -i "Keychain returned status -34018" "$OCR_OUTPUT"; then

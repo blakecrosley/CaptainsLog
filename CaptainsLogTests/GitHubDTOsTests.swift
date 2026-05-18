@@ -1,4 +1,5 @@
 import SwiftData
+import Security
 import XCTest
 @testable import Captain_s_Log
 
@@ -22,6 +23,12 @@ final class GitHubDTOsTests: XCTestCase {
     func testHotSyncPolicyKeepsForegroundRefreshSmall() {
         XCTAssertEqual(RepositoryHotSyncPolicy.lookbackDays, 14)
         XCTAssertEqual(RepositoryHotSyncPolicy.minimumForegroundInterval, 120)
+    }
+
+    func testKeychainMissingEntitlementIsRecognizedForStartupRestore() {
+        XCTAssertTrue(KeychainError.unhandled(errSecMissingEntitlement).isMissingEntitlement)
+        XCTAssertFalse(KeychainError.unhandled(errSecAuthFailed).isMissingEntitlement)
+        XCTAssertFalse(KeychainError.invalidData.isMissingEntitlement)
     }
 
     func testDecodesViewerNodeIDForSessionIdentity() throws {

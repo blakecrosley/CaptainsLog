@@ -205,6 +205,9 @@ final class AppModel: ObservableObject {
             authState = .signedIn(loadedViewer)
             syncLogger.info("Loaded GitHub session for \(loadedViewer.login, privacy: .private)")
         } catch {
+            if handleUnavailableKeychainRestore(error, operation: "Load GitHub session") {
+                return
+            }
             if handleExpiredGitHubSessionError(error, operation: "Load GitHub session") {
                 return
             }
@@ -255,6 +258,13 @@ final class AppModel: ObservableObject {
             syncLogger.info("Restored GitHub session for \(loadedViewer.login, privacy: .private)")
             return true
         } catch {
+            if handleUnavailableKeychainRestore(
+                error,
+                operation: "Restore GitHub session",
+                syncMessage: "Sign in to GitHub again"
+            ) {
+                return false
+            }
             if handleExpiredGitHubSessionError(error, operation: "Restore GitHub session") {
                 return false
             }
@@ -301,6 +311,29 @@ final class AppModel: ObservableObject {
             return false
         }
         expireGitHubSession(operation: operation, login: login)
+        return true
+    }
+
+    private func handleUnavailableKeychainRestore(
+        _ error: Error,
+        operation: String,
+        syncMessage: String? = nil
+    ) -> Bool {
+        guard let keychainError = error as? KeychainError,
+              keychainError.isMissingEntitlement else {
+            return false
+        }
+
+        oauthSession = nil
+        token = nil
+        viewer = nil
+        pendingDeviceCode = nil
+        repositoryApprovalURL = githubAppInstallURL
+        if let syncMessage {
+            self.syncMessage = syncMessage
+        }
+        authState = .signedOut
+        syncLogger.error("\(operation, privacy: .public) could not read a saved GitHub session because Keychain entitlement is unavailable")
         return true
     }
 

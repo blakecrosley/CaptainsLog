@@ -170,6 +170,13 @@ enum KeychainError: LocalizedError {
     case invalidData
     case unhandled(OSStatus)
 
+    var isMissingEntitlement: Bool {
+        guard case .unhandled(let status) = self else {
+            return false
+        }
+        return status == errSecMissingEntitlement
+    }
+
     var errorDescription: String? {
         switch self {
         case .invalidData:

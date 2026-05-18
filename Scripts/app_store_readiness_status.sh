@@ -458,7 +458,7 @@ printf_platform_target_status() {
         fi
 
         if rg -q -i "Captain'?s Log" "$VISION_SMOKE_OCR" \
-            && rg -q -i "Sign in with GitHub" "$VISION_SMOKE_OCR" \
+            && { rg -q -i "Sign in with GitHub" "$VISION_SMOKE_OCR" || rg -q -i "Authorize this device" "$VISION_SMOKE_OCR"; } \
             && rg -q -i "Use Demo Data" "$VISION_SMOKE_OCR"; then
             pass "Vision compatible launch OCR found first-run UI"
         else
