@@ -23,6 +23,9 @@ xcuserdata/
 private_keys/
 *.p8
 *.mobileprovision
+*.provisionprofile
+*.cer
+*.p12
 
 # App Store export artifacts
 *.ipa
