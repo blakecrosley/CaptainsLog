@@ -49,7 +49,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 `Scripts/app_store_readiness_status.sh` from clean local `main` currently:
 
 - Passes command availability, Xcode/iOS SDK check, screenshot packet checks, screenshot text audit, preflight, required-reason audit, and credential-guard self-test.
-- Confirms CaptainsLog is clean but currently ahead of `origin/main` by local release-support commits; Kit941 is synced with upstream and has only an untracked `build/` directory outside the linked package source. The ahead CaptainsLog branch is reported as an external source-custody gate.
+- Confirms CaptainsLog is clean but currently ahead of `origin/main` by local release-support commits; Kit941 is clean and synced with upstream after locally excluding generated `build/` module-map output from Git status. The ahead CaptainsLog branch is reported as an external source-custody gate.
 - Reports no App Store private keys inside the repo.
 - Reports no OpenAI, Anthropic, or GitHub token-shaped source literals in app, test, doc, or script files.
 - Uses staged screenshot package/review scripts so failed screenshot regeneration does not erase the last reviewed artifacts.
