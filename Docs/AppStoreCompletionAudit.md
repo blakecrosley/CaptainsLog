@@ -50,7 +50,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 
 ## Latest Readiness Result
 
-`Scripts/app_store_readiness_status.sh` from clean local `main` at commit `6ddac31` currently:
+`Scripts/app_store_readiness_status.sh` from clean local `main` currently:
 
 - Passes command availability, Xcode/iOS SDK check, screenshot packet checks, screenshot text audit, preflight, required-reason audit, and credential-guard self-test.
 - Confirms CaptainsLog is clean and synced with `origin/main`; Kit941 is clean but has upstream drift outside linked package source: `## main...origin/main [ahead 1]`.
