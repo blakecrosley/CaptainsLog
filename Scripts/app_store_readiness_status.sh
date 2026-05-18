@@ -232,7 +232,7 @@ else
     external "App Store Connect .p8 key file is not set"
 fi
 
-external "create or confirm the App Store Connect app record"
+external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
 external "upload build and verify TestFlight processing"
 external "complete human screenshot marketing acceptance"
 external "complete legal/privacy review"

@@ -20,11 +20,12 @@ usage() {
     cat <<'USAGE'
 Usage:
   Scripts/upload_app_store_ipa.sh local-check [ipa]
+  Scripts/upload_app_store_ipa.sh app-record [ipa]
   Scripts/upload_app_store_ipa.sh validate [ipa]
   Scripts/upload_app_store_ipa.sh upload [ipa]
   Scripts/upload_app_store_ipa.sh status [ipa]
 
-Authentication for validate/upload/status:
+Authentication for app-record/validate/upload/status:
   APP_STORE_CONNECT_API_KEY       App Store Connect API key ID.
   APP_STORE_CONNECT_API_ISSUER    App Store Connect issuer UUID.
 
@@ -32,7 +33,8 @@ Optional:
   APP_STORE_CONNECT_P8_FILE       Direct path to AuthKey_<key>.p8.
   APP_STORE_CONNECT_PROVIDER_PUBLIC_ID
   APP_STORE_CONNECT_DELIVERY_ID   Use for status after upload.
-  APP_STORE_CONNECT_APPLE_ID      App Apple ID for status when delivery ID is unavailable.
+  APP_STORE_CONNECT_APPLE_ID      App Apple ID for status when delivery ID is unavailable;
+                                  also narrows app-record checks when set.
   APP_STORE_CONNECT_WAIT=1        Wait for upload/status processing.
   ALTOOL_OUTPUT_FORMAT=json       Use altool JSON output.
   CAPTAINS_LOG_ALLOW_MISSING_EXPORT_MANIFEST=1
@@ -184,6 +186,23 @@ run_validate() {
         --output-format "$ALTOOL_OUTPUT_FORMAT"
 }
 
+run_app_record() {
+    build_auth_args
+
+    local args=(
+        --list-apps
+        --filter-bundle-id "$BUNDLE_ID"
+        "${auth_args[@]}"
+        --output-format "$ALTOOL_OUTPUT_FORMAT"
+    )
+
+    if [[ -n "${APP_STORE_CONNECT_APPLE_ID:-}" ]]; then
+        args+=(--filter-apple-id "$APP_STORE_CONNECT_APPLE_ID")
+    fi
+
+    xcrun altool "${args[@]}"
+}
+
 run_upload() {
     local_check "$IPA_PATH"
     build_auth_args
@@ -231,6 +250,9 @@ run_status() {
 case "$COMMAND" in
     local-check)
         local_check "$IPA_PATH"
+        ;;
+    app-record)
+        run_app_record
         ;;
     validate)
         run_validate
