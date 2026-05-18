@@ -29,7 +29,7 @@ If signing status still reports a missing distribution identity, either configur
 
 ## 1. Create Or Confirm The App Record
 
-In App Store Connect, create or confirm:
+In the App Store Connect web UI, create or confirm:
 
 - Platform: iOS
 - Name: `Captain's Log`
@@ -44,7 +44,7 @@ Evidence that closes this step:
 Scripts/check_app_store_connect_record.py
 ```
 
-Run the evidence command after API credentials are configured in step 4. It checks the App Store Connect REST API directly and does not need `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID`. Current evidence shows the Developer Portal bundle ID exists, but the App Store Connect app record is missing or not visible to this API key. If App Store Connect gives an Apple ID for this app after creation, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
+Run the evidence command after API credentials are configured in step 4. It checks the App Store Connect REST API directly and does not need `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID`. Current evidence shows the Developer Portal bundle ID exists, but the App Store Connect app record is missing or not visible to this API key. Apple's `apps` API documentation describes the API as a management surface for existing apps, not the supported path for creating new app records, so this remains a web-UI gate followed by read-only REST verification. If App Store Connect gives an Apple ID for this app after creation, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
 
 ## 2. Enter Product Metadata
 
@@ -88,7 +88,7 @@ Platform availability notes for the first App Review submission:
 - iPhone and iPad: submit as the current universal iOS app.
 - Apple Vision Pro: make available as the compatible iPhone/iPad app after `Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke` still reaches the first-run UI. Do not add native visionOS screenshots or metadata unless a separate visionOS target exists.
 - Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until `Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke`, `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export`, screenshot marketing acceptance, TestFlight, and human QA are complete.
-- Apple Watch and Apple TV: no action in App Store Connect for this release because there is no watchOS or tvOS app target.
+- Apple Watch and Apple TV: no action in App Store Connect for this release because there is no watchOS or tvOS app target. Return and Banana List are valid local references if we intentionally add those platforms later, but their targets and App Store records do not make Captain's Log ready.
 
 Evidence that closes this step: App Store Connect shows the version ready to add for review with no missing-metadata warnings, and private details remain only in App Store Connect.
 
