@@ -667,7 +667,7 @@ Next external actions:
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability, Apple Silicon Mac availability, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
 3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
-4. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, then either set APP_STORE_CONNECT_P8_FILE or place AuthKey_<key>.p8 in an altool default private key folder outside this repo.
+4. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
 5. Run Scripts/upload_app_store_ipa.sh providers, then export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID.
 6. Run:
    Scripts/upload_app_store_ipa.sh app-record
