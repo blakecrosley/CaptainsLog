@@ -578,9 +578,9 @@ if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|iOS Distribut
     pass "App Store distribution signing identity for team ${TEAM_ID} available in local keychain"
 elif (( xcode_auth_env_ready == 1 )); then
     pass "App Store Connect API-key auth inputs for xcodebuild provisioning updates are present"
-    warn "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; export will rely on xcodebuild automatic signing"
+    warn "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; export will rely on xcodebuild cloud-managed signing and must still prove cloud certificate access"
 else
-    external "App Store export signing is not ready; provide either an Apple Distribution/iOS Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
+    external "App Store export signing is not ready; provide either an Apple Distribution/iOS Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates with cloud-managed distribution certificate access"
 fi
 
 if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|Mac App Distribution|3rd Party Mac Developer Application):.*\\(${TEAM_ID}\\)\""; then
@@ -588,9 +588,9 @@ if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|Mac App Distr
     pass "Mac App Store application signing identity for team ${TEAM_ID} available in local keychain"
 elif (( xcode_auth_env_ready == 1 )); then
     pass "App Store Connect API-key auth inputs are present for native Mac provisioning updates"
-    warn "Mac App Store application signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild automatic signing"
+    warn "Mac App Store application signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild cloud-managed signing and must still prove cloud certificate access"
 else
-    external "Mac App Store application signing is not ready; provide an Apple Distribution/Mac App Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
+    external "Mac App Store application signing is not ready; provide an Apple Distribution/Mac App Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates with cloud-managed distribution certificate access"
 fi
 
 if printf '%s\n' "$identity_output" | rg -q "\"(Mac Installer Distribution|3rd Party Mac Developer Installer):.*\\(${TEAM_ID}\\)\""; then
@@ -598,9 +598,9 @@ if printf '%s\n' "$identity_output" | rg -q "\"(Mac Installer Distribution|3rd P
     pass "Mac App Store installer signing identity for team ${TEAM_ID} available in local keychain"
 elif (( xcode_auth_env_ready == 1 )); then
     pass "App Store Connect API-key auth inputs are present for native Mac package export"
-    warn "Mac App Store installer signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild automatic signing"
+    warn "Mac App Store installer signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild cloud-managed signing and must still prove cloud certificate access"
 else
-    external "Mac App Store installer signing is not ready; provide a Mac Installer Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
+    external "Mac App Store installer signing is not ready; provide a Mac Installer Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates with cloud-managed distribution certificate access"
 fi
 
 printf '\nLocal artifact checks\n'
@@ -903,7 +903,7 @@ if (( local_failures > 0 )); then
 
 Next local action:
 1. Run Scripts/app_store_signing_status.sh.
-2. Make one App Store export-signing path available: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ, or APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates.
+2. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates plus cloud-managed distribution certificate access.
 3. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
@@ -922,7 +922,7 @@ if (( external_blockers > 0 )); then
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth available, then regenerate the current IPA if readiness reports it missing or stale:
+3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
