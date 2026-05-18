@@ -106,7 +106,12 @@ fi
 printf '\nNext step\n'
 if (( failures > 0 )); then
     cat <<NEXT
-Open Xcode Settings > Accounts, sign into the App Store Connect team, then create or download an Apple Distribution certificate for team ${TEAM_ID}.
+Make App Store distribution signing available to Xcode:
+
+1. Open Xcode > Settings > Accounts.
+2. Sign into an Apple ID that belongs to team ${TEAM_ID}.
+3. Select the team, open Manage Certificates, then use + > Apple Distribution.
+4. If profiles still look stale afterward, use Download Manual Profiles.
 
 After the distribution identity appears in this command, regenerate the current IPA:
 

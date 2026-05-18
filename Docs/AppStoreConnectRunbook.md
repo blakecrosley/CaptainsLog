@@ -25,6 +25,8 @@ The signing status script checks the local Xcode/App Store upload toolchain and 
 
 The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity before archiving. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
+If signing status still reports a missing distribution identity, open Xcode > Settings > Accounts, sign into an Apple ID that belongs to team `M4WTLM6RAQ`, select the team, open Manage Certificates, then use `+` > Apple Distribution. If profiles still look stale afterward, use Download Manual Profiles and rerun `Scripts/app_store_signing_status.sh`.
+
 ## 1. Create Or Confirm The App Record
 
 In App Store Connect, create or confirm:
