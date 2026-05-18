@@ -43,6 +43,7 @@ Last local audit: May 17, 2026.
 Checked against Apple documentation on May 18, 2026.
 
 - Apple says to create the App Store Connect app record before uploading a build. Required roles are Account Holder, App Manager, or Admin, and the record opens in `Prepare for Submission` after creation. This matches the remaining app-record gate below.
+- Apple says apps uploaded to App Store Connect starting April 28, 2026 need to be built with the iOS and iPadOS 26 SDK or later. This matches the local toolchain evidence: `xcodebuild -version` reports Xcode 26.5 and `xcodebuild -showsdks` lists iOS 26.5.
 - Apple says builds can be uploaded with Xcode, altool, or Transporter after an app is added to the account. It also notes that the first upload creates a beta version but the build must finish Apple processing before it appears in App Store Connect. This matches the validate, upload, and TestFlight-processing gates below.
 - Apple says team API keys require Account Holder or Admin, and downloaded API keys are private and only downloadable once. This matches the `.p8` handling below: keep `AuthKey_*.p8` outside the repo and pass it through `APP_STORE_CONNECT_P8_FILE`.
 - Apple's screenshot specification allows one to ten `.jpeg`, `.jpg`, or `.png` screenshots. The current packaged set has six PNGs per family. The iPhone 6.9-inch portrait size `1320 x 2868` and iPad 13-inch portrait size `2064 x 2752` are accepted sizes in Apple's table.
@@ -57,6 +58,7 @@ Checked against Apple documentation on May 18, 2026.
 Sources:
 
 - https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
+- https://developer.apple.com/app-store/submitting/
 - https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/
 - https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api
 - https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications

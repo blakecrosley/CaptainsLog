@@ -63,6 +63,17 @@ is_app_source_path() {
     esac
 }
 
+is_kit_package_source_path() {
+    case "$1" in
+        Package.swift|Package.resolved|Sources/Kit941/*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 absolute_path() {
     local path="$1"
     local dir
@@ -79,12 +90,24 @@ printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git
 need_command xcrun
+need_command xcodebuild
 need_command sips
 need_command sqlite3
 need_command unzip
 need_command rg
 need_command magick
 need_xcrun_tool altool
+
+if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuild -showsdks 2>/dev/null)"; then
+    xcode_first_line="$(printf '%s\n' "$xcode_version" | sed -n '1p')"
+    if printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
+        pass "$xcode_first_line with iOS 26 or newer SDK"
+    else
+        fail "$xcode_first_line does not list an iOS 26 or newer SDK required for 2026 App Store upload"
+    fi
+else
+    fail "xcodebuild version or SDK list unavailable"
+fi
 
 printf '\nLocal artifact checks\n'
 if [[ -f "$IPA_PATH" ]]; then
@@ -218,7 +241,19 @@ $app_source_changes"
         if [[ "$exported_kit_commit" == "$current_kit_commit" ]]; then
             pass "IPA exported from current Kit941 commit"
         else
-            fail "Kit941 commit changed after IPA export; regenerate IPA"
+            kit_source_changes=""
+            while IFS= read -r changed_path; do
+                if is_kit_package_source_path "$changed_path"; then
+                    kit_source_changes+="${changed_path}"$'\n'
+                fi
+            done < <(git -C "$KIT941_DIR" diff --name-only "$exported_kit_commit"..HEAD)
+
+            if [[ -z "$kit_source_changes" ]]; then
+                pass "IPA Kit941 library source still current; commits after export are outside linked package source"
+            else
+                fail "Kit941 package source changed after IPA export; regenerate IPA:
+$kit_source_changes"
+            fi
         fi
     fi
 fi
