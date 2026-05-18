@@ -105,6 +105,9 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 
 ## Official References
 
+- Add a new app record: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
+- Upload builds: https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/
+- App Store Connect API: https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api
 - App privacy details: https://developer.apple.com/app-store/app-privacy-details/
 - Manage app privacy: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/
 - App information fields: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
