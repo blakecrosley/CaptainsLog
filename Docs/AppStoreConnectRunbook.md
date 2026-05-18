@@ -114,6 +114,8 @@ export APP_STORE_CONNECT_API_ISSUER="..."
 export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
+`Docs/AppStoreConnectEnv.template.sh` contains a safe placeholder-only shell template for these exports plus provider/status variables. Do not enter real credentials in the tracked file; copy the placeholder exports into a private shell session or a gitignored local file outside this repo.
+
 Keep the `.p8` outside this repo and outside any other git working tree. Preferred location:
 
 ```text
