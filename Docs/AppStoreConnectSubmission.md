@@ -37,9 +37,9 @@ Latest local readiness check: May 18, 2026. The screenshot packet and connected-
 - `Scripts/app_store_readiness_status.sh` failed on May 18, 2026 because the current IPA, export manifest, and IPA local-check are missing after the blocked clean export. It passed preflight, passed the credential-guard self-test, verifies that no App Store Connect `.p8` private-key material is inside the repository, and reports the remaining external App Store Connect gates.
 - `xcodebuild build -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -destination 'id=00008150-00166D690EF0401C'` previously built a Debug app for Blake's iPhone 17 Pro Max, then `xcrun devicectl device install app` installed bundle `com.blakecrosley.captainslog` and `xcrun devicectl device process launch` launched it successfully with process id `6545`.
 - `Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit` copied the connected iPhone app store and passed SQLite integrity. Aggregate-only output reported 1 account, 104 selected repositories, 12,468 commits from 2012-08-16 through 2026-05-17, 12,468/12,468 commits with diff stats, 0 diff-stat errors, 67,479,776 known changed lines, and 137/137 active days from 2026-01-01 through 2026-05-17. This is local device-store coverage evidence, not an external GitHub API parity proof.
-- Current source git status after the documentation correction should be rechecked before the next export attempt.
+- Current source status is rechecked by `Scripts/app_store_readiness_status.sh` before each export attempt.
 - Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
-- The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. At export, Kit941 was clean and aligned with `origin/main`.
+- The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. Current readiness distinguishes upstream drift in compiled package source from the existing `Playground/PlaygroundApp.swift` drift outside the linked package.
 
 ## Official Docs Cross-Check
 
