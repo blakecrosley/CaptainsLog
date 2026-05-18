@@ -96,8 +96,8 @@ local_check() {
     [[ -f "$executable_path" ]] || fail "App executable missing from IPA app: $executable_path"
 
     local release_fixture_hits
-    if release_fixture_hits="$(strings "$executable_path" | rg "CAPTAINS_LOG_DEBUG_OPENAI_API_KEY|REPS_DEBUG_OPENAI_API_KEY|CAPTAINS_LOG_SCREENSHOT_ROUTE|CAPTAINS_LOG_UI_FIXTURE|sk-captainslog-screenshot-demo26")"; then
-        fail "Release app executable contains debug screenshot/auth fixture strings:
+    if release_fixture_hits="$(strings "$executable_path" | rg "CAPTAINS_LOG_DEBUG_OPENAI_API_KEY|REPS_DEBUG_OPENAI_API_KEY|CAPTAINS_LOG_SCREENSHOT_ROUTE|CAPTAINS_LOG_UI_FIXTURE|CAPTAINS_LOG_UI_TESTING|-ui-testing|sk-captainslog-screenshot-demo26")"; then
+        fail "Release app executable contains debug/test fixture strings:
 $(printf '%s\n' "$release_fixture_hits" | sed -n '1,12p')"
     fi
 
