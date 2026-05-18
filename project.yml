@@ -80,6 +80,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.tests
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: M4WTLM6RAQ
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Captain's Log.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Captain's Log"
         BUNDLE_LOADER: "$(TEST_HOST)"
@@ -94,5 +96,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.uitests
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: M4WTLM6RAQ
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: CaptainsLog-iOS
