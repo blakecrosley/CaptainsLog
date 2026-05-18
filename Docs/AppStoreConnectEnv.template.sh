@@ -7,6 +7,12 @@
 #   chmod 700 "$HOME/.appstoreconnect" "$HOME/.appstoreconnect/private_keys"
 #   mv "/path/to/downloaded/AuthKey_YOUR_KEY_ID.p8" "$HOME/.appstoreconnect/private_keys/"
 #   chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8"
+#
+# If multiple AuthKey_*.p8 files are staged locally, choose the matching team
+# key ID in App Store Connect > Users and Access > Integrations and keep the
+# basename as AuthKey_<KEY_ID>.p8. The release scripts fail early on a mismatch
+# unless CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 is set after manual
+# verification.
 
 export APP_STORE_CONNECT_API_KEY="YOUR_KEY_ID"
 export APP_STORE_CONNECT_API_ISSUER="YOUR_ISSUER_UUID"

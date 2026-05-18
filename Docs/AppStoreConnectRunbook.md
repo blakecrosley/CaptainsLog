@@ -126,7 +126,7 @@ export APP_STORE_CONNECT_API_ISSUER="<ISSUER_UUID>"
 export APP_STORE_CONNECT_P8_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
 ```
 
-`Scripts/export_app_store_ipa.sh` fails early if the selected file name does not match `AuthKey_<KEY_ID>.p8`. Only set `CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1` after manually verifying the selected file belongs to the key ID.
+The readiness, export, and upload scripts fail early if the selected file name does not match `AuthKey_<KEY_ID>.p8`. Only set `CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1` after manually verifying the selected file belongs to the key ID.
 
 Keep the `.p8` outside this repo and outside any other git working tree. Preferred location:
 

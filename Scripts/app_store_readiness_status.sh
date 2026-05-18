@@ -113,6 +113,7 @@ branch_sync_warning() {
             fi
         fi
         warn "$label branch is not in sync with upstream: $branch_line"
+        external "$label branch is not synced with upstream; push it or explicitly accept the unpushed source state before final release export"
     else
         pass "$label branch synced with upstream"
     fi
@@ -260,8 +261,10 @@ check_p8_path() {
         expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
         if [[ "$(basename "$p8_path")" == "$expected_p8_name" ]]; then
             pass "App Store Connect .p8 filename matches the API key ID"
+        elif [[ "${CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME:-0}" == "1" ]]; then
+            warn "App Store Connect .p8 filename is not $expected_p8_name; continuing because CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1"
         else
-            warn "App Store Connect .p8 filename is not $expected_p8_name; --p8-file-path may still work, but verify carefully"
+            fail "App Store Connect .p8 filename is not $expected_p8_name. Set CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 only after manually verifying the key file belongs to this key ID."
         fi
     fi
 }

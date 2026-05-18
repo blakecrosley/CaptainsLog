@@ -45,6 +45,9 @@ Optional:
                                   Allow local-check for a legacy IPA without a sibling ExportManifest.txt.
   CAPTAINS_LOG_ALLOW_DIRTY_EXPORT=1
                                   Allow local-check for an export manifest generated from a dirty git tree.
+  CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1
+                                  Allow APP_STORE_CONNECT_P8_FILE to use a basename other than
+                                  AuthKey_<APP_STORE_CONNECT_API_KEY>.p8 after manual verification.
 USAGE
 }
 
@@ -213,7 +216,10 @@ check_p8_path() {
     local expected_p8_name
     expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
     if [[ "$(basename "$p8_path")" != "$expected_p8_name" ]]; then
-        printf 'warning: App Store Connect .p8 filename is not %s; --p8-file-path may still work, but verify carefully\n' "$expected_p8_name" >&2
+        if [[ "${CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME:-0}" != "1" ]]; then
+            fail "APP_STORE_CONNECT_P8_FILE basename should be $expected_p8_name for APP_STORE_CONNECT_API_KEY. Set CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 only after manually verifying the key file belongs to this key ID."
+        fi
+        printf 'warning: App Store Connect .p8 filename is not %s; continuing because CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1\n' "$expected_p8_name" >&2
     fi
 
     if [[ "$source_label" == "APP_STORE_CONNECT_P8_FILE" ]]; then
@@ -246,7 +252,7 @@ assert_app_record_output_contains_bundle() {
 }
 
 credential_guard_self_test() {
-    local temp_dir test_key test_issuer good_p8 bad_p8
+    local temp_dir test_key test_issuer good_p8 bad_p8 mismatched_p8
     temp_dir="$(mktemp -d)"
     trap 'rm -rf "$temp_dir"' RETURN
 
@@ -254,9 +260,11 @@ credential_guard_self_test() {
     test_issuer="00000000-0000-0000-0000-000000000000"
     good_p8="$temp_dir/AuthKey_${test_key}.p8"
     bad_p8="$temp_dir/AuthKey_BADHEADER.p8"
+    mismatched_p8="$temp_dir/AuthKey_ZZZZZZZZZZ.p8"
 
     printf '%s\n%s\n%s\n' "-----BEGIN PRIVATE KEY-----" "fake-self-test-key" "-----END PRIVATE KEY-----" >"$good_p8"
     printf '%s\n' "not a private key" >"$bad_p8"
+    printf '%s\n%s\n%s\n' "-----BEGIN PRIVATE KEY-----" "fake-self-test-key" "-----END PRIVATE KEY-----" >"$mismatched_p8"
 
     good_direct_path() {
         APP_STORE_CONNECT_API_KEY="$test_key"
@@ -310,6 +318,24 @@ credential_guard_self_test() {
         APP_STORE_CONNECT_API_KEY="$test_key"
         APP_STORE_CONNECT_API_ISSUER="$test_issuer"
         APP_STORE_CONNECT_P8_FILE="$bad_p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    mismatched_p8_filename() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$mismatched_p8"
+        CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=0
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    mismatched_p8_filename_allowed() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$mismatched_p8"
+        CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1
         unset API_PRIVATE_KEYS_DIR
         check_api_credentials
     }
@@ -383,6 +409,8 @@ credential_guard_self_test() {
     expect_fail "symlink to repo-local .p8 path" symlink_to_repo_local_p8
     expect_fail ".p8 path inside another git repo" p8_inside_other_git_repo
     expect_fail "non-private-key .p8 file" bad_p8_header
+    expect_fail "mismatched .p8 filename" mismatched_p8_filename
+    expect_pass "mismatched .p8 filename with explicit override" mismatched_p8_filename_allowed
     expect_fail "missing default .p8 file" no_p8_available
     expect_pass "app-record output containing bundle id" good_app_record_output
     expect_fail "app-record output missing bundle id" bad_app_record_output
