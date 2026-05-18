@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
 IOS_BUNDLE_ID="com.blakecrosley.captainslog"
+MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
 DEFAULT_IPA="/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 SCREENSHOT_DIR="${1:-/tmp/captainslog-key-state-audit}"
 IPA_PATH="${2:-$DEFAULT_IPA}"
@@ -362,12 +363,12 @@ printf_platform_target_status() {
         if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+CaptainsLog-macOS$'; then
             warn "native macOS target exists, but first release still requires Mac signing/export, screenshots, TestFlight, and human QA before Mac App Store availability"
 
-            if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
-                if printf '%s\n' "$macos_settings" | rg -q 'PRODUCT_BUNDLE_IDENTIFIER = com[.]blakecrosley[.]captainslog[.]mac'; then
-                    pass "macOS target bundle id is com.blakecrosley.captainslog.mac"
-                else
-                    fail "macOS target bundle id is missing or mismatched"
-                fi
+	            if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
+	                if printf '%s\n' "$macos_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${MACOS_BUNDLE_ID//./[.]}"; then
+	                    pass "macOS target bundle id is ${MACOS_BUNDLE_ID}"
+	                else
+	                    fail "macOS target bundle id is missing or mismatched"
+	                fi
                 if printf '%s\n' "$macos_settings" | rg -q 'CODE_SIGN_STYLE = Automatic'; then
                     pass "macOS target uses automatic signing"
                 else
@@ -383,9 +384,18 @@ printf_platform_target_status() {
                 else
                     fail "macOS target does not have hardened runtime enabled"
                 fi
-            else
-                fail "unable to read CaptainsLog-macOS Release build settings for platform availability"
-            fi
+	            else
+	                fail "unable to read CaptainsLog-macOS Release build settings for platform availability"
+	            fi
+
+	            if [[ -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
+	                if macos_bundle_output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$MACOS_BUNDLE_ID" --require bundle-id 2>&1)"; then
+	                    pass "native Mac Developer Portal bundle ID exists for ${MACOS_BUNDLE_ID}"
+	                else
+	                    external "native Mac Developer Portal bundle ID is missing or not visible to this API key; create it before native Mac App Store export"
+	                    printf '%s\n' "$macos_bundle_output" | sed 's/^/  /'
+	                fi
+	            fi
 
             if [[ -x "$ROOT_DIR/Scripts/smoke_macos_launch.sh" ]]; then
                 pass "macOS launch smoke script exists"

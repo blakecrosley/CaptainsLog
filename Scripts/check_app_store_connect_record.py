@@ -126,6 +126,12 @@ def api_get(token: str, path: str, params: dict[str, str]) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE_ID)
+    parser.add_argument(
+        "--require",
+        choices=("both", "app-record", "bundle-id"),
+        default="both",
+        help="Choose which remote record type must exist for a successful exit.",
+    )
     parser.add_argument("--json", action="store_true", help="Print machine-readable status")
     args = parser.parse_args()
 
@@ -196,7 +202,11 @@ def main() -> int:
         else:
             print("[fail] App Store Connect app record is missing or not visible to this API key")
 
-    return 0 if apps and bundle_ids else 1
+    if args.require == "both":
+        return 0 if apps and bundle_ids else 1
+    if args.require == "app-record":
+        return 0 if apps else 1
+    return 0 if bundle_ids else 1
 
 
 if __name__ == "__main__":
