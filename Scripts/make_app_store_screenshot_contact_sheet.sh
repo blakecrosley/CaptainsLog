@@ -4,10 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INPUT_DIR="${1:-/tmp/captainslog-key-state-packaged}"
 OUTPUT_DIR="${2:-/tmp/captainslog-appstore-review}"
-THUMB_DIR="$OUTPUT_DIR/thumbs"
-CONTACT_SHEET="$OUTPUT_DIR/contact-sheet.png"
-README_PATH="$OUTPUT_DIR/README.md"
-REVIEW_HTML="$OUTPUT_DIR/review.html"
+OUTPUT_PARENT="$(dirname "$OUTPUT_DIR")"
+OUTPUT_NAME="$(basename "$OUTPUT_DIR")"
 
 fail() {
     printf '[fail] %s\n' "$1" >&2
@@ -42,7 +40,19 @@ if ! command -v magick >/dev/null 2>&1; then
     fail "ImageMagick 'magick' is required to create the contact sheet"
 fi
 
-rm -rf "$OUTPUT_DIR"
+mkdir -p "$OUTPUT_PARENT"
+STAGING_DIR="$(mktemp -d "$OUTPUT_PARENT/.${OUTPUT_NAME}.staging.XXXXXX")"
+STAGED_OUTPUT_DIR="$STAGING_DIR/$OUTPUT_NAME"
+cleanup_staging() {
+    rm -rf "$STAGING_DIR"
+}
+trap cleanup_staging EXIT
+
+THUMB_DIR="$STAGED_OUTPUT_DIR/thumbs"
+CONTACT_SHEET="$STAGED_OUTPUT_DIR/contact-sheet.png"
+README_PATH="$STAGED_OUTPUT_DIR/README.md"
+REVIEW_HTML="$STAGED_OUTPUT_DIR/review.html"
+
 mkdir -p "$THUMB_DIR/iphone" "$THUMB_DIR/ipad"
 
 printf "Captain's Log App Store screenshot contact sheet\n"
@@ -420,6 +430,9 @@ cat > "$REVIEW_HTML" <<'HTML'
 </html>
 HTML
 
-printf '[ok] Contact sheet: %s\n' "$CONTACT_SHEET"
-printf '[ok] Review notes: %s\n' "$README_PATH"
-printf '[ok] Review page: %s\n' "$REVIEW_HTML"
+rm -rf "$OUTPUT_DIR"
+mv "$STAGED_OUTPUT_DIR" "$OUTPUT_DIR"
+
+printf '[ok] Contact sheet: %s\n' "$OUTPUT_DIR/contact-sheet.png"
+printf '[ok] Review notes: %s\n' "$OUTPUT_DIR/README.md"
+printf '[ok] Review page: %s\n' "$OUTPUT_DIR/review.html"

@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INPUT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreScreenshots}"
 OUTPUT_DIR="${2:-$ROOT_DIR/Artifacts/AppStoreScreenshotUpload}"
+OUTPUT_PARENT="$(dirname "$OUTPUT_DIR")"
+OUTPUT_NAME="$(basename "$OUTPUT_DIR")"
 
 fail() {
     printf '[fail] %s\n' "$1" >&2
@@ -44,28 +46,35 @@ if [[ ! -d "$INPUT_DIR" ]]; then
     fail "Input screenshot directory missing: $INPUT_DIR"
 fi
 
-rm -rf "$OUTPUT_DIR"
-mkdir -p "$OUTPUT_DIR/iphone-6.9" "$OUTPUT_DIR/ipad-13"
+mkdir -p "$OUTPUT_PARENT"
+STAGING_DIR="$(mktemp -d "$OUTPUT_PARENT/.${OUTPUT_NAME}.staging.XXXXXX")"
+STAGED_OUTPUT_DIR="$STAGING_DIR/$OUTPUT_NAME"
+cleanup_staging() {
+    rm -rf "$STAGING_DIR"
+}
+trap cleanup_staging EXIT
+
+mkdir -p "$STAGED_OUTPUT_DIR/iphone-6.9" "$STAGED_OUTPUT_DIR/ipad-13"
 
 printf 'Packaging App Store screenshots\n'
 printf 'Input: %s\n' "$INPUT_DIR"
 printf 'Output: %s\n\n' "$OUTPUT_DIR"
 
-copy_slot "$OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-dashboard.png" "01-dashboard.png" 1320 2868
-copy_slot "$OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-work-map.png" "02-work-map.png" 1320 2868
-copy_slot "$OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-journal.png" "03-journal.png" 1320 2868
-copy_slot "$OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-repositories.png" "04-repositories.png" 1320 2868
-copy_slot "$OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-ai.png" "05-ai-providers.png" 1320 2868
-copy_slot "$OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-privacy.png" "06-privacy-data.png" 1320 2868
+copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-dashboard.png" "01-dashboard.png" 1320 2868
+copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-work-map.png" "02-work-map.png" 1320 2868
+copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-journal.png" "03-journal.png" 1320 2868
+copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-repositories.png" "04-repositories.png" 1320 2868
+copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-ai.png" "05-ai-providers.png" 1320 2868
+copy_slot "$STAGED_OUTPUT_DIR/iphone-6.9" "iphone-17-pro-max-privacy.png" "06-privacy-data.png" 1320 2868
 
-copy_slot "$OUTPUT_DIR/ipad-13" "ipad-pro-13-dashboard.png" "01-dashboard.png" 2064 2752
-copy_slot "$OUTPUT_DIR/ipad-13" "ipad-pro-13-work-map.png" "02-work-map.png" 2064 2752
-copy_slot "$OUTPUT_DIR/ipad-13" "ipad-pro-13-journal.png" "03-journal.png" 2064 2752
-copy_slot "$OUTPUT_DIR/ipad-13" "ipad-pro-13-repositories.png" "04-repositories.png" 2064 2752
-copy_slot "$OUTPUT_DIR/ipad-13" "ipad-pro-13-ai.png" "05-ai-providers.png" 2064 2752
-copy_slot "$OUTPUT_DIR/ipad-13" "ipad-pro-13-privacy.png" "06-privacy-data.png" 2064 2752
+copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-dashboard.png" "01-dashboard.png" 2064 2752
+copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-work-map.png" "02-work-map.png" 2064 2752
+copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-journal.png" "03-journal.png" 2064 2752
+copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-repositories.png" "04-repositories.png" 2064 2752
+copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-ai.png" "05-ai-providers.png" 2064 2752
+copy_slot "$STAGED_OUTPUT_DIR/ipad-13" "ipad-pro-13-privacy.png" "06-privacy-data.png" 2064 2752
 
-cat > "$OUTPUT_DIR/README.md" <<'README'
+cat > "$STAGED_OUTPUT_DIR/README.md" <<'README'
 # Captain's Log Screenshot Upload Order
 
 Use the same order for the 6.9-inch iPhone and 13-inch iPad screenshot sets.
@@ -83,5 +92,8 @@ Before upload:
 - Keep the dashboard and Work Map first; those are the clearest product promise.
 - Re-run `Scripts/app_store_preflight.sh <source-screenshot-dir>` after capturing new screenshots.
 README
+
+rm -rf "$OUTPUT_DIR"
+mv "$STAGED_OUTPUT_DIR" "$OUTPUT_DIR"
 
 printf '\nPackaged screenshots in %s\n' "$OUTPUT_DIR"
