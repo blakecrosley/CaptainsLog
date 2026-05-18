@@ -17,6 +17,9 @@ Official references:
 
 - App information: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
 - Platform version information: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
+- Pricing and availability: https://developer.apple.com/help/app-store-connect/reference/pricing-and-availability/app-pricing-and-availability
+- Set app price: https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price
+- Version release option: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/
 - App privacy details: https://developer.apple.com/app-store/app-privacy-details/
 - App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
 

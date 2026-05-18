@@ -58,9 +58,9 @@ Sources:
 - https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/
 - https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api
 - https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications
-- https://developer.apple.com/help/app-store-connect/reference/app-pricing-and-availability/
+- https://developer.apple.com/help/app-store-connect/reference/pricing-and-availability/app-pricing-and-availability
 - https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price
-- https://developer.apple.com/help/app-store-connect/reference/app-review-information
+- https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
 - https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/
 - https://developer.apple.com/app-store/app-privacy-details/
 

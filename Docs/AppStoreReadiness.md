@@ -109,6 +109,9 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Manage app privacy: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/
 - App information fields: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
 - Platform version fields: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
+- Pricing and availability: https://developer.apple.com/help/app-store-connect/reference/pricing-and-availability/app-pricing-and-availability
+- Set app price: https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price
+- Version release option: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/
 - Screenshots: https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots/
 - App icon: https://developer.apple.com/help/app-store-connect/manage-app-information/add-an-app-icon/
 - Review guidelines: https://developer.apple.com/app-store/review/guidelines/
