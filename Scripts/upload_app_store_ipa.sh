@@ -145,9 +145,14 @@ auth_args=()
 
 absolute_path() {
     local path="$1"
+    realpath "$path"
+}
+
+git_root_for_path() {
+    local path="$1"
     local dir
-    dir="$(cd "$(dirname "$path")" && pwd -P)" || return 1
-    printf '%s/%s\n' "$dir" "$(basename "$path")"
+    dir="$(dirname "$path")"
+    git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true
 }
 
 default_p8_path_for_key() {
@@ -183,11 +188,16 @@ check_p8_path() {
     [[ -f "$p8_path" ]] || fail "$source_label file does not exist: $p8_path"
     p8_path="$(absolute_path "$p8_path")" || fail "$source_label path is not accessible: $p8_path"
 
+    local p8_git_root
+    p8_git_root="$(git_root_for_path "$p8_path")"
     case "$p8_path" in
         "$ROOT_DIR"/*)
             fail "App Store Connect .p8 key file must live outside the repo"
             ;;
     esac
+    if [[ -n "$p8_git_root" ]]; then
+        fail "App Store Connect .p8 key file must live outside any git working tree: $p8_git_root"
+    fi
 
     [[ -r "$p8_path" ]] || fail "App Store Connect .p8 key file is not readable"
 
@@ -297,6 +307,30 @@ credential_guard_self_test() {
         check_api_credentials
     }
 
+    symlink_to_repo_local_p8() {
+        local link_path="$temp_dir/AuthKey_${test_key}.p8"
+        ln -sf "$ROOT_DIR/Scripts/upload_app_store_ipa.sh" "$link_path"
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$link_path"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    p8_inside_other_git_repo() {
+        local foreign_repo foreign_p8
+        foreign_repo="$temp_dir/foreign-repo"
+        foreign_p8="$foreign_repo/AuthKey_${test_key}.p8"
+        mkdir -p "$foreign_repo"
+        git -C "$foreign_repo" init -q
+        printf '%s\n%s\n%s\n' "-----BEGIN PRIVATE KEY-----" "fake-self-test-key" "-----END PRIVATE KEY-----" >"$foreign_p8"
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$foreign_p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
     expect_pass() {
         local label="$1"
         shift
@@ -323,6 +357,8 @@ credential_guard_self_test() {
     expect_fail "malformed issuer UUID" bad_issuer_shape
     expect_fail "missing .p8 path" missing_p8
     expect_fail "repo-local .p8 path" repo_local_p8
+    expect_fail "symlink to repo-local .p8 path" symlink_to_repo_local_p8
+    expect_fail ".p8 path inside another git repo" p8_inside_other_git_repo
     expect_fail "non-private-key .p8 file" bad_p8_header
     expect_fail "missing default .p8 file" no_p8_available
 

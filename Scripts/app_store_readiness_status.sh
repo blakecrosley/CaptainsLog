@@ -77,9 +77,14 @@ is_kit_package_source_path() {
 
 absolute_path() {
     local path="$1"
+    realpath "$path"
+}
+
+git_root_for_path() {
+    local path="$1"
     local dir
-    dir="$(cd "$(dirname "$path")" && pwd -P)"
-    printf '%s/%s\n' "$dir" "$(basename "$path")"
+    dir="$(dirname "$path")"
+    git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true
 }
 
 branch_sync_warning() {
@@ -140,6 +145,8 @@ check_p8_path() {
 
     pass "App Store Connect .p8 key file found via $source_label"
     p8_path="$(absolute_path "$p8_path")"
+    local p8_git_root
+    p8_git_root="$(git_root_for_path "$p8_path")"
     case "$p8_path" in
         "$ROOT_DIR"/*)
             fail "App Store Connect .p8 key file must live outside the repo"
@@ -148,6 +155,11 @@ check_p8_path() {
             pass "App Store Connect .p8 key file is outside the repo"
             ;;
     esac
+    if [[ -n "$p8_git_root" ]]; then
+        fail "App Store Connect .p8 key file must live outside any git working tree: $p8_git_root"
+    else
+        pass "App Store Connect .p8 key file is outside git working trees"
+    fi
 
     if [[ -r "$p8_path" ]]; then
         pass "App Store Connect .p8 key file is readable"

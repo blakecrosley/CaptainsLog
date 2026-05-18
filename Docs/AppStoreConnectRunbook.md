@@ -102,7 +102,7 @@ export APP_STORE_CONNECT_API_ISSUER="..."
 export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
-Keep the `.p8` outside this repo. Preferred location:
+Keep the `.p8` outside this repo and outside any other git working tree. Preferred location:
 
 ```text
 ~/.appstoreconnect/private_keys/AuthKey_<key>.p8
@@ -115,7 +115,7 @@ Scripts/upload_app_store_ipa.sh credential-guard-self-test
 Scripts/app_store_readiness_status.sh
 ```
 
-Evidence that closes this step: readiness shows API key/issuer and `.p8` as valid, and no App Store private key material exists inside the repo.
+Evidence that closes this step: readiness shows API key/issuer and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
 
 ## 5. Validate, Upload, And Check Processing
 
