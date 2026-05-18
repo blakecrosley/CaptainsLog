@@ -40,6 +40,8 @@ A later May 18 dashboard polish pass removed the second full-width segmented con
 
 A later May 18 repository pass split the iPad repository access screen into a left control rail and right repository list. This keeps the long list scannable without leaving the selection summary, search, filter, and GitHub access actions floating above a mostly empty tablet page.
 
+A later May 18 browser-rendered spot-check opened `/tmp/captainslog-appstore-review/review.html` in Yurei and inspected the generated `contact-sheet.png`. The review page rendered the expected title, counts, screenshot sequence, and approval checklist. The contact sheet showed the neutral `captains-log-demo` fixture, repository access, AI provider, Privacy & Data, and iPad rows without obvious private repository names, live keys, simulator chrome, debug labels, active sync bars, or clipped controls. This is supporting local evidence only; final App Store preview approval remains a human gate.
+
 ## May 18 Design-Skill Spot-Check
 
 Reviewed against the local `.impeccable.md` direction and the `frontend-design`, `critique`, and `polish` skills:
