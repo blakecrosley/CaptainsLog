@@ -41,8 +41,39 @@ git_root_for_path() {
     git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true
 }
 
+default_p8_candidate_count() {
+    local dirs=(
+        "$HOME/private_keys"
+        "$HOME/.private_keys"
+        "$HOME/.appstoreconnect/private_keys"
+    )
+
+    if [[ -n "${API_PRIVATE_KEYS_DIR:-}" ]]; then
+        dirs+=("$API_PRIVATE_KEYS_DIR")
+    fi
+
+    local dir candidate abs_path count
+    count=0
+    for dir in "${dirs[@]}"; do
+        [[ -d "$dir" ]] || continue
+        while IFS= read -r candidate; do
+            [[ -f "$candidate" ]] || continue
+            abs_path="$(absolute_path "$candidate")"
+            case "$abs_path" in
+                "$ROOT_DIR"/*)
+                    continue
+                    ;;
+            esac
+            count=$((count + 1))
+        done < <(find "$dir" -maxdepth 1 -type f -name "AuthKey_*.p8" 2>/dev/null)
+    done
+
+    printf '%s\n' "$count"
+}
+
 check_xcode_auth_env() {
     local has_any_auth_value=0
+    local p8_candidate_count
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" || -n "${APP_STORE_CONNECT_API_ISSUER:-}" || -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
         has_any_auth_value=1
     fi
@@ -50,6 +81,10 @@ check_xcode_auth_env() {
     printf '\nApp Store Connect xcodebuild authentication\n'
     if (( has_any_auth_value == 0 )); then
         warn "APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE are not set"
+        p8_candidate_count="$(default_p8_candidate_count)"
+        if (( p8_candidate_count > 0 )); then
+            warn "candidate App Store Connect .p8 private-key files are staged outside the repo, but no selected API key ID or issuer UUID is set"
+        fi
         warn "xcodebuild provisioning updates will require a signed-in Xcode account or a local distribution identity"
         return
     fi
