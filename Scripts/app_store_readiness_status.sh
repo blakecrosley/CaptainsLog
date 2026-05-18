@@ -226,8 +226,11 @@ need_xcrun_tool swift
 
 if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuild -showsdks 2>/dev/null)"; then
     xcode_first_line="$(printf '%s\n' "$xcode_version" | sed -n '1p')"
-    if printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
-        pass "$xcode_first_line with iOS 26 or newer SDK"
+    xcode_major="$(printf '%s\n' "$xcode_first_line" | sed -E 's/^Xcode ([0-9]+).*/\1/')"
+    if ! [[ "$xcode_major" =~ ^[0-9]+$ ]] || (( xcode_major < 26 )); then
+        fail "$xcode_first_line is older than Xcode 26 required for 2026 App Store upload"
+    elif printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
+        pass "$xcode_first_line satisfies Xcode 26+ and iOS 26+ SDK requirements"
     else
         fail "$xcode_first_line does not list an iOS 26 or newer SDK required for 2026 App Store upload"
     fi
