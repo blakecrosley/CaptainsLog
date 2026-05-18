@@ -63,6 +63,7 @@ Make the manual choices from the table in `Docs/AppStoreMetadata.md`:
 - Availability: broad unless legal narrows it.
 - Apple Vision Pro availability: make available as the compatible iPhone/iPad app after final smoke-test acceptance; do not claim native visionOS.
 - Apple Silicon Mac availability: opt out unless you complete a Mac/TestFlight pass and intentionally accept that extra platform.
+- Apple Watch / Apple TV availability: no action because Captain's Log has no watchOS or tvOS target for this release.
 - Distribution: public App Store.
 - Version release: manual.
 - Made for Kids: no.
