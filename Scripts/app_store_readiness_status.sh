@@ -350,6 +350,13 @@ else
     fail "IPA local check failed"
 fi
 
+printf '\nCredential guard self-test\n'
+if "$ROOT_DIR/Scripts/upload_app_store_ipa.sh" credential-guard-self-test; then
+    pass "App Store upload credential guard self-test"
+else
+    fail "App Store upload credential guard self-test failed"
+fi
+
 printf '\nExternal gates\n'
 if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
     pass "App Store Connect API key and issuer are set"

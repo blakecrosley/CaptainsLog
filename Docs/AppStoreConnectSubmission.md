@@ -110,7 +110,7 @@ Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
 
-`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet and review page, clean source state, preflight, and release local check, then lists external blockers such as missing App Store Connect credentials, manual App Store Connect fields, TestFlight processing, legal review, and final human screenshot acceptance.
+`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet and review page, clean source state, preflight, release local check, and upload credential guard self-test, then lists external blockers such as missing App Store Connect credentials, manual App Store Connect fields, TestFlight processing, legal review, and final human screenshot acceptance.
 
 `Scripts/upload_app_store_ipa.sh credential-guard-self-test` uses fake throwaway values and temporary files to verify that the upload helper accepts valid-looking credential inputs and rejects malformed key IDs, malformed issuers, missing `.p8` files, repo-local `.p8` paths, and non-private-key `.p8` contents without calling App Store Connect.
 
