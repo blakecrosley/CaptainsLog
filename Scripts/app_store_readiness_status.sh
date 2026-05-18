@@ -616,7 +616,11 @@ elif [[ -n "${APP_STORE_CONNECT_API_KEY:-}" ]] && default_p8_path="$(default_p8_
 else
     p8_candidate_count="$(default_p8_candidate_count)"
     if (( p8_candidate_count > 0 )); then
-        external "App Store Connect candidate .p8 private-key files are staged outside the repo in altool default private-key search paths, but no selected APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER are set"
+        if (( p8_candidate_count > 1 )); then
+            external "$p8_candidate_count App Store Connect candidate .p8 private-key files are staged outside the repo in altool default private-key search paths; set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly so the selected key is unambiguous"
+        else
+            external "1 App Store Connect candidate .p8 private-key file is staged outside the repo in altool default private-key search paths, but no selected APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER are set"
+        fi
     else
         external "App Store Connect .p8 key file is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
     fi

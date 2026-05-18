@@ -83,7 +83,10 @@ check_xcode_auth_env() {
         warn "APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE are not set"
         p8_candidate_count="$(default_p8_candidate_count)"
         if (( p8_candidate_count > 0 )); then
-            warn "candidate App Store Connect .p8 private-key files are staged outside the repo, but no selected API key ID or issuer UUID is set"
+            warn "$p8_candidate_count candidate App Store Connect .p8 private-key file(s) are staged outside the repo, but no selected API key ID or issuer UUID is set"
+            if (( p8_candidate_count > 1 )); then
+                warn "multiple candidate .p8 files found; set APP_STORE_CONNECT_P8_FILE explicitly to the key that matches APP_STORE_CONNECT_API_KEY"
+            fi
         fi
         warn "xcodebuild provisioning updates will require a signed-in Xcode account or a local distribution identity"
         return
