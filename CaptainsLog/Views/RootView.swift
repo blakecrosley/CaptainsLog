@@ -541,6 +541,9 @@ struct RootView: View {
                 onSeedDemo: {
                     do {
                         try appModel.seedDemoData()
+                        reloadCommitSnapshot()
+                        selectDemoShowcaseDate()
+                        generationError = nil
                     } catch {
                         generationError = error.localizedDescription
                     }
@@ -745,7 +748,7 @@ struct RootView: View {
         do {
             try appModel.seedDemoData(includeFixtureDetails: true)
             reloadCommitSnapshot()
-            selectDebugFixtureShowcaseDate()
+            selectDemoShowcaseDate()
             generationError = nil
         } catch {
             generationError = error.localizedDescription
@@ -753,8 +756,9 @@ struct RootView: View {
         }
         return true
     }
+    #endif
 
-    private func selectDebugFixtureShowcaseDate() {
+    private func selectDemoShowcaseDate() {
         let calendar = Calendar.current
         for offset in [2, 3, 5, 6, 0] {
             guard let candidate = calendar.date(byAdding: .day, value: -offset, to: Date()) else {
@@ -775,7 +779,6 @@ struct RootView: View {
 
         selectLatestCommitDateIfUseful(force: true)
     }
-    #endif
 
     private func refreshCurrentAccount() async {
         guard appModel.isSignedIn else {

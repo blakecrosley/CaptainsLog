@@ -15,6 +15,21 @@ final class CaptainsLogUITests: XCTestCase {
         XCTAssertTrue(actionRow("Use Demo Data", in: app).waitForExistence(timeout: 3))
     }
 
+    func testUseDemoDataOpensDashboardAndJournal() throws {
+        let app = launchApp()
+        defer { app.terminate() }
+
+        let useDemoData = actionRow("Use Demo Data", in: app)
+        XCTAssertTrue(useDemoData.waitForExistence(timeout: 6))
+        useDemoData.tap()
+
+        let openDayDetail = app.buttons["Open selected day detail"]
+        XCTAssertTrue(openDayDetail.waitForExistence(timeout: 4))
+        openDayDetail.tap()
+        XCTAssertTrue(app.staticTexts["Built the app spine"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.buttons["Commits"].waitForExistence(timeout: 3))
+    }
+
     func testFixtureDashboardExposesSettingsAndDayDetail() throws {
         let app = launchApp(fixture: true)
         defer { app.terminate() }

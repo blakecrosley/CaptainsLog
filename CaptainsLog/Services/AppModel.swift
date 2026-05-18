@@ -1154,14 +1154,12 @@ final class AppModel: ObservableObject {
         ]
 
         let recentOffsets = (0..<18).filter { $0 % 3 != 1 }
-        let yearOffsets = includeFixtureDetails
-            ? [
-                24, 31, 45, 58, 73, 84,
-                97, 112, 126, 139, 154, 168,
-                183, 197, 212, 229, 244, 259,
-                276, 291, 307, 322, 339, 356
-            ]
-            : []
+        let yearOffsets = [
+            24, 31, 45, 58, 73, 84,
+            97, 112, 126, 139, 154, 168,
+            183, 197, 212, 229, 244, 259,
+            276, 291, 307, 322, 339, 356
+        ]
         let demoDayOffsets = recentOffsets + yearOffsets
 
         for offset in demoDayOffsets {
@@ -1188,26 +1186,22 @@ final class AppModel: ObservableObject {
                     modelContext.insert(record)
                 }
                 record.repository = repo
-                if includeFixtureDetails {
-                    let additions = (offset + 1) * (index + 4) * 7
-                    let deletions = (offset % 5 + 1) * (index + 1) * 3
-                    record.applyDiffStats(additions: additions, deletions: deletions, changedFileCount: index + 2)
-                    let demoFiles = [
-                        "CaptainsLog/Views/WorkOverviewView.swift",
-                        "CaptainsLog/Services/AppModel.swift",
-                        "CaptainsLogTests/CalendarMathTests.swift"
-                    ]
-                    record.changedFiles = Array(demoFiles.prefix(index + 2))
-                }
+                let additions = (offset + 1) * (index + 4) * 7
+                let deletions = (offset % 5 + 1) * (index + 1) * 3
+                record.applyDiffStats(additions: additions, deletions: deletions, changedFileCount: index + 2)
+                let demoFiles = [
+                    "CaptainsLog/Views/WorkOverviewView.swift",
+                    "CaptainsLog/Services/AppModel.swift",
+                    "CaptainsLog/Models/CalendarMath.swift"
+                ]
+                record.changedFiles = Array(demoFiles.prefix(index + 2))
             }
         }
 
-        if includeFixtureDetails {
-            try seedDemoSummary(modelContext: modelContext, repo: repo, calendar: calendar)
-        }
+        try seedDemoSummary(modelContext: modelContext, repo: repo, calendar: calendar)
 
         try modelContext.save()
-        syncMessage = "Seeded demo commits"
+        syncMessage = "Loaded demo data"
     }
 
     func saveSummary(
