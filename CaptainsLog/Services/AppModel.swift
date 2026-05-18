@@ -2537,13 +2537,13 @@ final class AppModel: ObservableObject {
 
         let draft = JournalSummaryDraft(
             title: "Built the app spine",
-            narrative: "The day focused on turning GitHub history into a readable work record. The fixture covers sync state, changed-line stats, Work Map data, and journal evidence so screen QA can run without a live GitHub account.",
+            narrative: "The day focused on turning GitHub history into a readable work record. The team connected sync state, changed-line stats, Work Map data, and journal evidence so the app could explain a day of work at a glance.",
             bullets: [
                 "Connected the dashboard to demo commits with changed-line stats.",
                 "Added enough source evidence to open day and commit detail screens.",
-                "Marked history coverage complete for the fixture repository."
+                "Marked history coverage complete for the demo repository."
             ],
-            tags: ["fixture", "sync", "journal"]
+            tags: ["sync", "journal", "analytics"]
         )
         let generatedAt = calendar.date(byAdding: .hour, value: 15, to: featuredDate) ?? featuredDate
 
@@ -2553,7 +2553,7 @@ final class AppModel: ObservableObject {
         )
         descriptor.fetchLimit = 1
         if let existing = try modelContext.fetch(descriptor).first {
-            _ = existing.update(from: draft, sourceCommitIDs: sourceIDs, modelName: "UI Fixture")
+            _ = existing.update(from: draft, sourceCommitIDs: sourceIDs, modelName: "Captain's Log")
             existing.generatedAt = generatedAt
         } else {
             modelContext.insert(
@@ -2565,7 +2565,7 @@ final class AppModel: ObservableObject {
                     tags: draft.tags,
                     sourceCommitIDs: sourceIDs,
                     generatedAt: generatedAt,
-                    modelName: "UI Fixture"
+                    modelName: "Captain's Log"
                 )
             )
         }

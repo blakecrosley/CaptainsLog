@@ -54,7 +54,8 @@ Reviewed against the local `.impeccable.md` direction and the `frontend-design`,
 - Repository and Privacy & Data screenshots explain permissions and data handling.
 - AI provider screenshots show cloud AI as optional and key-backed.
 - The fixture identity is neutral and does not appear to expose a real private GitHub account.
-- The latest review artifacts do not show visible sync bars, debug labels, previous-app breadcrumbs, or simulator chrome.
+- The latest regenerated review artifacts do not show visible sync bars, debug labels, previous-app breadcrumbs, or simulator chrome.
+- A Vision OCR pass over the packaged screenshots found no `fixture`, `UI Fixture`, debug, simulator, sync-progress, error, personal-account, or token-like text. The journal screenshot now reads as a demo product story and labels the generated summary source as `Captain's Log`.
 
 ## Remaining Human Checks
 
