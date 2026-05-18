@@ -7,6 +7,8 @@ SCHEME="CaptainsLog-iOS"
 METADATA_FILE="$ROOT_DIR/Docs/AppStoreMetadata.md"
 INFO_PLIST="$ROOT_DIR/CaptainsLog/App/CaptainsLog-iOS-Info.plist"
 PRIVACY_MANIFEST="$ROOT_DIR/CaptainsLog/Resources/PrivacyInfo.xcprivacy"
+BACKGROUND_INDEXER_SOURCE="$ROOT_DIR/CaptainsLog/Services/BackgroundHistoryIndexer.swift"
+EXPECTED_BACKGROUND_TASK_ID="com.blakecrosley.captainslog.history-index"
 APP_ICON_DIR="$ROOT_DIR/CaptainsLog/Resources/Assets.xcassets/AppIcon.appiconset"
 APP_ICON="$APP_ICON_DIR/app-icon-1024-marketing.png"
 SCREENSHOT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreScreenshots}"
@@ -266,6 +268,26 @@ else
         pass "ITSAppUsesNonExemptEncryption=false"
     else
         fail "ITSAppUsesNonExemptEncryption is $encryption_flag"
+    fi
+
+    background_mode="$(/usr/libexec/PlistBuddy -c 'Print :UIBackgroundModes:0' "$INFO_PLIST" 2>/dev/null || true)"
+    if [[ "$background_mode" == "processing" ]]; then
+        pass "UIBackgroundModes includes processing"
+    else
+        fail "UIBackgroundModes: ${background_mode:-missing}, expected processing"
+    fi
+
+    permitted_background_task="$(/usr/libexec/PlistBuddy -c 'Print :BGTaskSchedulerPermittedIdentifiers:0' "$INFO_PLIST" 2>/dev/null || true)"
+    if [[ "$permitted_background_task" == "$EXPECTED_BACKGROUND_TASK_ID" ]]; then
+        pass "BGTaskSchedulerPermittedIdentifiers includes $EXPECTED_BACKGROUND_TASK_ID"
+    else
+        fail "BGTaskSchedulerPermittedIdentifiers: ${permitted_background_task:-missing}, expected $EXPECTED_BACKGROUND_TASK_ID"
+    fi
+
+    if rg -q "static let taskIdentifier = \"$EXPECTED_BACKGROUND_TASK_ID\"" "$BACKGROUND_INDEXER_SOURCE"; then
+        pass "Background indexer task identifier matches Info.plist"
+    else
+        fail "Background indexer task identifier does not match Info.plist"
     fi
 fi
 
