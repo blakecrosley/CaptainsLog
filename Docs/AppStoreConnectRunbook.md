@@ -10,7 +10,7 @@ From the repo root:
 Scripts/app_store_readiness_status.sh
 ```
 
-Use the summary as the gate. If it only reports the known missing/stale IPA state, make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported paths are a local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, provider public ID for altool-only checks, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+Use the summary as the gate. If it only reports the known missing/stale IPA state, make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported paths are a local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
@@ -157,7 +157,7 @@ Scripts/app_store_readiness_status.sh
 
 The export script uses the same API key, issuer, and `.p8` env vars for `xcodebuild` provisioning updates, so the same private-key custody rules apply: keep the `.p8` outside this repo and outside any git working tree.
 
-Then run `Scripts/check_app_store_connect_record.py` to confirm the App Store Connect app record by bundle ID. Set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` only if you need the older `Scripts/upload_app_store_ipa.sh app-record` altool path; Xcode 26.5 `altool --list-providers` does not support API-key authentication, so obtain this value from App Store Connect, Transporter, or a manually authenticated altool session. Evidence that closes this step: readiness shows API key/issuer and `.p8` as valid, `Scripts/check_app_store_connect_record.py` reports an app record for `com.blakecrosley.captainslog`, and no App Store private key material exists inside this repo or another git working tree.
+Then run `Scripts/upload_app_store_ipa.sh app-record` or `Scripts/check_app_store_connect_record.py` to confirm the App Store Connect app record by bundle ID. Set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` only if you need the older `Scripts/upload_app_store_ipa.sh app-record-altool` path; Xcode 26.5 `altool --list-providers` does not support API-key authentication, so obtain this value from App Store Connect, Transporter, or a manually authenticated altool session. Evidence that closes this step: readiness shows API key/issuer and `.p8` as valid, the REST app-record check reports an app record for `com.blakecrosley.captainslog`, and no App Store private key material exists inside this repo or another git working tree.
 
 ## 5. Validate, Upload, And Check Processing
 

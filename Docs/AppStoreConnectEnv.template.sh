@@ -18,10 +18,11 @@ export APP_STORE_CONNECT_API_KEY="YOUR_KEY_ID"
 export APP_STORE_CONNECT_API_ISSUER="YOUR_ISSUER_UUID"
 export APP_STORE_CONNECT_P8_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8"
 
-# Fill this from App Store Connect, Transporter, or a manually authenticated
-# altool session. Xcode 26.5 altool --list-providers does not support API-key
-# authentication.
-export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID="YOUR_PROVIDER_PUBLIC_ID"
+# Optional. Fill only if using Scripts/upload_app_store_ipa.sh app-record-altool.
+# Xcode 26.5 altool --list-providers does not support API-key authentication.
+# The default app-record command uses the App Store Connect REST API and does
+# not need this value.
+# export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID="YOUR_PROVIDER_PUBLIC_ID"
 
 # Optional. Fill after the app record exists if you want status checks by app.
 export APP_STORE_CONNECT_APPLE_ID="YOUR_APPLE_ID"
