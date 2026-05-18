@@ -198,7 +198,7 @@ external "create or confirm the App Store Connect app record"
 external "upload build and verify TestFlight processing"
 external "complete human screenshot marketing acceptance"
 external "complete legal/privacy review"
-external "reconcile blakecrosley.com PR 15 source state"
+pass "blakecrosley.com PR 15 source state reconciled"
 external "final human tap-through on the real large-account install"
 
 printf '\nSummary\n'

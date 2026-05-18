@@ -90,13 +90,13 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - Debug-only UI performance probes are compiled out of the exported release executable; direct IPA string inspection did not find the heartbeat or slow-metrics probe messages.
 - The real-account device store can be aggregate-audited without exposing commit messages or repository names by running `Scripts/audit_device_store.sh /tmp/captainslog-device-store-script-audit`.
 - The reviewer/demo path has a simulator UI test pass after the final Work Map polish and an earlier device UI test pass for first-run actions, fixture dashboard, settings, privacy, and selected-day journal detail.
+- The `blakecrosley.com` source PR that disables active analytics scripts on the Captain's Log Privacy Policy and Support pages was merged on May 17, 2026 as merge commit `661f0a183bf8ed8dca22f80ff83315df90f1f819`.
 
 ### Next
 
 - A final manual tap-through on the real large GitHub account is still recommended before submission, even though local device-store coverage now has aggregate evidence.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
-- Reconcile `blakecrosley.com` PR 15. The live Captain's Log Privacy Policy and Support pages currently pass the active-analytics preflight check, but the site source PR remains open and should either be merged or closed once the production source of truth is confirmed.
 
 ## Official References
 
