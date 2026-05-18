@@ -1,6 +1,6 @@
 # Captain's Log App Store Connect Runbook
 
-Use this during the first App Store Connect/TestFlight session. It is the short operator path; keep `Docs/AppStoreConnectSubmission.md` open for evidence and `Docs/AppStoreMetadata.md` for paste-ready copy.
+Use this during the first App Store Connect/TestFlight session. It is the short operator path; keep `Docs/AppStoreConnectSubmission.md` open for evidence, `Docs/AppStoreCompletionAudit.md` open for gate status, and `Docs/AppStoreMetadata.md` open for paste-ready copy.
 
 ## Start Here
 

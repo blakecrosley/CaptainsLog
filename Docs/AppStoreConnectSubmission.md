@@ -1,6 +1,6 @@
 # Captain's Log App Store Connect Submission Packet
 
-This is the evidence packet for the first TestFlight/App Store Connect submission. Use `Docs/AppStoreConnectRunbook.md` as the short operator sequence during the actual App Store Connect session.
+This is the evidence packet for the first TestFlight/App Store Connect submission. Use `Docs/AppStoreConnectRunbook.md` as the short operator sequence during the actual App Store Connect session and `Docs/AppStoreCompletionAudit.md` for the current gate-by-gate completion state.
 
 ## Current Local State
 
