@@ -56,12 +56,12 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 - Has current device-test evidence showing the latest connected-phone UI-test attempt built and signed but could not launch while the phone was locked.
 - Has current generic iOS Release archive evidence showing the app and linked `Kit941` package compile and package for device when code signing is disabled.
 - Fails local readiness because the current IPA and export manifest are missing; readiness now skips IPA local-check until a current IPA exists so the missing IPA is not counted twice.
-- A bypassed signing-precheck export attempt archived the generic iOS build, but the App Store export failed with `No Accounts` and `No signing certificate "iOS Distribution" found`, confirming the missing IPA cannot be fixed locally until Xcode account/distribution signing is configured.
-- Reports external blockers for distribution signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields including platform availability, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+- A bypassed signing-precheck export attempt archived the generic iOS build, but the App Store export failed with `No Accounts` and `No signing certificate "iOS Distribution" found`, confirming the missing IPA cannot be fixed locally until either Xcode account/distribution signing or App Store Connect API-key provisioning auth is configured.
+- Reports external blockers for export signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields including platform availability, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 ## Next Action
 
-The next meaningful action is not more local feature work. Make App Store distribution signing available in Xcode, then regenerate the current IPA:
+The next meaningful action is not more local feature work. Make one App Store export-signing path available, then regenerate the current IPA. Either configure Xcode account/distribution signing or set the App Store Connect API-key env vars from `Docs/AppStoreConnectEnv.template.sh`:
 
 ```sh
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export

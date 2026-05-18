@@ -10,11 +10,11 @@ From the repo root:
 Scripts/app_store_readiness_status.sh
 ```
 
-Use the summary as the gate. If it only reports the known missing/stale IPA state, resolve distribution signing and regenerate the IPA before continuing into App Store Connect. After the current IPA passes local checks, the expected remaining blockers before submission are external: credentials, app record, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+Use the summary as the gate. If it only reports the known missing/stale IPA state, make one export-signing path available, then regenerate the IPA before continuing into App Store Connect. The two supported paths are a local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates. After the current IPA passes local checks, the expected remaining blockers before submission are external: credentials, app record, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
-If readiness reports a missing or stale IPA, make App Store distribution signing available in Xcode, then run:
+If readiness reports a missing or stale IPA, make either Xcode distribution signing or `xcodebuild` API-key provisioning auth available, then run:
 
 ```sh
 Scripts/app_store_signing_status.sh

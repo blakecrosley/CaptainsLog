@@ -16,6 +16,8 @@ local_failures=0
 external_blockers=0
 ipa_missing=0
 export_manifest_missing=0
+distribution_identity_available=0
+xcode_auth_env_ready=0
 
 pass() {
     printf '[ok] %s\n' "$1"
@@ -234,6 +236,35 @@ check_p8_path() {
     fi
 }
 
+xcode_auth_env_ready_for_status() {
+    if [[ -z "${APP_STORE_CONNECT_API_KEY:-}" || -z "${APP_STORE_CONNECT_API_ISSUER:-}" || -z "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
+        return 1
+    fi
+    if ! [[ "$APP_STORE_CONNECT_API_KEY" =~ ^[A-Za-z0-9]{10}$ ]]; then
+        return 1
+    fi
+    if ! [[ "$APP_STORE_CONNECT_API_ISSUER" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+        return 1
+    fi
+    if [[ ! -f "$APP_STORE_CONNECT_P8_FILE" ]]; then
+        return 1
+    fi
+
+    local p8_path
+    local p8_git_root
+    p8_path="$(absolute_path "$APP_STORE_CONNECT_P8_FILE")"
+    p8_git_root="$(git_root_for_path "$p8_path")"
+    case "$p8_path" in
+        "$ROOT_DIR"/*)
+            return 1
+            ;;
+    esac
+    if [[ -n "$p8_git_root" || ! -r "$p8_path" ]]; then
+        return 1
+    fi
+    rg -q -- "-----BEGIN PRIVATE KEY-----" "$p8_path"
+}
+
 check_token_shaped_source_literals() {
     local sk_prefix token_pattern token_hits
     sk_prefix="$(printf '%s-' "sk")"
@@ -285,10 +316,18 @@ else
     fail "xcodebuild version or SDK list unavailable"
 fi
 
+if xcode_auth_env_ready_for_status; then
+    xcode_auth_env_ready=1
+fi
+
 if security find-identity -v -p codesigning 2>/dev/null | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
+    distribution_identity_available=1
     pass "App Store distribution signing identity for team ${TEAM_ID} available in local keychain"
+elif (( xcode_auth_env_ready == 1 )); then
+    pass "App Store Connect API-key auth inputs for xcodebuild provisioning updates are present"
+    warn "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; export will rely on xcodebuild automatic signing"
 else
-    external "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; a current IPA export requires signing in to Xcode or installing the distribution certificate for that team"
+    external "App Store export signing is not ready; provide either an Apple Distribution/iOS Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates"
 fi
 
 printf '\nLocal artifact checks\n'
@@ -548,6 +587,12 @@ else
     external "App Store Connect .p8 key file is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
 fi
 
+if (( distribution_identity_available == 0 && xcode_auth_env_ready == 0 )); then
+    external "xcodebuild App Store Connect API-key auth is not configured; without a local distribution identity, export_app_store_ipa.sh cannot regenerate the current IPA"
+elif (( xcode_auth_env_ready == 1 )); then
+    pass "xcodebuild App Store Connect API-key auth inputs are present for export_app_store_ipa.sh"
+fi
+
 external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
 external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability, Apple Silicon Mac availability, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
@@ -564,7 +609,7 @@ if (( local_failures > 0 )); then
 
 Next local action:
 1. Run Scripts/app_store_signing_status.sh.
-2. Make App Store distribution signing available in Xcode.
+2. Make one App Store export-signing path available: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ, or APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates.
 3. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. Rerun Scripts/app_store_readiness_status.sh.
@@ -581,7 +626,7 @@ if (( external_blockers > 0 )); then
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability, Apple Silicon Mac availability, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-3. Check signing state with Scripts/app_store_signing_status.sh, make App Store distribution signing available to Xcode, then regenerate the current IPA if readiness reports it missing or stale:
+3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, then either set APP_STORE_CONNECT_P8_FILE or place AuthKey_<key>.p8 in an altool default private key folder outside this repo.
 5. Run Scripts/upload_app_store_ipa.sh providers, then export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID.
