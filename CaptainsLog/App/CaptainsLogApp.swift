@@ -48,8 +48,12 @@ struct CaptainsLogApp: App {
     }
 
     static var isUITesting: Bool {
+        #if DEBUG
         ProcessInfo.processInfo.arguments.contains("-ui-testing")
             || ProcessInfo.processInfo.environment["CAPTAINS_LOG_UI_TESTING"] == "1"
+        #else
+        false
+        #endif
     }
 }
 
