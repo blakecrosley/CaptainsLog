@@ -173,10 +173,17 @@ if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuil
     xcode_major="$(printf '%s\n' "$xcode_first_line" | sed -E 's/^Xcode ([0-9]+).*/\1/')"
     if ! [[ "$xcode_major" =~ ^[0-9]+$ ]] || (( xcode_major < 26 )); then
         fail "$xcode_first_line is older than Xcode 26 required for 2026 App Store upload"
-    elif printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
-        pass "$xcode_first_line satisfies Xcode 26+ and iOS 26+ SDK requirements"
     else
-        fail "$xcode_first_line does not list an iOS 26 or newer SDK required for 2026 App Store upload"
+        if printf '%s\n' "$xcode_sdks" | rg -q 'iphoneos(2[6-9]|[3-9][0-9])([.]|$)'; then
+            pass "$xcode_first_line satisfies Xcode 26+ and iOS 26+ SDK requirements"
+        else
+            fail "$xcode_first_line does not list an iOS 26 or newer SDK required for 2026 App Store upload"
+        fi
+        if printf '%s\n' "$xcode_sdks" | rg -q 'macosx(2[6-9]|[3-9][0-9])([.]|$)'; then
+            pass "$xcode_first_line satisfies macOS 26+ SDK requirements"
+        else
+            fail "$xcode_first_line does not list a macOS 26 or newer SDK required for native Mac App Store export"
+        fi
     fi
 else
     fail "xcodebuild version or SDK list unavailable"
