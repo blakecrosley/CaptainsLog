@@ -32,7 +32,7 @@ Latest local readiness check: May 18, 2026. The screenshot packet and connected-
 - `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` archived the current source successfully, then failed before IPA export because local Xcode could not find an App Store distribution account/certificate (`exportArchive No Accounts`, `No signing certificate "iOS Distribution" found`).
 - No current IPA local-check can pass until the App Store export is regenerated. The previous now-stale IPA local-check had passed before the app icon resource update.
 - Direct IPA string inspection must be rerun after the next successful export.
-- `Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` cannot be rerun until the current IPA exists. After export succeeds, the App Store Connect app-record query is still blocked until `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER` are set.
+- `Scripts/upload_app_store_ipa.sh app-record` does not require an IPA and can be run as soon as App Store Connect API credentials are set.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` cannot be rerun until the current IPA exists. After export succeeds, validation is still blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
 - `Scripts/app_store_readiness_status.sh` failed on May 18, 2026 because the current IPA, export manifest, and IPA local-check are missing after the blocked clean export. It passed preflight, passed the credential-guard self-test, verifies that no App Store Connect `.p8` private-key material is inside the repository, and reports the remaining external App Store Connect gates.
 - `xcodebuild build -project CaptainsLog.xcodeproj -scheme CaptainsLog-iOS -destination 'id=00008150-00166D690EF0401C'` previously built a Debug app for Blake's iPhone 17 Pro Max, then `xcrun devicectl device install app` installed bundle `com.blakecrosley.captainslog` and `xcrun devicectl device process launch` launched it successfully with process id `6545`.
@@ -191,10 +191,10 @@ export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 
 `Scripts/app_store_readiness_status.sh` and `Scripts/upload_app_store_ipa.sh` both validate that the API key looks like a 10-character key ID, the issuer looks like a UUID, and the `.p8` file is readable, outside the repo, and has a private-key header when either `APP_STORE_CONNECT_P8_FILE` or an `altool` default private-key path is available. They do not print private-key contents.
 
-Then validate, upload, and check processing:
+Then confirm the app record, validate, upload, and check processing:
 
 ```sh
-Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+Scripts/upload_app_store_ipa.sh app-record
 Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
@@ -287,7 +287,7 @@ Use this table as the final owner checklist. A gate is closed only when the evid
 
 | Gate | Action | Evidence that closes it |
 | --- | --- | --- |
-| App Store Connect app record | Create or confirm the iOS app record with bundle ID `com.blakecrosley.captainslog`, SKU `captainslog-ios`, primary language English (U.S.), and team `M4WTLM6RAQ`. | `Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` lists the app by bundle ID, and the Apple ID is captured as `APP_STORE_CONNECT_APPLE_ID` for status checks. |
+| App Store Connect app record | Create or confirm the iOS app record with bundle ID `com.blakecrosley.captainslog`, SKU `captainslog-ios`, primary language English (U.S.), and team `M4WTLM6RAQ`. | `Scripts/upload_app_store_ipa.sh app-record` lists the app by bundle ID, and the Apple ID is captured as `APP_STORE_CONNECT_APPLE_ID` for status checks. |
 | Manual App Store Connect fields | Enter pricing, availability, regional availability prompts if shown, EU DSA trader status, Labels and Markings URLs if shown, regulated medical device status if shown, tax category if shown, distribution, version-release option, age-rating questionnaire, content-rights answer, license choice, Made for Kids answer, App Review contact, and demo-account details using `Docs/AppStoreMetadata.md`. | App Store Connect shows the app version ready to add for review with no missing metadata warnings, and private contact/demo/trader contact details exist only in App Store Connect. |
 | App Store Connect API credentials | Create or select an App Store Connect API key with upload permission, then set `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE`. Keep the `.p8` outside the repo. | `Scripts/app_store_readiness_status.sh` shows API key/issuer and `.p8` as set; `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passes. |
 | Build upload | Run `Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` after validate passes. | Upload command succeeds and returns either a delivery ID or a build visible in App Store Connect. |

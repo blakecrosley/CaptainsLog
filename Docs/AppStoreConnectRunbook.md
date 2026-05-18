@@ -36,7 +36,7 @@ In App Store Connect, create or confirm:
 Evidence that closes this step:
 
 ```sh
-Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+Scripts/upload_app_store_ipa.sh app-record
 ```
 
 If App Store Connect gives an Apple ID for this app, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.

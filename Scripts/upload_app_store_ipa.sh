@@ -20,7 +20,7 @@ usage() {
     cat <<'USAGE'
 Usage:
   Scripts/upload_app_store_ipa.sh local-check [ipa]
-  Scripts/upload_app_store_ipa.sh app-record [ipa]
+  Scripts/upload_app_store_ipa.sh app-record
   Scripts/upload_app_store_ipa.sh validate [ipa]
   Scripts/upload_app_store_ipa.sh upload [ipa]
   Scripts/upload_app_store_ipa.sh status [ipa]
