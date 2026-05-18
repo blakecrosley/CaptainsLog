@@ -39,6 +39,14 @@ need_command() {
     fi
 }
 
+need_xcrun_tool() {
+    if xcrun "$1" --help >/dev/null 2>&1; then
+        pass "xcrun tool available: $1"
+    else
+        fail "xcrun tool missing or unavailable: $1"
+    fi
+}
+
 manifest_value() {
     local label="$1"
     awk -F ': ' -v label="$label" '$1 == label { print $2; exit }' "$EXPORT_MANIFEST"
@@ -68,6 +76,8 @@ need_command sips
 need_command sqlite3
 need_command unzip
 need_command rg
+need_command magick
+need_xcrun_tool altool
 
 printf '\nLocal artifact checks\n'
 if [[ -f "$IPA_PATH" ]]; then

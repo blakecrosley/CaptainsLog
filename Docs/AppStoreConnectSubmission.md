@@ -38,6 +38,25 @@ Last local audit: May 17, 2026.
 - Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
 - The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. At export, Kit941 was clean and aligned with `origin/main`.
 
+## Official Docs Cross-Check
+
+Checked against Apple documentation on May 18, 2026.
+
+- Apple says to create the App Store Connect app record before uploading a build. Required roles are Account Holder, App Manager, or Admin, and the record opens in `Prepare for Submission` after creation. This matches the remaining app-record gate below.
+- Apple says builds can be uploaded with Xcode, altool, or Transporter after an app is added to the account. It also notes that the first upload creates a beta version but the build must finish Apple processing before it appears in App Store Connect. This matches the validate, upload, and TestFlight-processing gates below.
+- Apple says team API keys require Account Holder or Admin, and downloaded API keys are private and only downloadable once. This matches the `.p8` handling below: keep `AuthKey_*.p8` outside the repo and pass it through `APP_STORE_CONNECT_P8_FILE`.
+- Apple's screenshot specification allows one to ten `.jpeg`, `.jpg`, or `.png` screenshots. The current packaged set has six PNGs per family. The iPhone 6.9-inch portrait size `1320 x 2868` and iPad 13-inch portrait size `2064 x 2752` are accepted sizes in Apple's table.
+- Apple says App Store privacy information is required for new apps and updates. This matches the open legal/privacy review gate and the paste-ready privacy questionnaire in `Docs/AppStorePrivacyAnswers.md`.
+- Local Xcode evidence: `xcrun altool --help` reports altool `26.40.1` and supports the script's `--validate-app`, `--upload-package`, and `--build-status` commands.
+
+Sources:
+
+- https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
+- https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/
+- https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api
+- https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications
+- https://developer.apple.com/app-store/app-privacy-details/
+
 ## Prompt-To-Artifact Checklist
 
 | Requirement | Artifact | Current Evidence | Status |
