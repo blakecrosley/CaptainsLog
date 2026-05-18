@@ -22,6 +22,12 @@ struct CaptainsLogApp: App {
                 }
                 #endif
         }
+        #if os(macOS) && DEBUG
+        .defaultSize(
+            width: Self.debugDefaultWindowSize.width,
+            height: Self.debugDefaultWindowSize.height
+        )
+        #endif
         .modelContainer(Self.sharedModelContainer)
     }
 
@@ -55,6 +61,29 @@ struct CaptainsLogApp: App {
         false
         #endif
     }
+
+    #if os(macOS) && DEBUG
+    private static var debugDefaultWindowSize: CGSize {
+        guard ProcessInfo.processInfo.environment["CAPTAINS_LOG_MACOS_SCREENSHOT_MODE"] == "1" else {
+            return CGSize(width: 900, height: 450)
+        }
+
+        return CGSize(
+            width: debugWindowDimension("CAPTAINS_LOG_MACOS_SCREENSHOT_WINDOW_WIDTH", fallback: 1440),
+            height: debugWindowDimension("CAPTAINS_LOG_MACOS_SCREENSHOT_WINDOW_HEIGHT", fallback: 900)
+        )
+    }
+
+    private static func debugWindowDimension(_ key: String, fallback: CGFloat) -> CGFloat {
+        guard let rawValue = ProcessInfo.processInfo.environment[key],
+              let value = Double(rawValue),
+              value >= 100 else {
+            return fallback
+        }
+
+        return CGFloat(value)
+    }
+    #endif
 }
 
 #if DEBUG

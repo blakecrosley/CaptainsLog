@@ -19,7 +19,7 @@ Current platform availability status:
 
 - iPhone and iPad: ready as the universal iOS app once a signed IPA is exported and uploaded.
 - Apple Vision Pro: use the compatible iPhone/iPad app path after final smoke-test acceptance; this is not a native visionOS app.
-- Mac: a native macOS target exists, but do not submit it until Mac signing/export, screenshots, TestFlight, and human QA are complete.
+- Mac: a native macOS target exists and local Mac screenshot candidates can be generated, but do not submit it until Mac signing/export, TestFlight, screenshot acceptance, and human QA are complete.
 - Apple Watch and Apple TV: no watchOS or tvOS app target exists for this release.
 
 Refresh the local Vision compatible-app smoke before final Vision acceptance:
@@ -32,6 +32,12 @@ Refresh the local native Mac launch smoke before accepting Mac availability:
 
 ```sh
 Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke
+```
+
+Refresh the local Mac screenshot candidates before Mac screenshot acceptance:
+
+```sh
+Scripts/capture_macos_app_store_screenshots.sh /tmp/captainslog-macos-appstore-screenshots
 ```
 
 After signing/auth is available:

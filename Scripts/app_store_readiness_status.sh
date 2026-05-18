@@ -18,6 +18,9 @@ MACOS_SMOKE_DIR="${CAPTAINS_LOG_MACOS_SMOKE_DIR:-/tmp/captainslog-macos-smoke}"
 MACOS_SMOKE_METADATA="$MACOS_SMOKE_DIR/macos-bundle-metadata.txt"
 MACOS_SMOKE_CODESIGN="$MACOS_SMOKE_DIR/macos-codesign.txt"
 MACOS_SMOKE_LAUNCH="$MACOS_SMOKE_DIR/macos-launch.log"
+MACOS_SCREENSHOT_DIR="${CAPTAINS_LOG_MACOS_SCREENSHOT_DIR:-/tmp/captainslog-macos-appstore-screenshots}"
+MACOS_SCREENSHOT_MANIFEST="$MACOS_SCREENSHOT_DIR/macos-screenshot-manifest.txt"
+MACOS_SCREENSHOT_AUDIT="$MACOS_SCREENSHOT_DIR/macos-screenshot-text-audit.log"
 
 local_failures=0
 external_blockers=0
@@ -354,6 +357,12 @@ printf_platform_target_status() {
                 fail "macOS launch smoke script missing or not executable"
             fi
 
+            if [[ -x "$ROOT_DIR/Scripts/capture_macos_app_store_screenshots.sh" ]]; then
+                pass "macOS screenshot capture script exists"
+            else
+                fail "macOS screenshot capture script missing or not executable"
+            fi
+
             if [[ -f "$MACOS_SMOKE_METADATA" && -f "$MACOS_SMOKE_CODESIGN" && -f "$MACOS_SMOKE_LAUNCH" ]]; then
                 if rg -q '^CFBundleIdentifier: com[.]blakecrosley[.]captainslog[.]mac$' "$MACOS_SMOKE_METADATA"; then
                     pass "macOS launch smoke bundle id recorded"
@@ -377,6 +386,41 @@ printf_platform_target_status() {
                 fi
             else
                 warn "macOS launch smoke artifacts missing; run Scripts/smoke_macos_launch.sh $MACOS_SMOKE_DIR before Mac availability acceptance"
+            fi
+
+            if [[ -d "$MACOS_SCREENSHOT_DIR" ]]; then
+                local macos_screenshot_count
+                local macos_screenshot
+                macos_screenshot_count="$(find "$MACOS_SCREENSHOT_DIR" -maxdepth 1 -type f -name '*.png' | wc -l | tr -d ' ')"
+                if [[ "$macos_screenshot_count" == "6" ]]; then
+                    pass "macOS screenshot count: 6"
+                else
+                    fail "macOS screenshot count: ${macos_screenshot_count:-0}, expected 6"
+                fi
+
+                for macos_screenshot in \
+                    "01-dashboard.png" \
+                    "02-work-map.png" \
+                    "03-journal.png" \
+                    "04-repositories.png" \
+                    "05-ai-providers.png" \
+                    "06-privacy-data.png"; do
+                    check_png_size_any "$MACOS_SCREENSHOT_DIR/$macos_screenshot" "macOS/$macos_screenshot" 2880x1800 2560x1600 1440x900 1280x800
+                done
+
+                if [[ -f "$MACOS_SCREENSHOT_MANIFEST" ]]; then
+                    pass "macOS screenshot manifest exists"
+                else
+                    fail "macOS screenshot manifest missing: $MACOS_SCREENSHOT_MANIFEST"
+                fi
+
+                if [[ -f "$MACOS_SCREENSHOT_AUDIT" ]] && rg -q 'Screenshot text audit passed' "$MACOS_SCREENSHOT_AUDIT"; then
+                    pass "macOS screenshot text audit passed"
+                else
+                    fail "macOS screenshot text audit missing or failed: $MACOS_SCREENSHOT_AUDIT"
+                fi
+            else
+                warn "macOS screenshots missing; run Scripts/capture_macos_app_store_screenshots.sh $MACOS_SCREENSHOT_DIR before Mac screenshot acceptance"
             fi
         else
             pass "no native macOS target found"
@@ -438,6 +482,7 @@ printf 'Packaged screenshots: %s\n' "$PACKAGED_DIR"
 printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
 printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
 printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
+printf 'macOS screenshots: %s\n' "$MACOS_SCREENSHOT_DIR"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git
