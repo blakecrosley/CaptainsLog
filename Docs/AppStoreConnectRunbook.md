@@ -96,7 +96,9 @@ Evidence that closes this step: legal/product approves the submitted privacy ans
 
 ## 4. Configure Upload Credentials
 
-Create or choose an App Store Connect API key with upload permission.
+Confirm App Store Connect API access exists first. Apple requires the Account Holder to request API access before keys can be used.
+
+For this upload helper, create or choose a team API key with upload permission. The helper uses `altool`'s API key plus issuer ID authentication path, so a team key is the clearest supported route for the first submission.
 
 Set API credentials in the shell only:
 
