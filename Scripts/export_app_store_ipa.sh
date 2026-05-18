@@ -110,6 +110,7 @@ app_path="$staged_archive_path/Products/Applications/Captain's Log.app"
 info_plist="$app_path/Info.plist"
 privacy_manifest="$app_path/PrivacyInfo.xcprivacy"
 staged_ipa_path="$(find "$staged_export_path" -maxdepth 1 -name "*.ipa" -print -quit)"
+staged_export_manifest="$staged_export_path/ExportManifest.txt"
 
 if [[ ! -d "$app_path" ]]; then
     printf 'Archived app not found: %s\n' "$app_path" >&2
@@ -131,6 +132,7 @@ archived_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionStrin
 archived_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$info_plist")"
 uses_non_exempt_encryption="$(/usr/libexec/PlistBuddy -c 'Print :ITSAppUsesNonExemptEncryption' "$info_plist")"
 created_utc="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+ipa_path="$EXPORT_PATH/$(basename "$staged_ipa_path")"
 
 if [[ "$archived_bundle_id" != "$BUNDLE_ID" ]]; then
     printf 'Unexpected bundle id: %s\n' "$archived_bundle_id" >&2
@@ -141,13 +143,6 @@ if [[ "$uses_non_exempt_encryption" != "false" ]]; then
     printf 'Unexpected export compliance flag: ITSAppUsesNonExemptEncryption=%s\n' "$uses_non_exempt_encryption" >&2
     exit 1
 fi
-
-rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
-mv "$staged_archive_path" "$ARCHIVE_PATH"
-mv "$staged_export_path" "$EXPORT_PATH"
-
-app_path="$ARCHIVE_PATH/Products/Applications/Captain's Log.app"
-ipa_path="$(find "$EXPORT_PATH" -maxdepth 1 -name "*.ipa" -print -quit)"
 
 {
     printf "Captain's Log App Store Export\n"
@@ -173,7 +168,19 @@ ipa_path="$(find "$EXPORT_PATH" -maxdepth 1 -name "*.ipa" -print -quit)"
     else
         printf 'Kit941 status at export: unavailable\n'
     fi
-} > "$EXPORT_MANIFEST"
+} > "$staged_export_manifest"
+
+if [[ ! -s "$staged_export_manifest" ]]; then
+    printf 'Export manifest was not created in staged output: %s\n' "$staged_export_manifest" >&2
+    exit 1
+fi
+
+rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
+mv "$staged_archive_path" "$ARCHIVE_PATH"
+mv "$staged_export_path" "$EXPORT_PATH"
+
+app_path="$ARCHIVE_PATH/Products/Applications/Captain's Log.app"
+ipa_path="$(find "$EXPORT_PATH" -maxdepth 1 -name "*.ipa" -print -quit)"
 
 printf 'Archive: %s\n' "$ARCHIVE_PATH"
 printf 'IPA: %s\n' "$ipa_path"
