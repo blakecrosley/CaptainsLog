@@ -24,6 +24,7 @@ Usage:
   Scripts/upload_app_store_ipa.sh validate [ipa]
   Scripts/upload_app_store_ipa.sh upload [ipa]
   Scripts/upload_app_store_ipa.sh status [ipa]
+  Scripts/upload_app_store_ipa.sh credential-guard-self-test
 
 Authentication for app-record/validate/upload/status:
   APP_STORE_CONNECT_API_KEY       App Store Connect API key ID.
@@ -219,6 +220,115 @@ check_api_credentials() {
     fi
 }
 
+credential_guard_self_test() {
+    local temp_dir test_key test_issuer good_p8 bad_p8
+    temp_dir="$(mktemp -d)"
+    trap 'rm -rf "$temp_dir"' RETURN
+
+    test_key="ABCDEFGHIJ"
+    test_issuer="00000000-0000-0000-0000-000000000000"
+    good_p8="$temp_dir/AuthKey_${test_key}.p8"
+    bad_p8="$temp_dir/AuthKey_BADHEADER.p8"
+
+    printf '%s\n%s\n%s\n' "-----BEGIN PRIVATE KEY-----" "fake-self-test-key" "-----END PRIVATE KEY-----" >"$good_p8"
+    printf '%s\n' "not a private key" >"$bad_p8"
+
+    good_direct_path() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$good_p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    good_default_path() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        unset APP_STORE_CONNECT_P8_FILE
+        API_PRIVATE_KEYS_DIR="$temp_dir"
+        check_api_credentials
+    }
+
+    bad_key_shape() {
+        APP_STORE_CONNECT_API_KEY="SHORT"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$good_p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    bad_issuer_shape() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="not-a-uuid"
+        APP_STORE_CONNECT_P8_FILE="$good_p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    missing_p8() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$temp_dir/missing.p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    repo_local_p8() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$ROOT_DIR/Scripts/upload_app_store_ipa.sh"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    bad_p8_header() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        APP_STORE_CONNECT_P8_FILE="$bad_p8"
+        unset API_PRIVATE_KEYS_DIR
+        check_api_credentials
+    }
+
+    no_p8_available() {
+        APP_STORE_CONNECT_API_KEY="$test_key"
+        APP_STORE_CONNECT_API_ISSUER="$test_issuer"
+        unset APP_STORE_CONNECT_P8_FILE
+        API_PRIVATE_KEYS_DIR="$temp_dir/empty"
+        check_api_credentials
+    }
+
+    expect_pass() {
+        local label="$1"
+        shift
+        if ( "$@" ) >/dev/null 2>&1; then
+            printf '[ok] credential guard accepts %s\n' "$label"
+        else
+            fail "credential guard should accept $label"
+        fi
+    }
+
+    expect_fail() {
+        local label="$1"
+        shift
+        if ( "$@" ) >/dev/null 2>&1; then
+            fail "credential guard should reject $label"
+        else
+            printf '[ok] credential guard rejects %s\n' "$label"
+        fi
+    }
+
+    expect_pass "direct .p8 path outside repo" good_direct_path
+    expect_pass "altool default .p8 path outside repo" good_default_path
+    expect_fail "malformed API key ID" bad_key_shape
+    expect_fail "malformed issuer UUID" bad_issuer_shape
+    expect_fail "missing .p8 path" missing_p8
+    expect_fail "repo-local .p8 path" repo_local_p8
+    expect_fail "non-private-key .p8 file" bad_p8_header
+    expect_fail "missing default .p8 file" no_p8_available
+
+    printf 'Credential guard self-test passed\n'
+}
+
 build_auth_args() {
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
         check_api_credentials
@@ -340,6 +450,9 @@ case "$COMMAND" in
         ;;
     status)
         run_status
+        ;;
+    credential-guard-self-test)
+        credential_guard_self_test
         ;;
     -h|--help|help)
         usage
