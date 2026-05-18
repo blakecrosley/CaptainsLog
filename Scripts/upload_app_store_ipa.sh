@@ -142,8 +142,86 @@ $(printf '%s\n' "$release_fixture_hits" | sed -n '1,12p')"
 
 auth_args=()
 
+absolute_path() {
+    local path="$1"
+    local dir
+    dir="$(cd "$(dirname "$path")" && pwd -P)" || return 1
+    printf '%s/%s\n' "$dir" "$(basename "$path")"
+}
+
+default_p8_path_for_key() {
+    local api_key="$1"
+    local expected_name="AuthKey_${api_key}.p8"
+    local dirs=(
+        "$PWD/private_keys"
+        "$HOME/private_keys"
+        "$HOME/.private_keys"
+        "$HOME/.appstoreconnect/private_keys"
+    )
+
+    if [[ -n "${API_PRIVATE_KEYS_DIR:-}" ]]; then
+        dirs+=("$API_PRIVATE_KEYS_DIR")
+    fi
+
+    local dir candidate
+    for dir in "${dirs[@]}"; do
+        candidate="$dir/$expected_name"
+        if [[ -f "$candidate" ]]; then
+            absolute_path "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+check_p8_path() {
+    local p8_path="$1"
+    local source_label="$2"
+
+    [[ -f "$p8_path" ]] || fail "$source_label file does not exist: $p8_path"
+    p8_path="$(absolute_path "$p8_path")" || fail "$source_label path is not accessible: $p8_path"
+
+    case "$p8_path" in
+        "$ROOT_DIR"/*)
+            fail "App Store Connect .p8 key file must live outside the repo"
+            ;;
+    esac
+
+    [[ -r "$p8_path" ]] || fail "App Store Connect .p8 key file is not readable"
+
+    if ! rg -q -- "-----BEGIN PRIVATE KEY-----" "$p8_path"; then
+        fail "App Store Connect .p8 key file does not look like an App Store Connect private key"
+    fi
+
+    local expected_p8_name
+    expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
+    if [[ "$(basename "$p8_path")" != "$expected_p8_name" ]]; then
+        printf 'warning: App Store Connect .p8 filename is not %s; --p8-file-path may still work, but verify carefully\n' "$expected_p8_name" >&2
+    fi
+
+    if [[ "$source_label" == "APP_STORE_CONNECT_P8_FILE" ]]; then
+        APP_STORE_CONNECT_P8_FILE="$p8_path"
+    fi
+}
+
+check_api_credentials() {
+    [[ "$APP_STORE_CONNECT_API_KEY" =~ ^[A-Za-z0-9]{10}$ ]] || fail "APP_STORE_CONNECT_API_KEY should be a 10-character key ID"
+    [[ "$APP_STORE_CONNECT_API_ISSUER" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]] || fail "APP_STORE_CONNECT_API_ISSUER should be a UUID"
+
+    local default_p8_path
+    if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
+        check_p8_path "$APP_STORE_CONNECT_P8_FILE" "APP_STORE_CONNECT_P8_FILE"
+    elif default_p8_path="$(default_p8_path_for_key "$APP_STORE_CONNECT_API_KEY")"; then
+        check_p8_path "$default_p8_path" "altool default private key search path"
+    else
+        fail "APP_STORE_CONNECT_P8_FILE is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
+    fi
+}
+
 build_auth_args() {
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
+        check_api_credentials
         auth_args=(
             --api-key "$APP_STORE_CONNECT_API_KEY"
             --api-issuer "$APP_STORE_CONNECT_API_ISSUER"
