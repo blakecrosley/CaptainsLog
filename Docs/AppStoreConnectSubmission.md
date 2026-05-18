@@ -89,6 +89,7 @@ If screenshots need to be regenerated:
 Scripts/capture_app_store_screenshots.sh /tmp/captainslog-key-state-audit
 Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/package_app_store_screenshots.sh /tmp/captainslog-key-state-audit /tmp/captainslog-key-state-packaged
+Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review
 ```
 
 ## App Store Connect Record
@@ -151,7 +152,7 @@ Use both folders:
 - `/tmp/captainslog-key-state-packaged/iphone-6.9`
 - `/tmp/captainslog-key-state-packaged/ipad-13`
 
-Do a human pass before submission. The local checks verify size and obvious UI regressions, not marketing quality.
+Do a human pass before submission. The local checks verify size and obvious UI regressions, not marketing quality. Use `Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review` to generate `/tmp/captainslog-appstore-review/contact-sheet.png` for a fast side-by-side review of both device families.
 
 ## Physical Device Smoke
 
