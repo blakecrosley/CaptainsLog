@@ -6,7 +6,7 @@ This is the handoff checklist for the first TestFlight/App Store Connect submiss
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Exported app commit: `fd10cdee997e5ad0cb60d7a9a5b1b00a178661f2`
+- Exported app commit: `0485480d8d37fbba5f6e1437a54d3bc0d50c1733`
 - Exported Kit941 commit: `9330d58ca0e14d8133250a9051599fecafea03b2`
 - Bundle ID: `com.blakecrosley.captainslog`
 - Version/build: `1.0.0 (1)`
@@ -26,7 +26,7 @@ Last local audit: May 17, 2026.
 - Preflight now checks that the published Privacy Policy and Support pages contain expected Captain's Log, GitHub, Keychain, optional AI provider, and contact content, not just HTTP success.
 - Preflight now warns only when the published Privacy Policy or Support page includes active analytics script endpoints, not when the privacy copy says the app has no analytics SDKs. The current live pages passed the active-analytics check on May 17, 2026. The matching `blakecrosley.com` source PR remains open for site repo hygiene: https://github.com/blakecrosley/blakecrosley-site/pull/15
 - `Scripts/privacy_required_reason_audit.sh` is included in preflight and passed for the app target plus local `Kit941` package source.
-- `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` exported the current IPA from CaptainsLog commit `fd10cdee997e5ad0cb60d7a9a5b1b00a178661f2` and Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2`, with both source trees clean at export.
+- `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` exported the current IPA from CaptainsLog commit `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` and Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2`, with both source trees clean at export.
 - `Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passed: bundle `com.blakecrosley.captainslog`, version `1.0.0 (1)`, privacy manifest present, `ITSAppUsesNonExemptEncryption=false`, `get-task-allow=false`, Kit941 commit recorded, Kit941 dirty state `false`, and release debug fixture strings absent.
 - Direct IPA string inspection found no debug UI performance probe strings in the exported release executable.
 - `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` was attempted against the current IPA after the local check passed and is blocked until App Store Connect API credentials are provided: set `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER`.
@@ -40,8 +40,8 @@ Last local audit: May 17, 2026.
 
 | Requirement | Artifact | Current Evidence | Status |
 | --- | --- | --- | --- |
-| Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet | Preflight, archive/export, screenshots, metadata, privacy notes, and upload helper exist; current IPA local check passes from clean CaptainsLog commit `fd10cdee997e5ad0cb60d7a9a5b1b00a178661f2` and clean Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2` | Locally ready |
-| Clean up UI | Fixture screenshot routes and latest PNG audit | Dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data screenshots generated for iPhone and iPad; iPad dashboard uses the adaptive tablet layout with a selected-day journal preview; Work Map, AI provider, and Privacy & Data iPad screens now use wider/two-column layouts; no dashboard sync bar or repository toggle clipping was visible in the checked PNGs | Locally reviewed |
+| Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet | Preflight, archive/export, screenshots, metadata, privacy notes, and upload helper exist; current IPA local check passes from clean CaptainsLog commit `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` and clean Kit941 commit `9330d58ca0e14d8133250a9051599fecafea03b2` | Locally ready |
+| Clean up UI | Fixture screenshot routes and latest PNG audit | Dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data screenshots generated for iPhone and iPad; iPad dashboard uses the adaptive tablet layout with a selected-day journal preview; Work Map, AI provider, and Privacy & Data iPad screens now use wider/two-column layouts; no dashboard sync bar, repository toggle clipping, or oversized Work Map empty space was visible in the checked PNGs | Locally reviewed |
 | Make design feel coherent | `.impeccable.md`, fixture screenshots | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity | Locally reviewed |
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft | Locally ready, legal review open |
 | Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md`, `Docs/AppStorePrivacyAnswers.md` | URLs passed preflight reachability checks; privacy answers map App Store Connect fields to current code evidence | Locally ready, legal review open |
