@@ -21,6 +21,11 @@ MACOS_SMOKE_LAUNCH="$MACOS_SMOKE_DIR/macos-launch.log"
 MACOS_SCREENSHOT_DIR="${CAPTAINS_LOG_MACOS_SCREENSHOT_DIR:-/tmp/captainslog-macos-appstore-screenshots}"
 MACOS_SCREENSHOT_MANIFEST="$MACOS_SCREENSHOT_DIR/macos-screenshot-manifest.txt"
 MACOS_SCREENSHOT_AUDIT="$MACOS_SCREENSHOT_DIR/macos-screenshot-text-audit.log"
+MACOS_EXPORT_DIR="${CAPTAINS_LOG_MACOS_EXPORT_DIR:-/tmp/captainslog-current-macos-appstore-export}"
+MACOS_EXPORT_PATH="$MACOS_EXPORT_DIR/Export"
+MACOS_PACKAGE="$(find "$MACOS_EXPORT_PATH" -maxdepth 1 -name '*.pkg' -print -quit 2>/dev/null || true)"
+MACOS_PACKAGE_LABEL="${MACOS_PACKAGE:-$MACOS_EXPORT_PATH/*.pkg}"
+MACOS_EXPORT_MANIFEST="$MACOS_EXPORT_PATH/MacExportManifest.txt"
 
 local_failures=0
 external_blockers=0
@@ -390,6 +395,19 @@ printf_platform_target_status() {
                 fail "macOS screenshot capture script missing or not executable"
             fi
 
+            if [[ -x "$ROOT_DIR/Scripts/export_macos_app_store_pkg.sh" ]]; then
+                pass "macOS App Store package export script exists"
+            else
+                fail "macOS App Store package export script missing or not executable"
+            fi
+
+            if [[ -n "$MACOS_PACKAGE" && -f "$MACOS_PACKAGE" && -f "$MACOS_EXPORT_MANIFEST" ]]; then
+                pass "macOS App Store package exists"
+                pass "macOS App Store export manifest exists"
+            else
+                warn "macOS App Store package/export manifest missing; run Scripts/export_macos_app_store_pkg.sh $MACOS_EXPORT_DIR after Mac App Store signing or App Store Connect API auth is available"
+            fi
+
             if [[ -f "$MACOS_SMOKE_METADATA" && -f "$MACOS_SMOKE_CODESIGN" && -f "$MACOS_SMOKE_LAUNCH" ]]; then
                 if rg -q '^CFBundleIdentifier: com[.]blakecrosley[.]captainslog[.]mac$' "$MACOS_SMOKE_METADATA"; then
                     pass "macOS launch smoke bundle id recorded"
@@ -510,6 +528,7 @@ printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
 printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
 printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
 printf 'macOS screenshots: %s\n' "$MACOS_SCREENSHOT_DIR"
+printf 'macOS package: %s\n' "$MACOS_PACKAGE_LABEL"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git

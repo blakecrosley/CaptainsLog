@@ -88,7 +88,7 @@ Platform availability notes for the first App Review submission:
 
 - iPhone and iPad: submit as the current universal iOS app.
 - Apple Vision Pro: make available as the compatible iPhone/iPad app after `Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke` still reaches the first-run UI. Do not add native visionOS screenshots or metadata unless a separate visionOS target exists.
-- Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until `Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke`, Mac signing/export, screenshots, TestFlight, and human QA are complete.
+- Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until `Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke`, `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export`, screenshot marketing acceptance, TestFlight, and human QA are complete.
 - Apple Watch and Apple TV: no action in App Store Connect for this release because there is no watchOS or tvOS app target.
 
 Evidence that closes this step: App Store Connect shows the version ready to add for review with no missing-metadata warnings, and private details remain only in App Store Connect.
