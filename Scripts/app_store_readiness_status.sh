@@ -432,6 +432,12 @@ else
     external "App Store Connect API key and issuer are not set; validate/upload/status remain blocked"
 fi
 
+if [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then
+    pass "App Store Connect provider public ID is set"
+else
+    external "App Store Connect provider public ID is not set; run Scripts/upload_app_store_ipa.sh providers after setting API credentials, then export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID before app-record"
+fi
+
 if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
     if [[ -f "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
         check_p8_path "$APP_STORE_CONNECT_P8_FILE" "APP_STORE_CONNECT_P8_FILE"
@@ -469,11 +475,12 @@ Next external actions:
 3. Check signing state with Scripts/app_store_signing_status.sh, make App Store distribution signing available to Xcode, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, then either set APP_STORE_CONNECT_P8_FILE or place AuthKey_<key>.p8 in an altool default private key folder outside this repo.
-5. Run:
+5. Run Scripts/upload_app_store_ipa.sh providers, then export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID.
+6. Run:
    Scripts/upload_app_store_ipa.sh app-record
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-6. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
-7. Complete legal/privacy review and final real-account tap-through before submitting.
+7. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+8. Complete legal/privacy review and final real-account tap-through before submitting.
 NEXT_STEPS
 fi

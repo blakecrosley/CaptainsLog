@@ -20,19 +20,22 @@ usage() {
     cat <<'USAGE'
 Usage:
   Scripts/upload_app_store_ipa.sh local-check [ipa]
+  Scripts/upload_app_store_ipa.sh providers
   Scripts/upload_app_store_ipa.sh app-record
   Scripts/upload_app_store_ipa.sh validate [ipa]
   Scripts/upload_app_store_ipa.sh upload [ipa]
   Scripts/upload_app_store_ipa.sh status [ipa]
   Scripts/upload_app_store_ipa.sh credential-guard-self-test
 
-Authentication for app-record/validate/upload/status:
+Authentication for providers/app-record/validate/upload/status:
   APP_STORE_CONNECT_API_KEY       App Store Connect API key ID.
   APP_STORE_CONNECT_API_ISSUER    App Store Connect issuer UUID.
 
 Optional:
   APP_STORE_CONNECT_P8_FILE       Direct path to AuthKey_<key>.p8.
   APP_STORE_CONNECT_PROVIDER_PUBLIC_ID
+                                  Required for app-record because altool --list-apps
+                                  requires a provider public ID.
   APP_STORE_CONNECT_DELIVERY_ID   Use for status after upload.
   APP_STORE_CONNECT_APPLE_ID      App Apple ID for status when delivery ID is unavailable;
                                   also narrows app-record checks when set.
@@ -366,6 +369,8 @@ credential_guard_self_test() {
 }
 
 build_auth_args() {
+    local include_provider="${1:-1}"
+
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
         check_api_credentials
         auth_args=(
@@ -384,9 +389,13 @@ build_auth_args() {
         fail "Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER before using $COMMAND"
     fi
 
-    if [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then
+    if [[ "$include_provider" == "1" && -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then
         auth_args+=(--provider-public-id "$APP_STORE_CONNECT_PROVIDER_PUBLIC_ID")
     fi
+}
+
+require_provider_public_id() {
+    [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]] || fail "Set APP_STORE_CONNECT_PROVIDER_PUBLIC_ID before using app-record. Run Scripts/upload_app_store_ipa.sh providers to list providers."
 }
 
 ipa_version() {
@@ -410,11 +419,21 @@ run_validate() {
         --output-format "$ALTOOL_OUTPUT_FORMAT"
 }
 
+run_providers() {
+    build_auth_args 0
+    xcrun altool \
+        --list-providers \
+        "${auth_args[@]}" \
+        --output-format "$ALTOOL_OUTPUT_FORMAT"
+}
+
 run_app_record() {
-    build_auth_args
+    build_auth_args 0
+    require_provider_public_id
 
     local args=(
         --list-apps
+        --provider-public-id "$APP_STORE_CONNECT_PROVIDER_PUBLIC_ID"
         --filter-bundle-id "$BUNDLE_ID"
         "${auth_args[@]}"
         --output-format "$ALTOOL_OUTPUT_FORMAT"
@@ -474,6 +493,9 @@ run_status() {
 case "$COMMAND" in
     local-check)
         local_check "$IPA_PATH"
+        ;;
+    providers)
+        run_providers
         ;;
     app-record)
         run_app_record

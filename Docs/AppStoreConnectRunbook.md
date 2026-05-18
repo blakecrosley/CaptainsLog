@@ -37,10 +37,12 @@ In App Store Connect, create or confirm:
 Evidence that closes this step:
 
 ```sh
+Scripts/upload_app_store_ipa.sh providers
+export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID="..."
 Scripts/upload_app_store_ipa.sh app-record
 ```
 
-If App Store Connect gives an Apple ID for this app, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
+Run the evidence command after API credentials are configured in step 4. If App Store Connect gives an Apple ID for this app, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
 
 ## 2. Enter Product Metadata
 
@@ -112,10 +114,11 @@ Verify the local credential guard without contacting Apple:
 
 ```sh
 Scripts/upload_app_store_ipa.sh credential-guard-self-test
+Scripts/upload_app_store_ipa.sh providers
 Scripts/app_store_readiness_status.sh
 ```
 
-Evidence that closes this step: readiness shows API key/issuer and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
+Use the provider output to set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` for the team that owns `com.blakecrosley.captainslog`. Evidence that closes this step: readiness shows API key/issuer, provider public ID, and `.p8` as valid, and no App Store private key material exists inside this repo or another git working tree.
 
 ## 5. Validate, Upload, And Check Processing
 

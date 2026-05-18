@@ -31,7 +31,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 | Current release IPA | `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` | The export script now fails fast before archiving because local Xcode lacks an Apple Distribution/iOS Distribution signing identity. The previous IPA is stale after app icon resources changed; readiness also fails if an archive-only output exists without the matching export manifest so stale development-signed archives are not mistaken for release output. | Blocked |
 | Preserve existing IPA on failed export | `Scripts/export_app_store_ipa.sh` | Temp preservation test kept an existing dummy IPA and manifest after the expected signing failure. The script now stages outputs and only replaces current export output after validation succeeds. | Complete locally |
 | Upload helper local checks | `Scripts/upload_app_store_ipa.sh local-check <ipa>` | Helper validates bundle ID, privacy manifest, encryption flag, `get-task-allow=false`, clean export manifest, and debug fixture strings. It cannot pass until a current IPA exists. | Script ready, IPA blocked |
-| App Store Connect app record check | `Scripts/upload_app_store_ipa.sh app-record` | Helper no longer requires an IPA for `app-record`. Current run fails before contacting Apple because `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER` are not set. | Blocked on credentials |
+| App Store Connect app record check | `Scripts/upload_app_store_ipa.sh providers`, `Scripts/upload_app_store_ipa.sh app-record` | Helper no longer requires an IPA for `app-record`. Current run fails before contacting Apple because `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER` are not set; after API credentials are available, `providers` must be used to set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` because Xcode 26.5 `altool --list-apps` requires a provider public ID. | Blocked on credentials |
 | App Store Connect API key custody | `Scripts/upload_app_store_ipa.sh credential-guard-self-test`, `Scripts/app_store_readiness_status.sh` | Credential guard self-test passed. Readiness confirms no `.p8` private-key material is in the repo. | Complete locally, real credentials open |
 | Distribution signing | `Scripts/app_store_signing_status.sh`, `security find-identity -v -p codesigning`, `Scripts/export_app_store_ipa.sh`, and readiness script | Current keychain has Apple Development and Developer ID Application identities, but no Apple Distribution/iOS Distribution identity. Xcode has local provisioning profiles available in its UserData profile directory, but distribution export remains blocked until an Apple Distribution/iOS Distribution identity is installed. Export now stops immediately with setup guidance unless `CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1` is set. | Blocked |
 | Validate/upload/status | `Scripts/upload_app_store_ipa.sh validate`, `upload`, `status` | Cannot run until a current IPA exists and App Store Connect credentials are set. | Blocked |
@@ -47,7 +47,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 - Confirms both CaptainsLog and Kit941 are clean and synced with upstream.
 - Reports no App Store private keys inside the repo.
 - Fails local readiness because the current IPA and export manifest are missing, so IPA local-check cannot run.
-- Reports external blockers for distribution signing, App Store Connect API credentials, app record confirmation, manual App Store Connect fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+- Reports external blockers for distribution signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 ## Next Action
 
@@ -63,6 +63,8 @@ After that passes, rerun:
 Scripts/app_store_signing_status.sh
 Scripts/app_store_readiness_status.sh
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+Scripts/upload_app_store_ipa.sh providers
+export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID="..."
 Scripts/upload_app_store_ipa.sh app-record
 Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
