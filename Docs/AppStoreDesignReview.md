@@ -2,6 +2,8 @@
 
 Review date: May 17, 2026
 
+Follow-up screenshot spot-check: May 18, 2026
+
 Artifacts reviewed:
 
 - `/tmp/captainslog-appstore-review/review.html`
@@ -31,6 +33,8 @@ The current set reads as one coherent progression:
 The iPhone set is the stronger marketing set. It is compact, legible, and makes the product shape clear without marketing overlays.
 
 The iPad set is acceptable for v1. Some screens intentionally preserve calm whitespace instead of filling the canvas with extra dashboard furniture. This is a reasonable tradeoff for a developer journal app, but it should still be checked by a person at App Store preview scale before upload.
+
+The May 18 contact-sheet spot-check found that the iPad thumbnails make the lower whitespace look more severe than the full-size screenshots. The full-size iPad dashboard still reads as a complete adaptive layout, while the Work Map detail remains the main composition to approve or reject during the final human screenshot pass.
 
 ## What Passes
 
