@@ -17,6 +17,8 @@ Official references:
 
 - App information: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
 - Platform version information: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information
+- Set app age rating: https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating/
+- Age rating values and definitions: https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions
 - Pricing and availability: https://developer.apple.com/help/app-store-connect/reference/pricing-and-availability/app-pricing-and-availability
 - Set app price: https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price
 - Version release option: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/
@@ -86,7 +88,7 @@ Copyright:
 Age rating notes:
 
 ```text
-No mature content, social posting, user-to-user communication, commerce, gambling, medical content, location use, or unrestricted web browsing is present in the app code today. Complete the App Store Connect questionnaire from the final binary before submission.
+No mature content, social posting, user-to-user communication, commerce, gambling, medical content, location use, advertising, or embedded unrestricted web browsing is present in the app code today. The app does display user-authorized GitHub repository content, including repository names, commit messages, file paths, and diffs, so answer any user-generated-content prompt conservatively from the final App Store Connect questionnaire wording.
 ```
 
 Export compliance note:
@@ -105,6 +107,7 @@ These fields are not all pasteable text fields, but they should be decided befor
 | App Availability | All countries or regions where the App Store can distribute the app, unless legal review narrows this | The app has no known region-specific content, commerce, medical, gambling, or location behavior. |
 | Distribution Methods | Public App Store distribution | Do not set up private/custom distribution for the first public review unless the release strategy changes. |
 | Content Rights | Legal/product decision required; conservative answer is that the app accesses user-authorized GitHub repository content | The app does not ship third-party media, but it displays repository names, commit messages, paths, and diffs obtained from GitHub after user authorization. Confirm the exact App Store Connect answer before submission. |
+| Age Rating | Complete the questionnaire from the final binary; expected low-risk developer-tool profile | No mature, medical, gambling, contest, commerce, advertising, location, chat, or embedded browser behavior was found in the current app surface. Treat GitHub repository history as user-supplied content if the questionnaire asks about user-generated content. |
 | Made for Kids | No | The app is a developer tool for GitHub repository history, not a Kids category app. |
 | License Agreement | Apple Standard EULA | Use Apple's standard license unless legal review provides a custom EULA. |
 | Version Release Option | Manual release | Keeps the first App Store release from going live automatically after approval. TestFlight distribution is separate from App Store release. |
