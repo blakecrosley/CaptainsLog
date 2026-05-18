@@ -79,6 +79,12 @@ MESSAGE
         printf 'App Store Connect .p8 key file does not look like an App Store Connect private key: %s\n' "$APP_STORE_CONNECT_P8_FILE" >&2
         exit 1
     fi
+    local expected_p8_name
+    expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
+    if [[ "$(basename "$APP_STORE_CONNECT_P8_FILE")" != "$expected_p8_name" && "${CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME:-0}" != "1" ]]; then
+        printf 'APP_STORE_CONNECT_P8_FILE basename should be %s for APP_STORE_CONNECT_API_KEY. Set CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 only after manually verifying the key file belongs to this key ID.\n' "$expected_p8_name" >&2
+        exit 1
+    fi
 
     xcode_auth_args=(
         -authenticationKeyPath "$APP_STORE_CONNECT_P8_FILE"
