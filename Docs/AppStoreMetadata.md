@@ -232,7 +232,7 @@ Use the paste-ready working draft in `Docs/AppStorePrivacyAnswers.md`.
 Conservative summary:
 
 - Data Used to Track You: no.
-- Data Linked to You for App Functionality: GitHub profile name when returned, GitHub login/account identifier, repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, and work classifications.
+- Data Linked to You for App Functionality: GitHub profile name when returned, GitHub login/account identifier, GitHub profile/avatar URLs for account display, repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, and work classifications.
 - Data Not Linked to You: none in this build unless App Store Connect requires Apple-provided diagnostics to be handled separately.
 - Optional cloud AI: OpenAI and Anthropic receive selected commit evidence only when the user attaches that provider key and generates AI output.
 - Pasteboard: the app writes the short-lived GitHub device code only when the user taps "Copy & Open GitHub"; it does not read the pasteboard.

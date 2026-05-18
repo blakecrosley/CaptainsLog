@@ -31,7 +31,7 @@ Recommended disclosed data types:
 | App Store Connect category | Data type | Answer | Purpose | Notes |
 | --- | --- | --- | --- | --- |
 | Contact Info | Name | Conservative: Yes | App Functionality | The GitHub `/user` response can include a profile display name. The app stores it locally for account display. If legal review treats the GitHub profile response as local processing rather than collected data, this may be narrowed. |
-| Identifiers | User ID | Yes | App Functionality | GitHub login/account identifier is used to show the active account and associate selected repositories with that account. |
+| Identifiers | User ID | Yes | App Functionality | GitHub login/account identifier is used to show the active account and associate selected repositories with that account. The app also stores GitHub profile and avatar URLs locally for account display. |
 | User Content | Other User Content | Yes | App Functionality | Repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, and work classifications. This is the core content of the app. |
 
 ### Data Not Linked To You
