@@ -21,7 +21,7 @@ Scripts/app_store_signing_status.sh
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 ```
 
-The signing status script checks the local Xcode/App Store upload toolchain and whether an Apple Distribution/iOS Distribution identity is available.
+The signing status script checks the local Xcode/App Store upload toolchain and whether an Apple Distribution/iOS Distribution identity is available for team `M4WTLM6RAQ`. A `Developer ID Application` identity is for macOS distribution and does not satisfy the iOS App Store IPA export gate.
 
 The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ` before archiving. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
