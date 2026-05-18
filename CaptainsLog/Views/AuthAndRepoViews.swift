@@ -623,6 +623,8 @@ private enum RepositoryListFilter: String, CaseIterable, Identifiable {
 }
 
 struct RepositorySelectionView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let repositories: [GitRepositoryRecord]
     let appInstallURL: URL?
     let onRefreshRepos: @MainActor @Sendable () -> Void
@@ -633,14 +635,10 @@ struct RepositorySelectionView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Kit941.Spacing.md) {
-                summaryCard
-                searchField
-                repositoryList
-            }
+            content
             .padding(.horizontal, Kit941.Spacing.md)
             .padding(.vertical, Kit941.Spacing.lg)
-            .appReadablePage(compactMaxWidth: 680, regularMaxWidth: 820)
+            .appReadablePage(compactMaxWidth: 680, regularMaxWidth: 1080)
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .background(AppSurface.backgroundGradient.ignoresSafeArea())
@@ -648,6 +646,28 @@ struct RepositorySelectionView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if usesWideLayout {
+            HStack(alignment: .top, spacing: Kit941.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                    summaryCard
+                    searchField
+                }
+                .frame(width: 360, alignment: .top)
+
+                repositoryList
+                    .frame(maxWidth: .infinity, alignment: .top)
+            }
+        } else {
+            LazyVStack(alignment: .leading, spacing: Kit941.Spacing.md) {
+                summaryCard
+                searchField
+                repositoryList
+            }
+        }
     }
 
     private var summaryCard: some View {
@@ -824,6 +844,10 @@ struct RepositorySelectionView: View {
         for repository in repositories {
             repository.isSelected = isSelected
         }
+    }
+
+    private var usesWideLayout: Bool {
+        horizontalSizeClass == .regular
     }
 }
 
