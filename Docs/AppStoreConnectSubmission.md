@@ -63,7 +63,7 @@ Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
 
-`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet, clean source state, preflight, and release local check, then lists external blockers such as missing App Store Connect credentials, TestFlight processing, legal review, and final human screenshot acceptance.
+`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet and review page, clean source state, preflight, and release local check, then lists external blockers such as missing App Store Connect credentials, TestFlight processing, legal review, and final human screenshot acceptance.
 
 For a real-account data sanity check on the connected iPhone:
 
@@ -155,7 +155,7 @@ Use both folders:
 - `/tmp/captainslog-key-state-packaged/iphone-6.9`
 - `/tmp/captainslog-key-state-packaged/ipad-13`
 
-Do a human pass before submission. The local checks verify size and obvious UI regressions, not marketing quality. Use `Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review` to generate `/tmp/captainslog-appstore-review/contact-sheet.png` for a fast side-by-side review of both device families.
+Do a human pass before submission. The local checks verify size and obvious UI regressions, not marketing quality. Use `Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review` to generate `/tmp/captainslog-appstore-review/review.html` and `/tmp/captainslog-appstore-review/contact-sheet.png` for a fast side-by-side review of both device families.
 
 Use this acceptance bar for the final screenshot marketing decision:
 

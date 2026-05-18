@@ -115,6 +115,16 @@ else
     fail "screenshot review README missing: $SCREENSHOT_REVIEW_DIR/README.md"
 fi
 
+if [[ -f "$SCREENSHOT_REVIEW_DIR/review.html" ]]; then
+    if rg -q "Screenshot approval pass" "$SCREENSHOT_REVIEW_DIR/review.html"; then
+        pass "screenshot review page exists"
+    else
+        fail "screenshot review page missing approval heading: $SCREENSHOT_REVIEW_DIR/review.html"
+    fi
+else
+    fail "screenshot review page missing: $SCREENSHOT_REVIEW_DIR/review.html"
+fi
+
 printf '\nSource cleanliness\n'
 repo_status="$(git -C "$ROOT_DIR" status --short)"
 if [[ -z "$repo_status" ]]; then
