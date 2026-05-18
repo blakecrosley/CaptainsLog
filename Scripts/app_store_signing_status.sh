@@ -3,7 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
-BUNDLE_ID="com.blakecrosley.captainslog"
+IOS_BUNDLE_ID="com.blakecrosley.captainslog"
+MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
 
 failures=0
 xcode_auth_env_ready=0
@@ -157,7 +158,8 @@ check_xcode_auth_env() {
 printf "Captain's Log App Store signing status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Team ID: %s\n' "$TEAM_ID"
-printf 'Bundle ID: %s\n\n' "$BUNDLE_ID"
+printf 'iOS bundle ID: %s\n' "$IOS_BUNDLE_ID"
+printf 'macOS bundle ID: %s\n\n' "$MACOS_BUNDLE_ID"
 
 need_command git
 need_command security
@@ -204,6 +206,34 @@ else
     fi
 fi
 
+if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|Mac App Distribution|3rd Party Mac Developer Application):.*\\(${TEAM_ID}\\)\""; then
+    pass "Mac App Store application signing identity is available for team ${TEAM_ID}"
+else
+    if printf '%s\n' "$identity_output" | rg -q '"(Mac App Distribution|3rd Party Mac Developer Application):'; then
+        warn "Mac App Store application signing identity exists, but not for team ${TEAM_ID}"
+    fi
+    if (( xcode_auth_env_ready == 1 )); then
+        warn "Mac App Store application signing identity for team ${TEAM_ID} is missing"
+        pass "Mac export can attempt automatic signing with the App Store Connect API-key inputs"
+    else
+        fail "Mac App Store application signing identity for team ${TEAM_ID} is missing"
+    fi
+fi
+
+if printf '%s\n' "$identity_output" | rg -q "\"(Mac Installer Distribution|3rd Party Mac Developer Installer):.*\\(${TEAM_ID}\\)\""; then
+    pass "Mac App Store installer signing identity is available for team ${TEAM_ID}"
+else
+    if printf '%s\n' "$identity_output" | rg -q '"(Mac Installer Distribution|3rd Party Mac Developer Installer):'; then
+        warn "Mac App Store installer signing identity exists, but not for team ${TEAM_ID}"
+    fi
+    if (( xcode_auth_env_ready == 1 )); then
+        warn "Mac App Store installer signing identity for team ${TEAM_ID} is missing"
+        pass "Mac export can attempt automatic signing with the App Store Connect API-key inputs"
+    else
+        fail "Mac App Store installer signing identity for team ${TEAM_ID} is missing"
+    fi
+fi
+
 if printf '%s\n' "$identity_output" | rg -q '"Apple Development:'; then
     pass "Apple Development signing identity is available"
 else
@@ -211,7 +241,7 @@ else
 fi
 
 if printf '%s\n' "$identity_output" | rg -q '"Developer ID Application:'; then
-    warn "Developer ID Application identity is present, but it is for macOS distribution and cannot export this iOS App Store IPA"
+    warn "Developer ID Application identity is present, but it cannot export this iOS App Store IPA or a Mac App Store package"
 fi
 
 printf '\nProvisioning profiles\n'
@@ -254,11 +284,16 @@ B. Or use Xcode account signing:
    1. Open Xcode > Settings > Accounts.
    2. Sign into an Apple ID that belongs to team ${TEAM_ID}.
    3. Select the team, open Manage Certificates, then use + > Apple Distribution.
-   4. If profiles still look stale afterward, use Download Manual Profiles.
+   4. For native Mac App Store export, also create or install a Mac Installer Distribution certificate if Xcode does not create it automatically.
+   5. If profiles still look stale afterward, use Download Manual Profiles.
 
 After one signing path is ready, regenerate the current IPA:
 
   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+
+If intentionally adding the native Mac app to this release, also regenerate the Mac App Store package:
+
+  CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
 
 Then rerun:
 
@@ -271,4 +306,8 @@ cat <<NEXT
 Signing looks locally ready. Regenerate the current IPA:
 
   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+
+If intentionally adding the native Mac app to this release, also regenerate the Mac App Store package:
+
+  CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
 NEXT
