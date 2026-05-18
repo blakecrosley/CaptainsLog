@@ -559,12 +559,12 @@ case "$COMMAND" in
     providers)
         run_providers
         ;;
-	    app-record)
-	        run_app_record
-	        ;;
-	    app-record-altool)
-	        run_app_record_altool
-	        ;;
+    app-record)
+        run_app_record
+        ;;
+    app-record-altool)
+        run_app_record_altool
+        ;;
     validate)
         run_validate
         ;;
