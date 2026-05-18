@@ -14,6 +14,10 @@ KIT941_DIR="$ROOT_DIR/../941Kit"
 VISION_SMOKE_DIR="${CAPTAINS_LOG_VISION_SMOKE_DIR:-/tmp/captainslog-vision-smoke}"
 VISION_SMOKE_SCREENSHOT="$VISION_SMOKE_DIR/vision-compatible-launch.png"
 VISION_SMOKE_OCR="$VISION_SMOKE_DIR/vision-compatible-launch-ocr.txt"
+MACOS_SMOKE_DIR="${CAPTAINS_LOG_MACOS_SMOKE_DIR:-/tmp/captainslog-macos-smoke}"
+MACOS_SMOKE_METADATA="$MACOS_SMOKE_DIR/macos-bundle-metadata.txt"
+MACOS_SMOKE_CODESIGN="$MACOS_SMOKE_DIR/macos-codesign.txt"
+MACOS_SMOKE_LAUNCH="$MACOS_SMOKE_DIR/macos-launch.log"
 
 local_failures=0
 external_blockers=0
@@ -344,6 +348,36 @@ printf_platform_target_status() {
     if project_list="$(xcodebuild -list -project "$ROOT_DIR/CaptainsLog.xcodeproj" 2>/dev/null)"; then
         if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+CaptainsLog-macOS$'; then
             warn "native macOS target exists, but first release still requires Mac signing/export, screenshots, TestFlight, and human QA before Mac App Store availability"
+            if [[ -x "$ROOT_DIR/Scripts/smoke_macos_launch.sh" ]]; then
+                pass "macOS launch smoke script exists"
+            else
+                fail "macOS launch smoke script missing or not executable"
+            fi
+
+            if [[ -f "$MACOS_SMOKE_METADATA" && -f "$MACOS_SMOKE_CODESIGN" && -f "$MACOS_SMOKE_LAUNCH" ]]; then
+                if rg -q '^CFBundleIdentifier: com[.]blakecrosley[.]captainslog[.]mac$' "$MACOS_SMOKE_METADATA"; then
+                    pass "macOS launch smoke bundle id recorded"
+                else
+                    fail "macOS launch smoke bundle id missing or mismatched"
+                fi
+                if rg -q '^LSApplicationCategoryType: public[.]app-category[.]developer-tools$' "$MACOS_SMOKE_METADATA"; then
+                    pass "macOS launch smoke category recorded"
+                else
+                    fail "macOS launch smoke category missing or mismatched"
+                fi
+                if rg -q '^[0-9]+$' "$MACOS_SMOKE_LAUNCH"; then
+                    pass "macOS launch smoke process recorded: $(sed -n '1p' "$MACOS_SMOKE_LAUNCH")"
+                else
+                    fail "macOS launch smoke process log missing pid"
+                fi
+                if rg -q "TeamIdentifier=not set" "$MACOS_SMOKE_CODESIGN"; then
+                    warn "macOS launch smoke codesign TeamIdentifier is not set; Mac App Store signing/export remains open"
+                else
+                    pass "macOS launch smoke codesign TeamIdentifier is present"
+                fi
+            else
+                warn "macOS launch smoke artifacts missing; run Scripts/smoke_macos_launch.sh $MACOS_SMOKE_DIR before Mac availability acceptance"
+            fi
         else
             pass "no native macOS target found"
         fi
@@ -403,6 +437,7 @@ printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
 printf 'Packaged screenshots: %s\n' "$PACKAGED_DIR"
 printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
 printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
+printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git

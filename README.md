@@ -28,6 +28,12 @@ Refresh the local Vision compatible-app smoke before final Vision acceptance:
 Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke
 ```
 
+Refresh the local native Mac launch smoke before accepting Mac availability:
+
+```sh
+Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke
+```
+
 After signing/auth is available:
 
 ```sh
