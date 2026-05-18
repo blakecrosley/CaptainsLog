@@ -210,7 +210,7 @@ default_p8_path_for_key() {
     return 1
 }
 
-default_p8_candidate_count() {
+default_p8_candidate_names() {
     local dirs=(
         "$HOME/private_keys"
         "$HOME/.private_keys"
@@ -221,8 +221,7 @@ default_p8_candidate_count() {
         dirs+=("$API_PRIVATE_KEYS_DIR")
     fi
 
-    local dir candidate abs_path count
-    count=0
+    local dir candidate abs_path
     for dir in "${dirs[@]}"; do
         [[ -d "$dir" ]] || continue
         while IFS= read -r candidate; do
@@ -233,11 +232,13 @@ default_p8_candidate_count() {
                     continue
                     ;;
             esac
-            count=$((count + 1))
+            basename "$candidate"
         done < <(find "$dir" -maxdepth 1 -type f -name "AuthKey_*.p8" 2>/dev/null)
-    done
+    done | sort -u
+}
 
-    printf '%s\n' "$count"
+default_p8_candidate_count() {
+    default_p8_candidate_names | wc -l | tr -d ' '
 }
 
 check_p8_path() {
@@ -865,6 +866,10 @@ else
         else
             external "1 App Store Connect candidate .p8 private-key file is staged outside the repo in altool default private-key search paths, but no selected APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER are set"
         fi
+        while IFS= read -r candidate_name; do
+            [[ -n "$candidate_name" ]] || continue
+            printf '[info] staged App Store Connect key candidate: %s\n' "$candidate_name"
+        done < <(default_p8_candidate_names)
     else
         external "App Store Connect .p8 key file is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
     fi

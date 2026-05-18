@@ -17,6 +17,10 @@ warn() {
     printf '[warn] %s\n' "$1"
 }
 
+info() {
+    printf '[info] %s\n' "$1"
+}
+
 fail() {
     printf '[fail] %s\n' "$1" >&2
     failures=$((failures + 1))
@@ -42,7 +46,7 @@ git_root_for_path() {
     git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true
 }
 
-default_p8_candidate_count() {
+default_p8_candidate_names() {
     local dirs=(
         "$HOME/private_keys"
         "$HOME/.private_keys"
@@ -53,8 +57,7 @@ default_p8_candidate_count() {
         dirs+=("$API_PRIVATE_KEYS_DIR")
     fi
 
-    local dir candidate abs_path count
-    count=0
+    local dir candidate abs_path
     for dir in "${dirs[@]}"; do
         [[ -d "$dir" ]] || continue
         while IFS= read -r candidate; do
@@ -65,11 +68,13 @@ default_p8_candidate_count() {
                     continue
                     ;;
             esac
-            count=$((count + 1))
+            basename "$candidate"
         done < <(find "$dir" -maxdepth 1 -type f -name "AuthKey_*.p8" 2>/dev/null)
-    done
+    done | sort -u
+}
 
-    printf '%s\n' "$count"
+default_p8_candidate_count() {
+    default_p8_candidate_names | wc -l | tr -d ' '
 }
 
 check_xcode_auth_env() {
@@ -85,6 +90,10 @@ check_xcode_auth_env() {
         p8_candidate_count="$(default_p8_candidate_count)"
         if (( p8_candidate_count > 0 )); then
             warn "$p8_candidate_count candidate App Store Connect .p8 private-key file(s) are staged outside the repo, but no selected API key ID or issuer UUID is set"
+            while IFS= read -r candidate_name; do
+                [[ -n "$candidate_name" ]] || continue
+                info "staged App Store Connect key candidate: $candidate_name"
+            done < <(default_p8_candidate_names)
             if (( p8_candidate_count > 1 )); then
                 warn "multiple candidate .p8 files found; set APP_STORE_CONNECT_P8_FILE explicitly to the key that matches APP_STORE_CONNECT_API_KEY"
             fi
