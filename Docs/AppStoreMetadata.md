@@ -74,7 +74,7 @@ Privacy Policy URL:
 https://blakecrosley.com/captains-log/privacy
 ```
 
-Verified live on May 17, 2026. Before submission, use the published copy or a legally reviewed replacement.
+Verified by preflight on May 18, 2026. Before submission, use the published copy or a legally reviewed replacement.
 
 Support URL:
 
@@ -82,7 +82,7 @@ Support URL:
 https://blakecrosley.com/captains-log/support
 ```
 
-Verified live on May 17, 2026 with a real support contact path.
+Verified by preflight on May 18, 2026 with a real support contact path.
 
 Copyright:
 
