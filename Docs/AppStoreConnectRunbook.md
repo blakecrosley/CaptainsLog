@@ -118,6 +118,8 @@ export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 
 If `Scripts/app_store_signing_status.sh` reports that candidate `.p8` private-key files are already staged, choose the matching App Store Connect key ID in Apple, then point `APP_STORE_CONNECT_P8_FILE` at the staged path for that key:
 
+Apple shows team key IDs in App Store Connect under Users and Access > Integrations, in the Active keys table. The issuer UUID appears near the top of that same Integrations page.
+
 ```sh
 export APP_STORE_CONNECT_API_KEY="<KEY_ID>"
 export APP_STORE_CONNECT_API_ISSUER="<ISSUER_UUID>"
