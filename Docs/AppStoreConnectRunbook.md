@@ -61,6 +61,7 @@ Make the manual choices from the table in `Docs/AppStoreMetadata.md`:
 
 - Price: free.
 - Availability: broad unless legal narrows it.
+- Apple Vision Pro availability: opt out unless you complete a Vision Pro/TestFlight pass and intentionally accept that extra platform.
 - Distribution: public App Store.
 - Version release: manual.
 - Made for Kids: no.
@@ -75,6 +76,7 @@ Resolve these only inside App Store Connect:
 - Demo GitHub review account credentials, if used.
 - EU DSA trader status and any trader contact details.
 - Region-specific availability/compliance prompts.
+- Apple Vision Pro availability if App Store Connect shows it.
 - Labels and Markings URLs, only if legal/product supplies one.
 - Content Rights final answer.
 - Age-rating questionnaire from the final binary.
