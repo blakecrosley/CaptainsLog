@@ -13,6 +13,8 @@ KIT941_DIR="$ROOT_DIR/../941Kit"
 
 local_failures=0
 external_blockers=0
+ipa_missing=0
+export_manifest_missing=0
 
 pass() {
     printf '[ok] %s\n' "$1"
@@ -248,6 +250,7 @@ printf '\nLocal artifact checks\n'
 if [[ -f "$IPA_PATH" ]]; then
     pass "IPA exists"
 else
+    ipa_missing=1
     fail "IPA missing: $IPA_PATH"
 fi
 
@@ -278,6 +281,7 @@ fi
 if [[ -f "$EXPORT_MANIFEST" ]]; then
     pass "export manifest exists"
 else
+    export_manifest_missing=1
     fail "export manifest missing: $EXPORT_MANIFEST"
 fi
 
@@ -508,6 +512,17 @@ external "final human tap-through on the real large-account install"
 printf '\nSummary\n'
 if (( local_failures > 0 )); then
     printf '[fail] Local readiness failed with %d issue(s).\n' "$local_failures" >&2
+    if (( ipa_missing == 1 || export_manifest_missing == 1 )); then
+        cat <<'NEXT_LOCAL' >&2
+
+Next local action:
+1. Run Scripts/app_store_signing_status.sh.
+2. Make App Store distribution signing available in Xcode.
+3. Regenerate the current IPA and export manifest:
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+4. Rerun Scripts/app_store_readiness_status.sh.
+NEXT_LOCAL
+    fi
     exit 1
 fi
 
