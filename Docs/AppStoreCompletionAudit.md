@@ -49,7 +49,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 `Scripts/app_store_readiness_status.sh` from clean local `main` currently:
 
 - Passes command availability, Xcode/iOS SDK check, source cleanliness, screenshot packet checks, screenshot text audit, preflight, required-reason audit, and credential-guard self-test.
-- Confirms CaptainsLog is clean but currently ahead of `origin/main` by the local upload-key guard commit; Kit941 is clean and synced with upstream. The ahead CaptainsLog branch is reported as an external source-custody gate.
+- Confirms CaptainsLog is clean but currently ahead of `origin/main` by local release-support commits; Kit941 is clean and synced with upstream. The ahead CaptainsLog branch is reported as an external source-custody gate.
 - Reports no App Store private keys inside the repo.
 - Reports no OpenAI, Anthropic, or GitHub token-shaped source literals in app, test, doc, or script files.
 - Uses staged screenshot package/review scripts so failed screenshot regeneration does not erase the last reviewed artifacts.
@@ -59,7 +59,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 - A bypassed signing-precheck export attempt archived the generic iOS build, but the App Store export failed with `No Accounts` and `No signing certificate "iOS Distribution" found`, confirming the missing IPA cannot be fixed locally until either Xcode account/distribution signing or App Store Connect API-key provisioning auth is configured.
 - Reports 4 candidate App Store Connect `.p8` files outside the repo and requires explicit `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE` selection before export/upload auth.
 - Reports external blockers for export signing, App Store Connect API credentials, provider public ID, app record confirmation, manual App Store Connect fields including platform availability, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
-- Requires either pushing the local guard commit or explicitly accepting an unpushed local source state before the final release export.
+- Requires either pushing the local release-support commits or explicitly accepting an unpushed local source state before the final release export.
 
 ## Next Action
 
