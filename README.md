@@ -15,6 +15,8 @@ As of the current App Store packet, the local metadata, privacy manifest, screen
 - App Store Connect API-key auth for `xcodebuild` provisioning updates, or
 - an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ`.
 
+Native Mac App Store export additionally needs Mac App Store application and installer signing, or the same App Store Connect API-key auth path.
+
 Current platform availability status:
 
 - iPhone and iPad: ready as the universal iOS app once a signed IPA is exported and uploaded.
@@ -46,6 +48,12 @@ After signing/auth is available:
 Scripts/app_store_signing_status.sh
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 Scripts/app_store_readiness_status.sh
+```
+
+If intentionally adding the native Mac target to this release:
+
+```sh
+CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
 ```
 
 ## Release Handoff
