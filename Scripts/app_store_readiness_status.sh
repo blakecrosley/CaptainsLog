@@ -156,8 +156,19 @@ if [[ -d "$KIT941_DIR/.git" ]]; then
     if [[ -z "$kit_status" ]]; then
         pass "Kit941 git tree clean"
     else
-        fail "Kit941 git tree is dirty:
+        kit_blocking_changes="$(
+            {
+                git -C "$KIT941_DIR" diff --name-only HEAD -- Package.swift Package.resolved Sources/Kit941
+                git -C "$KIT941_DIR" ls-files --others --exclude-standard -- Package.swift Package.resolved Sources/Kit941
+            } | sort -u
+        )"
+        if [[ -z "$kit_blocking_changes" ]]; then
+            warn "Kit941 has dirty files outside the CaptainsLog-linked package source:
 $kit_status"
+        else
+            fail "Kit941 package source changed after IPA export; regenerate IPA or restore these changes:
+$kit_blocking_changes"
+        fi
     fi
 else
     warn "Kit941 git tree not found at $KIT941_DIR"
@@ -297,4 +308,16 @@ fi
 pass "local readiness passed"
 if (( external_blockers > 0 )); then
     printf '[external] %d external gate(s) remain before submission.\n' "$external_blockers"
+    cat <<'NEXT_STEPS'
+
+Next external actions:
+1. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md.
+2. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE with the .p8 kept outside this repo.
+3. Run:
+   Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+   Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+   Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
+4. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+5. Complete legal/privacy review and final real-account tap-through before submitting.
+NEXT_STEPS
 fi
