@@ -6,8 +6,9 @@ This is the evidence packet for the first TestFlight/App Store Connect submissio
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Last verified app-code commit: `72c6a6a5333372fabce49da4e792963d37c669cf`
-- Current packet commit: use `git rev-parse HEAD` at submission time; later docs/script handoff commits may exist after the last app-code commit without changing the app binary.
+- Last app-target source/resource commit: `72c6a6a5333372fabce49da4e792963d37c669cf`
+- Last test-source commit: `8be0393139280defb17a4faffea1174fa0ce2de0`
+- Current packet commit: use `git rev-parse HEAD` at submission time. Later docs/script handoff commits may exist after the last app-target commit without changing the app binary.
 - App-resource change that invalidated the previous IPA: `638fee384b1c03f49770f1581f470f28a5259f37`
 - Last successful exported app commit: `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` (stale after the app icon resource update)
 - Current linked Kit941 commit: `69dcc9be7d064c752691bcde3778feb680d5dad1`
