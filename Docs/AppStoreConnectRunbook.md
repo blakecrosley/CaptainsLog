@@ -20,7 +20,7 @@ If readiness reports a missing or stale IPA, make App Store distribution signing
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 ```
 
-The export script stages archive/export output and replaces the current IPA folder only after export validation succeeds.
+The export script checks for an Apple Distribution/iOS Distribution signing identity before archiving. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
 ## 1. Create Or Confirm The App Record
 

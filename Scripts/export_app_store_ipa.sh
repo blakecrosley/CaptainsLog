@@ -45,6 +45,17 @@ if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_dirty" == "tr
     exit 1
 fi
 
+if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
+    if ! security find-identity -v -p codesigning 2>/dev/null | rg -q '"(Apple Distribution|iOS Distribution):'; then
+        cat >&2 <<'MESSAGE'
+App Store distribution signing identity not found in the local keychain.
+Open Xcode Settings > Accounts, sign into the App Store Connect team, and install or create an Apple Distribution certificate before exporting.
+Set CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1 to attempt the export anyway.
+MESSAGE
+        exit 1
+    fi
+fi
+
 mkdir -p "$OUTPUT_DIR"
 staging_dir="$(mktemp -d "$OUTPUT_DIR/.export-staging.XXXXXX")"
 staged_archive_path="$staging_dir/$(basename "$ARCHIVE_PATH")"
