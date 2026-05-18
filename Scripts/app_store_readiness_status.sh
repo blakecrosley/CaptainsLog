@@ -84,10 +84,23 @@ absolute_path() {
 branch_sync_warning() {
     local label="$1"
     local repo_dir="$2"
+    shift 2
     local branch_line
+    local upstream
+    local linked_source_delta
     branch_line="$(git -C "$repo_dir" status --short --branch 2>/dev/null | sed -n '1p')"
 
     if printf '%s\n' "$branch_line" | rg -q '\[(ahead|behind|gone|diverged)'; then
+        if (( $# > 0 )); then
+            upstream="$(git -C "$repo_dir" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+            if [[ -n "$upstream" ]] && ! printf '%s\n' "$branch_line" | rg -q '\[gone\]'; then
+                linked_source_delta="$(git -C "$repo_dir" diff --name-only HEAD "$upstream" -- "$@" 2>/dev/null | sed -n '1,8p')"
+                if [[ -z "$linked_source_delta" ]]; then
+                    warn "$label branch has upstream drift outside linked package source: $branch_line"
+                    return
+                fi
+            fi
+        fi
         warn "$label branch is not in sync with upstream: $branch_line"
     else
         pass "$label branch synced with upstream"
@@ -292,7 +305,7 @@ $kit_status"
 $kit_blocking_changes"
         fi
     fi
-    branch_sync_warning "Kit941" "$KIT941_DIR"
+    branch_sync_warning "Kit941" "$KIT941_DIR" Package.swift Package.resolved Sources/Kit941
 else
     warn "Kit941 git tree not found at $KIT941_DIR"
 fi
