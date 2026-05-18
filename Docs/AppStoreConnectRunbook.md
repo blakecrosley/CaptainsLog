@@ -122,6 +122,8 @@ export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 
 `Docs/AppStoreConnectEnv.template.sh` contains a safe placeholder-only shell template for these exports plus provider/status variables. Do not enter real credentials in the tracked file; copy the placeholder exports into a private shell session or `AppStoreConnectEnv.local.sh`, which is gitignored.
 
+If you are reusing an App Store Connect key already used by another 941 app, do not point Captain's Log at a `.p8` file inside that app's repository or Fastlane folder. The credential guard intentionally rejects private keys inside any git working tree. Select the matching key in App Store Connect, then stage a private local copy at `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` with owner-only permissions.
+
 If `Scripts/app_store_signing_status.sh` reports that candidate `.p8` private-key files are already staged, choose the matching App Store Connect key ID in Apple, then point `APP_STORE_CONNECT_P8_FILE` at the staged path for that key. The current machine has multiple staged candidates, so do not rely on implicit key search for the first submission:
 
 Apple shows team key IDs in App Store Connect under Users and Access > Integrations, in the Active keys table. The issuer UUID appears near the top of that same Integrations page.

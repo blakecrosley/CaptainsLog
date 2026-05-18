@@ -10,9 +10,11 @@
 #
 # If multiple AuthKey_*.p8 files are staged locally, choose the matching team
 # key ID in App Store Connect > Users and Access > Integrations and keep the
-# basename as AuthKey_<KEY_ID>.p8. The release scripts fail early on a mismatch
-# unless CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 is set after manual
-# verification.
+# basename as AuthKey_<KEY_ID>.p8. Do not point APP_STORE_CONNECT_P8_FILE at a
+# key stored inside another app repo or Fastlane folder; the release scripts
+# reject private keys inside any git working tree. The release scripts also
+# fail early on a filename mismatch unless
+# CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 is set after manual verification.
 
 export APP_STORE_CONNECT_API_KEY="YOUR_KEY_ID"
 export APP_STORE_CONNECT_API_ISSUER="YOUR_ISSUER_UUID"
