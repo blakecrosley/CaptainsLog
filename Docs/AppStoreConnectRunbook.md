@@ -87,7 +87,7 @@ Resolve these only inside App Store Connect:
 Platform availability notes for the first App Review submission:
 
 - iPhone and iPad: submit as the current universal iOS app.
-- Apple Vision Pro: make available as the compatible iPhone/iPad app. Do not add native visionOS screenshots or metadata unless a separate visionOS target exists.
+- Apple Vision Pro: make available as the compatible iPhone/iPad app after `Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke` still reaches the first-run UI. Do not add native visionOS screenshots or metadata unless a separate visionOS target exists.
 - Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until Mac signing/export, screenshots, TestFlight, and human QA are complete.
 - Apple Watch and Apple TV: no action in App Store Connect for this release because there is no watchOS or tvOS app target.
 

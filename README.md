@@ -22,6 +22,12 @@ Current platform availability status:
 - Mac: a native macOS target exists, but do not submit it until Mac signing/export, screenshots, TestFlight, and human QA are complete.
 - Apple Watch and Apple TV: no watchOS or tvOS app target exists for this release.
 
+Refresh the local Vision compatible-app smoke before final Vision acceptance:
+
+```sh
+Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke
+```
+
 After signing/auth is available:
 
 ```sh
