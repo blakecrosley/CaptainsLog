@@ -13,6 +13,8 @@ ARCHIVE_PATH="$(dirname "$(dirname "$IPA_PATH")")/CaptainsLog.xcarchive"
 PACKAGED_DIR="${CAPTAINS_LOG_PACKAGED_SCREENSHOTS:-/tmp/captainslog-key-state-packaged}"
 SCREENSHOT_REVIEW_DIR="${CAPTAINS_LOG_SCREENSHOT_REVIEW:-/tmp/captainslog-appstore-review}"
 KIT941_DIR="$ROOT_DIR/../941Kit"
+RETURN_REFERENCE_PROJECT="${CAPTAINS_LOG_RETURN_REFERENCE_PROJECT:-$ROOT_DIR/../Return/Return.xcodeproj}"
+BANANA_LIST_REFERENCE_PROJECT="${CAPTAINS_LOG_BANANA_LIST_REFERENCE_PROJECT:-$ROOT_DIR/../Banana List/Banana List.xcodeproj}"
 VISION_SMOKE_DIR="${CAPTAINS_LOG_VISION_SMOKE_DIR:-/tmp/captainslog-vision-smoke}"
 VISION_SMOKE_SCREENSHOT="$VISION_SMOKE_DIR/vision-compatible-launch.png"
 VISION_SMOKE_OCR="$VISION_SMOKE_DIR/vision-compatible-launch-ocr.txt"
@@ -336,6 +338,43 @@ $(printf '%s\n' "$token_hits" | sed -n '1,12p')"
     fi
 }
 
+check_reference_project_platform_precedent() {
+    local label="$1"
+    local project_path="$2"
+    local expected_watch_name="$3"
+    local expected_tv_name="$4"
+    local project_output
+    local match_count
+
+    if [[ ! -d "$project_path" ]]; then
+        warn "$label reference project missing; cannot confirm cross-app platform precedent: $project_path"
+        return
+    fi
+
+    if ! project_output="$(xcodebuild -list -project "$project_path" 2>/dev/null)"; then
+        warn "$label reference project could not be listed; cannot confirm cross-app platform precedent"
+        return
+    fi
+
+    if [[ -n "$expected_watch_name" ]]; then
+        match_count="$(printf '%s\n' "$project_output" | rg -c "^[[:space:]]+${expected_watch_name}$" || true)"
+        if [[ "$match_count" -ge 2 ]]; then
+            pass "$label reference has Apple Watch target and scheme precedent: $expected_watch_name"
+        else
+            warn "$label reference did not show both Apple Watch target and scheme for $expected_watch_name"
+        fi
+    fi
+
+    if [[ -n "$expected_tv_name" ]]; then
+        match_count="$(printf '%s\n' "$project_output" | rg -c "^[[:space:]]+${expected_tv_name}$" || true)"
+        if [[ "$match_count" -ge 2 ]]; then
+            pass "$label reference has Apple TV target and scheme precedent: $expected_tv_name"
+        else
+            warn "$label reference did not show both Apple TV target and scheme for $expected_tv_name"
+        fi
+    fi
+}
+
 printf_platform_target_status() {
     local project_list
     local ios_settings
@@ -499,6 +538,9 @@ printf_platform_target_status() {
     else
         pass "project.yml has no watchOS/tvOS app targets"
     fi
+
+    check_reference_project_platform_precedent "Return" "$RETURN_REFERENCE_PROJECT" "ReturnWatch Watch App" "ReturnTV"
+    check_reference_project_platform_precedent "Banana List" "$BANANA_LIST_REFERENCE_PROJECT" "Banana List Watch Watch App" ""
 
     if [[ -x "$ROOT_DIR/Scripts/smoke_vision_compatible_launch.sh" ]]; then
         pass "Vision compatible launch smoke script exists"

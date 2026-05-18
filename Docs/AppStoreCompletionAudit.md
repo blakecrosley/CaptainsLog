@@ -54,7 +54,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 
 - Passes command availability, Xcode iOS 26+ and macOS 26+ SDK checks, screenshot packet checks, screenshot text audit, preflight, required-reason audit, and credential-guard self-test.
 - Confirms CaptainsLog is clean and synced with `origin/main`, and reports Kit941 as clean with upstream drift outside linked package source.
-- Reports platform availability directly: iPhone/iPad enabled through `TARGETED_DEVICE_FAMILY=1,2`, compatible Vision Pro support enabled through `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD=YES`, native Mac target present with automatic signing build settings but not Mac App Store ready, no Apple Watch or Apple TV target/scheme, and the latest Vision, macOS smoke, macOS screenshot, and Mac bundle-ID evidence when present.
+- Reports platform availability directly: iPhone/iPad enabled through `TARGETED_DEVICE_FAMILY=1,2`, compatible Vision Pro support enabled through `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD=YES`, native Mac target present with automatic signing build settings but not Mac App Store ready, no Apple Watch or Apple TV target/scheme, Return/Banana List Watch/TV precedents when those projects are present, and the latest Vision, macOS smoke, macOS screenshot, and Mac bundle-ID evidence when present.
 - Reports no App Store private keys inside the repo.
 - Reports no OpenAI, Anthropic, or GitHub token-shaped source literals in app, test, doc, or script files.
 - Uses staged screenshot package/review scripts so failed screenshot regeneration does not erase the last reviewed artifacts.
