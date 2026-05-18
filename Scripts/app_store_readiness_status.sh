@@ -11,6 +11,9 @@ ARCHIVE_PATH="$(dirname "$(dirname "$IPA_PATH")")/CaptainsLog.xcarchive"
 PACKAGED_DIR="${CAPTAINS_LOG_PACKAGED_SCREENSHOTS:-/tmp/captainslog-key-state-packaged}"
 SCREENSHOT_REVIEW_DIR="${CAPTAINS_LOG_SCREENSHOT_REVIEW:-/tmp/captainslog-appstore-review}"
 KIT941_DIR="$ROOT_DIR/../941Kit"
+VISION_SMOKE_DIR="${CAPTAINS_LOG_VISION_SMOKE_DIR:-/tmp/captainslog-vision-smoke}"
+VISION_SMOKE_SCREENSHOT="$VISION_SMOKE_DIR/vision-compatible-launch.png"
+VISION_SMOKE_OCR="$VISION_SMOKE_DIR/vision-compatible-launch-ocr.txt"
 
 local_failures=0
 external_blockers=0
@@ -359,6 +362,39 @@ printf_platform_target_status() {
     else
         pass "project.yml has no watchOS/tvOS app targets"
     fi
+
+    if [[ -x "$ROOT_DIR/Scripts/smoke_vision_compatible_launch.sh" ]]; then
+        pass "Vision compatible launch smoke script exists"
+    else
+        fail "Vision compatible launch smoke script missing or not executable"
+    fi
+
+    if [[ -f "$VISION_SMOKE_SCREENSHOT" && -f "$VISION_SMOKE_OCR" ]]; then
+        local vision_width vision_height
+        vision_width="$(sips -g pixelWidth "$VISION_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelWidth:/ { print $2; exit }')"
+        vision_height="$(sips -g pixelHeight "$VISION_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelHeight:/ { print $2; exit }')"
+        if [[ -n "$vision_width" && -n "$vision_height" ]]; then
+            pass "Vision compatible launch screenshot dimensions: ${vision_width}x${vision_height}"
+        else
+            fail "unable to read Vision compatible launch screenshot dimensions"
+        fi
+
+        if rg -q -i "Captain'?s Log" "$VISION_SMOKE_OCR" \
+            && rg -q -i "Sign in with GitHub" "$VISION_SMOKE_OCR" \
+            && rg -q -i "Use Demo Data" "$VISION_SMOKE_OCR"; then
+            pass "Vision compatible launch OCR found first-run UI"
+        else
+            fail "Vision compatible launch OCR is missing first-run UI text"
+        fi
+
+        if rg -q -i "Keychain returned status -34018" "$VISION_SMOKE_OCR"; then
+            warn "Vision compatible launch OCR still shows Keychain returned status -34018; signed TestFlight/auth behavior remains open"
+        else
+            pass "Vision compatible launch OCR did not find Keychain returned status -34018"
+        fi
+    else
+        warn "Vision compatible launch smoke artifacts missing; run Scripts/smoke_vision_compatible_launch.sh $VISION_SMOKE_DIR before final Vision acceptance"
+    fi
 }
 
 printf "Captain's Log App Store readiness status\n"
@@ -366,6 +402,7 @@ printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
 printf 'Packaged screenshots: %s\n' "$PACKAGED_DIR"
 printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
+printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git
