@@ -63,7 +63,7 @@ Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 ```
 
-`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, clean source state, preflight, and release local check, then lists external blockers such as missing App Store Connect credentials, TestFlight processing, legal review, and final human screenshot acceptance.
+`Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, screenshots, screenshot review contact sheet, clean source state, preflight, and release local check, then lists external blockers such as missing App Store Connect credentials, TestFlight processing, legal review, and final human screenshot acceptance.
 
 For a real-account data sanity check on the connected iPhone:
 

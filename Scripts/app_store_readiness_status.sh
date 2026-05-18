@@ -7,6 +7,7 @@ SCREENSHOT_DIR="${1:-/tmp/captainslog-key-state-audit}"
 IPA_PATH="${2:-$DEFAULT_IPA}"
 EXPORT_MANIFEST="$(dirname "$IPA_PATH")/ExportManifest.txt"
 PACKAGED_DIR="${CAPTAINS_LOG_PACKAGED_SCREENSHOTS:-/tmp/captainslog-key-state-packaged}"
+SCREENSHOT_REVIEW_DIR="${CAPTAINS_LOG_SCREENSHOT_REVIEW:-/tmp/captainslog-appstore-review}"
 KIT941_DIR="$ROOT_DIR/../941Kit"
 
 local_failures=0
@@ -58,6 +59,7 @@ printf "Captain's Log App Store readiness status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
 printf 'Packaged screenshots: %s\n' "$PACKAGED_DIR"
+printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git
@@ -95,6 +97,22 @@ if [[ -d "$PACKAGED_DIR/iphone-6.9" && -d "$PACKAGED_DIR/ipad-13" ]]; then
     fi
 else
     fail "packaged screenshot folders missing under $PACKAGED_DIR"
+fi
+
+if [[ -f "$SCREENSHOT_REVIEW_DIR/contact-sheet.png" ]]; then
+    pass "screenshot review contact sheet exists"
+else
+    fail "screenshot review contact sheet missing: $SCREENSHOT_REVIEW_DIR/contact-sheet.png"
+fi
+
+if [[ -f "$SCREENSHOT_REVIEW_DIR/README.md" ]]; then
+    if rg -q "Approval checklist" "$SCREENSHOT_REVIEW_DIR/README.md"; then
+        pass "screenshot review checklist exists"
+    else
+        fail "screenshot review README missing approval checklist: $SCREENSHOT_REVIEW_DIR/README.md"
+    fi
+else
+    fail "screenshot review README missing: $SCREENSHOT_REVIEW_DIR/README.md"
 fi
 
 printf '\nSource cleanliness\n'
