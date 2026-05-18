@@ -6,6 +6,7 @@ This is the evidence packet for the first TestFlight/App Store Connect submissio
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
+- Current app/release-helper baseline commit: `8cff703961108ed19d52f93359a3f6967ff20aed`
 - Current app-resource baseline commit: `638fee384b1c03f49770f1581f470f28a5259f37`
 - Last successful exported app commit: `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` (stale after the app icon resource update)
 - Current linked Kit941 commit: `69dcc9be7d064c752691bcde3778feb680d5dad1`
@@ -41,6 +42,7 @@ Latest local readiness check: May 18, 2026. The screenshot packet and connected-
 - Current source status is rechecked by `Scripts/app_store_readiness_status.sh` before each export attempt.
 - Regenerate the IPA if any app target, source, resource, entitlement, privacy manifest, build setting, package, or signing input changes.
 - The export manifest records the local `Kit941` package commit and dirty state because the app links `../941Kit` directly. Current readiness shows Kit941 clean and synced; future linked package-source drift is still reported before export/submission work.
+- Screenshot packaging and screenshot-review generation are staged before replacement: `Scripts/package_app_store_screenshots.sh` and `Scripts/make_app_store_screenshot_contact_sheet.sh` write into temporary output folders, then replace the current package/review folders only after generation succeeds. Smoke tests generated the 12-PNG package and review page/contact sheet, and simulated missing-screenshot failures preserved existing output folders.
 
 ## Official Docs Cross-Check
 
@@ -96,7 +98,7 @@ Sources:
 | Privacy policy/support ready | `Docs/PrivacyPolicyDraft.md`, `Docs/SupportPageDraft.md`, `Docs/AppStorePrivacyAnswers.md` | URLs passed preflight reachability checks; privacy answers map App Store Connect fields to current code evidence | Locally ready, legal review open |
 | Binary export ready | `Scripts/export_app_store_ipa.sh` | Export is blocked before archive because local Xcode lacks App Store distribution signing; the export script checks signing first, then stages archive, IPA, and export manifest together and only replaces the current IPA folder after export validation succeeds | Blocked on signing credentials/certificate |
 | Upload path ready | `Scripts/upload_app_store_ipa.sh` | Script exists, requires a clean-tree export manifest by default, rejects release builds containing debug screenshot/auth fixture strings, and validate/upload/status require App Store Connect credentials; current local IPA check is blocked until a fresh IPA exists | Script ready, current IPA and external credentials open |
-| Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders | Locally ready, human marketing acceptance open |
+| Screenshots ready | `Scripts/capture_app_store_screenshots.sh`, `Scripts/package_app_store_screenshots.sh`, `Scripts/make_app_store_screenshot_contact_sheet.sh` | 12 PNGs generated and packaged for 6.9-inch iPhone and 13-inch iPad upload folders. Package and contact-sheet generation now stage output and preserve the previous reviewed artifacts if regeneration fails partway through. | Locally ready, human marketing acceptance open |
 | Physical device smoke | `xcodebuild`, `xcrun devicectl` | A Debug build installed on the connected iPhone 17 Pro Max running iOS 26.4.2 and launched successfully with bundle ID `com.blakecrosley.captainslog`; the latest post-polish device UI-test rerun built and signed, then was blocked by the locked phone | Build/install/launch previously verified; fresh post-polish device UI test blocked by locked phone |
 | Reviewer/demo path | `CaptainsLogUITests` | UI tests verify first-run Sign in with GitHub and Use Demo Data actions remain readable, then launch fixture data and navigate Settings, Privacy & Data, and selected-day journal detail | Post-polish simulator UI tests passed; earlier device UI tests passed |
 | Real data confidence | `Scripts/audit_device_store.sh`, connected iPhone app container | Device-store audit copied the real app database from Blake's iPhone 17 Pro Max and verified aggregate coverage: 104 selected repositories, 12,468 commits, 100% diff-stat coverage in the local store, and no empty days in 2026 through May 17 | Device store verified; final human tap-through/API parity open |
@@ -147,6 +149,8 @@ Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit
 Scripts/package_app_store_screenshots.sh /tmp/captainslog-key-state-audit /tmp/captainslog-key-state-packaged
 Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review
 ```
+
+Both screenshot artifact scripts stage their outputs before replacing the current folders, so a missing or malformed screenshot should fail without deleting the last reviewed package/contact sheet.
 
 ## App Store Connect Record
 
