@@ -207,7 +207,7 @@ export APP_STORE_CONNECT_API_ISSUER="..."
 export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
-`APP_STORE_CONNECT_P8_FILE` is the clearest path. If it is not set, `altool` also searches for `AuthKey_<key>.p8` in `./private_keys`, `~/private_keys`, `~/.private_keys`, `~/.appstoreconnect/private_keys`, and `$API_PRIVATE_KEYS_DIR`. Do not put the key in this repo or another git working tree; prefer `~/.appstoreconnect/private_keys/AuthKey_<key>.p8` or an absolute path outside project folders.
+`APP_STORE_CONNECT_P8_FILE` is the clearest path. If it is not set, `altool` also searches for `AuthKey_<key>.p8` in `./private_keys`, `~/private_keys`, `~/.private_keys`, `~/.appstoreconnect/private_keys`, and `$API_PRIVATE_KEYS_DIR`. Do not put the key in this repo or another git working tree; prefer `~/.appstoreconnect/private_keys/AuthKey_<key>.p8` or an absolute path outside project folders. Candidate private-key files are currently staged in `~/.appstoreconnect/private_keys` with owner-only permissions, but the selected key ID and issuer UUID still need to be supplied before this path can authenticate.
 
 `Scripts/app_store_readiness_status.sh` and `Scripts/upload_app_store_ipa.sh` both validate that the API key looks like a 10-character key ID, the issuer looks like a UUID, and the `.p8` file is readable, outside git working trees, and has a private-key header when either `APP_STORE_CONNECT_P8_FILE` or an `altool` default private-key path is available. They do not print private-key contents.
 
