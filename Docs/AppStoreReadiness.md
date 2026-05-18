@@ -97,6 +97,7 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 - A final manual tap-through on the real large GitHub account is still recommended before submission, even though local device-store coverage now has aggregate evidence.
 - Final App Store screenshot marketing acceptance still needs human review on the packaged iPhone and iPad exports. The contact-sheet script now writes a review checklist that rejects screenshots with private data, debug UI, clipped controls, active sync progress, or a generic analytics-dashboard feel.
 - Legal review of the published privacy copy is still recommended before App Store Connect submission.
+- `Docs/AppStoreConnectSubmission.md` contains the closeout table for the remaining external gates, including the exact evidence needed to close each gate.
 
 ## Official References
 

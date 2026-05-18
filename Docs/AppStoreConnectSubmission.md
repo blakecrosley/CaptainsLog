@@ -207,9 +207,14 @@ If App Review needs a live account, create a purpose-built GitHub account with s
 
 ## Remaining External Gates
 
-- Create the App Store Connect app record.
-- Validate and upload the IPA with App Store Connect credentials.
-- Verify TestFlight processing status.
-- Make the final screenshot marketing decision.
-- Complete legal/privacy review.
-- Do one final human tap-through on the real large-account install before submitting for review. The device-store aggregate audit now verifies local coverage, but it does not prove App Store reviewer-visible UX quality or GitHub API parity by itself.
+Use this table as the final owner checklist. A gate is closed only when the evidence column exists, not just when the action was attempted.
+
+| Gate | Action | Evidence that closes it |
+| --- | --- | --- |
+| App Store Connect app record | Create or confirm the iOS app record with bundle ID `com.blakecrosley.captainslog`, SKU `captainslog-ios`, primary language English (U.S.), and team `M4WTLM6RAQ`. | App record exists in App Store Connect and the Apple ID is captured as `APP_STORE_CONNECT_APPLE_ID` for status checks. |
+| App Store Connect API credentials | Create or select an App Store Connect API key with upload permission, then set `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE`. Keep the `.p8` outside the repo. | `Scripts/app_store_readiness_status.sh` shows API key/issuer and `.p8` as set; `Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` passes. |
+| Build upload | Run `Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` after validate passes. | Upload command succeeds and returns either a delivery ID or a build visible in App Store Connect. |
+| TestFlight processing | Run `Scripts/upload_app_store_ipa.sh status "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"` with either `APP_STORE_CONNECT_DELIVERY_ID` or `APP_STORE_CONNECT_APPLE_ID`. | Build status is processed/available in App Store Connect or TestFlight, with version `1.0.0` build `1`. |
+| Screenshot marketing approval | Open `/tmp/captainslog-appstore-review/contact-sheet.png` and check it against `/tmp/captainslog-appstore-review/README.md`. | Human approval that both device families are legible, private-data safe, quiet/journal-like, and free of debug UI, clipped controls, simulator chrome, and active sync progress. |
+| Legal/privacy review | Review the published Privacy Policy, Support page, App Store privacy answers, and optional AI provider disclosures. | Legal/product approval to submit the current privacy answers and published policy URLs, or specific edits applied and rechecked by preflight. |
+| Final real-account tap-through | On the real large-account install, open dashboard, Work Map, journal detail, repositories, AI providers, Privacy & Data, and run or observe sync without UI lockup. | Human tap-through confirms reviewer-visible UX quality and data plausibility. The device-store aggregate audit is supporting evidence only; it does not prove GitHub API parity or UX quality by itself. |
