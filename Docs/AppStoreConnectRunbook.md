@@ -98,7 +98,7 @@ Evidence that closes this step: legal/product approves the submitted privacy ans
 
 Create or choose an App Store Connect API key with upload permission.
 
-Set credentials in the shell only:
+Set API credentials in the shell only:
 
 ```sh
 export APP_STORE_CONNECT_API_KEY="..."

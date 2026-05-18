@@ -380,11 +380,6 @@ build_auth_args() {
         if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
             auth_args+=(--p8-file-path "$APP_STORE_CONNECT_P8_FILE")
         fi
-    elif [[ -n "${APP_STORE_CONNECT_USERNAME:-}" && -n "${APP_STORE_CONNECT_PASSWORD:-}" ]]; then
-        auth_args=(
-            --username "$APP_STORE_CONNECT_USERNAME"
-            --password "$APP_STORE_CONNECT_PASSWORD"
-        )
     else
         fail "Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER before using $COMMAND"
     fi
