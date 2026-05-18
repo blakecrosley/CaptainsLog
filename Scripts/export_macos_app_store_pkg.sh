@@ -116,14 +116,26 @@ fi
 
 kit941_commit="unavailable"
 kit941_dirty="unavailable"
+kit941_linked_source_dirty="unavailable"
 kit941_status=""
+kit941_linked_source_status=""
 if [[ -d "$KIT941_DIR/.git" ]]; then
     kit941_commit="$(git -C "$KIT941_DIR" rev-parse HEAD 2>/dev/null || printf 'unknown')"
     kit941_dirty_status="$(git -C "$KIT941_DIR" status --short 2>/dev/null || true)"
     kit941_branch_status="$(git -C "$KIT941_DIR" status --short --branch 2>/dev/null || true)"
+    kit941_linked_source_status="$(
+        {
+            git -C "$KIT941_DIR" diff --name-only HEAD -- Package.swift Package.resolved Sources/Kit941
+            git -C "$KIT941_DIR" ls-files --others --exclude-standard -- Package.swift Package.resolved Sources/Kit941
+        } | sort -u
+    )"
     kit941_dirty="false"
     if [[ -n "$kit941_dirty_status" ]]; then
         kit941_dirty="true"
+    fi
+    kit941_linked_source_dirty="false"
+    if [[ -n "$kit941_linked_source_status" ]]; then
+        kit941_linked_source_dirty="true"
     fi
     kit941_status="$kit941_branch_status"
 fi
@@ -134,10 +146,14 @@ if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$git_dirty" == "true"
     exit 1
 fi
 
-if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_dirty" == "true" ]]; then
-    printf 'Refusing to export with dirty Kit941 source. Commit or stash changes in %s, or unset CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT.\n' "$KIT941_DIR" >&2
-    printf '%s\n' "$kit941_status" >&2
+if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_linked_source_dirty" == "true" ]]; then
+    printf 'Refusing to export with dirty Kit941 linked package source. Commit or stash changes in %s, or unset CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT.\n' "$KIT941_DIR" >&2
+    printf '%s\n' "$kit941_linked_source_status" >&2
     exit 1
+fi
+
+if [[ "${CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT:-0}" == "1" && "$kit941_dirty" == "true" ]]; then
+    printf 'Continuing with dirty Kit941 files outside linked package source; manifest will record full Kit941 status.\n'
 fi
 
 if xcode_version="$(xcodebuild -version 2>/dev/null)" && xcode_sdks="$(xcodebuild -showsdks 2>/dev/null)"; then
@@ -277,7 +293,8 @@ fi
     printf 'Git dirty at export: %s\n' "$git_dirty"
     printf 'Kit941 path: %s\n' "$KIT941_DIR"
     printf 'Kit941 commit: %s\n' "$kit941_commit"
-    printf 'Kit941 dirty at export: %s\n' "$kit941_dirty"
+    printf 'Kit941 dirty at export: %s\n' "$kit941_linked_source_dirty"
+    printf 'Kit941 full dirty at export: %s\n' "$kit941_dirty"
     printf 'Archive: %s\n' "$ARCHIVE_PATH"
     printf 'Package: %s\n' "$pkg_path"
     printf 'Bundle: %s\n' "$archived_bundle_id"
@@ -293,6 +310,11 @@ fi
         printf 'Kit941 status at export:\n%s\n' "$kit941_status"
     else
         printf 'Kit941 status at export: unavailable\n'
+    fi
+    if [[ -n "$kit941_linked_source_status" ]]; then
+        printf 'Kit941 linked package source status at export:\n%s\n' "$kit941_linked_source_status"
+    else
+        printf 'Kit941 linked package source status at export: clean\n'
     fi
 } > "$staged_export_manifest"
 
@@ -313,7 +335,8 @@ printf 'Export manifest: %s\n' "$EXPORT_MANIFEST"
 printf 'Exported app commit: %s\n' "$git_commit"
 printf 'Git dirty at export: %s\n' "$git_dirty"
 printf 'Kit941 commit: %s\n' "$kit941_commit"
-printf 'Kit941 dirty at export: %s\n' "$kit941_dirty"
+printf 'Kit941 linked package source dirty at export: %s\n' "$kit941_linked_source_dirty"
+printf 'Kit941 full dirty at export: %s\n' "$kit941_dirty"
 printf 'Bundle: %s\n' "$archived_bundle_id"
 printf 'Version: %s (%s)\n' "$archived_version" "$archived_build"
 printf 'Category: %s\n' "$archived_category"

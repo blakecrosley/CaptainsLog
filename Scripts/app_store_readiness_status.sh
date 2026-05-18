@@ -754,9 +754,9 @@ if [[ -f "$EXPORT_MANIFEST" ]]; then
     fi
 
     if [[ "$exported_kit_dirty" == "false" ]]; then
-        pass "exported Kit941 tree was clean"
+        pass "exported Kit941 linked package source was clean"
     else
-        fail "exported Kit941 tree was dirty or unknown: ${exported_kit_dirty:-missing}"
+        fail "exported Kit941 linked package source was dirty or unknown: ${exported_kit_dirty:-missing}"
     fi
 
     if [[ "$exported_commit" == "$current_commit" ]]; then
