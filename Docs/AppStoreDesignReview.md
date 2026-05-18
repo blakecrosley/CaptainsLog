@@ -44,6 +44,7 @@ A later May 18 repository pass split the iPad repository access screen into a le
 
 Reviewed against the local `.impeccable.md` direction and the `frontend-design`, `critique`, and `polish` skills:
 
+- Cave availability: `$cave` was requested as the preferred design-review lens, but no Cave tool or connector is available in the current Codex tool registry. This review is therefore the local substitute, and human screenshot approval remains the final taste gate.
 - Anti-pattern verdict: passes for v1. The packet no longer reads as neon/cyberpunk, AI-gradient, generic SaaS dashboard, or card-stack demo UI.
 - Information hierarchy: acceptable. The iPhone dashboard starts with account, selected week, Work Map, and the selected-period metric; detail screens move evidence and settings into focused pages instead of flooding the dashboard.
 - Progressive disclosure: acceptable. Dashboard, Work Map, journal, repository access, AI provider, and Privacy & Data screenshots each say one clear thing.
