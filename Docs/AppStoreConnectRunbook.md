@@ -17,6 +17,7 @@ Do not commit private App Store Connect contact details, demo-account credential
 If readiness reports a missing or stale IPA, make App Store distribution signing available in Xcode, then run:
 
 ```sh
+Scripts/app_store_signing_status.sh
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 ```
 

@@ -33,7 +33,7 @@ Captain's Log is ready for the first App Store Connect/TestFlight pass only when
 | Upload helper local checks | `Scripts/upload_app_store_ipa.sh local-check <ipa>` | Helper validates bundle ID, privacy manifest, encryption flag, `get-task-allow=false`, clean export manifest, and debug fixture strings. It cannot pass until a current IPA exists. | Script ready, IPA blocked |
 | App Store Connect app record check | `Scripts/upload_app_store_ipa.sh app-record` | Helper no longer requires an IPA for `app-record`. Current run fails before contacting Apple because `APP_STORE_CONNECT_API_KEY` and `APP_STORE_CONNECT_API_ISSUER` are not set. | Blocked on credentials |
 | App Store Connect API key custody | `Scripts/upload_app_store_ipa.sh credential-guard-self-test`, `Scripts/app_store_readiness_status.sh` | Credential guard self-test passed. Readiness confirms no `.p8` private-key material is in the repo. | Complete locally, real credentials open |
-| Distribution signing | `security find-identity -v -p codesigning`, `Scripts/export_app_store_ipa.sh`, and readiness script | Current keychain has Apple Development and Developer ID Application identities, but no Apple Distribution/iOS Distribution identity. Export now stops immediately with setup guidance unless `CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1` is set. | Blocked |
+| Distribution signing | `Scripts/app_store_signing_status.sh`, `security find-identity -v -p codesigning`, `Scripts/export_app_store_ipa.sh`, and readiness script | Current keychain has Apple Development and Developer ID Application identities, but no Apple Distribution/iOS Distribution identity. Export now stops immediately with setup guidance unless `CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1` is set. | Blocked |
 | Validate/upload/status | `Scripts/upload_app_store_ipa.sh validate`, `upload`, `status` | Cannot run until a current IPA exists and App Store Connect credentials are set. | Blocked |
 | Final App Store Connect entry | App Store Connect web UI | Manual fields, regional prompts, EU DSA trader status, tax category if shown, demo/review contact, screenshot upload, and build selection are not verifiable locally. | Human/App Store gate |
 | Final product QA | Real account on device | Existing device-store audit verified local aggregate coverage, but final real-account tap-through remains open. | Human/device gate |
@@ -58,6 +58,7 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captain
 After that passes, rerun:
 
 ```sh
+Scripts/app_store_signing_status.sh
 Scripts/app_store_readiness_status.sh
 Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 Scripts/upload_app_store_ipa.sh app-record
