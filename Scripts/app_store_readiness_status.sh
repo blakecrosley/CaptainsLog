@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
+IOS_BUNDLE_ID="com.blakecrosley.captainslog"
 DEFAULT_IPA="/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 SCREENSHOT_DIR="${1:-/tmp/captainslog-key-state-audit}"
 IPA_PATH="${2:-$DEFAULT_IPA}"
@@ -847,7 +848,7 @@ fi
 if [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then
     pass "App Store Connect provider public ID is set"
 else
-    external "App Store Connect provider public ID is not set; Xcode 26.5 altool --list-providers does not support API-key authentication, so obtain the provider public ID from App Store Connect, Transporter, or a manually authenticated altool session before app-record"
+    warn "App Store Connect provider public ID is not set; only the older altool app-record path needs it because Scripts/check_app_store_connect_record.py uses the REST API directly"
 fi
 
 if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
@@ -887,7 +888,19 @@ elif (( xcode_auth_env_ready == 1 )); then
     pass "xcodebuild App Store Connect API-key auth inputs are present for export_macos_app_store_pkg.sh"
 fi
 
-external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
+app_record_checked=0
+if [[ -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
+    app_record_checked=1
+    if app_record_output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$IOS_BUNDLE_ID" 2>&1)"; then
+        pass "App Store Connect app record exists for $IOS_BUNDLE_ID"
+    else
+        external "App Store Connect app record is missing or not visible to this API key; create it, then rerun Scripts/check_app_store_connect_record.py"
+        printf '%s\n' "$app_record_output" | sed 's/^/  /'
+    fi
+fi
+if (( app_record_checked == 0 )); then
+    external "create or confirm the App Store Connect app record with Scripts/check_app_store_connect_record.py or Scripts/upload_app_store_ipa.sh app-record"
+fi
 external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
 external "complete human screenshot marketing acceptance"
@@ -927,12 +940,11 @@ Next external actions:
 4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
 5. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
-6. Export APP_STORE_CONNECT_PROVIDER_PUBLIC_ID for the provider that owns this bundle ID. Xcode 26.5 altool --list-providers does not support API-key authentication, so obtain it from App Store Connect, Transporter, or a manually authenticated altool session.
-7. Run:
-   Scripts/upload_app_store_ipa.sh app-record
+6. Run:
+   Scripts/check_app_store_connect_record.py
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-8. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
-9. Complete legal/privacy review and final real-account tap-through before submitting.
+7. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+8. Complete legal/privacy review and final real-account tap-through before submitting.
 NEXT_STEPS
 fi
