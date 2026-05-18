@@ -479,6 +479,7 @@ struct ActivityHeatmapView: View {
                     .padding(.horizontal, Kit941.Spacing.md)
                     .padding(.vertical, 2)
                 }
+                .frame(height: Self.heatmapScrollHeight, alignment: .top)
                 .clipShape(RoundedRectangle(cornerRadius: Kit941.Radius.md, style: .continuous))
                 .scrollIndicators(.hidden)
                 .onAppear {
@@ -568,6 +569,10 @@ struct ActivityHeatmapView: View {
             statsBackedCommitCount: statsBackedCommitCount,
             unknownDayCount: unknownDayCount
         )
+    }
+
+    private static var heatmapScrollHeight: CGFloat {
+        14 + (7 * 13) + (6 * 4) + 4
     }
 
     private var heatmapWeeks: [[Date]] {
