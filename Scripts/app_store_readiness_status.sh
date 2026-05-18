@@ -81,6 +81,69 @@ absolute_path() {
     printf '%s/%s\n' "$dir" "$(basename "$path")"
 }
 
+default_p8_path_for_key() {
+    local api_key="$1"
+    local expected_name="AuthKey_${api_key}.p8"
+    local dirs=(
+        "$PWD/private_keys"
+        "$HOME/private_keys"
+        "$HOME/.private_keys"
+        "$HOME/.appstoreconnect/private_keys"
+    )
+
+    if [[ -n "${API_PRIVATE_KEYS_DIR:-}" ]]; then
+        dirs+=("$API_PRIVATE_KEYS_DIR")
+    fi
+
+    local dir candidate
+    for dir in "${dirs[@]}"; do
+        candidate="$dir/$expected_name"
+        if [[ -f "$candidate" ]]; then
+            absolute_path "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+check_p8_path() {
+    local p8_path="$1"
+    local source_label="$2"
+
+    pass "App Store Connect .p8 key file found via $source_label"
+    p8_path="$(absolute_path "$p8_path")"
+    case "$p8_path" in
+        "$ROOT_DIR"/*)
+            fail "App Store Connect .p8 key file must live outside the repo"
+            ;;
+        *)
+            pass "App Store Connect .p8 key file is outside the repo"
+            ;;
+    esac
+
+    if [[ -r "$p8_path" ]]; then
+        pass "App Store Connect .p8 key file is readable"
+    else
+        fail "App Store Connect .p8 key file is not readable"
+    fi
+
+    if rg -q -- "-----BEGIN PRIVATE KEY-----" "$p8_path"; then
+        pass "App Store Connect .p8 key file has a private-key header"
+    else
+        fail "App Store Connect .p8 key file does not look like an App Store Connect private key"
+    fi
+
+    if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" ]]; then
+        expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
+        if [[ "$(basename "$p8_path")" == "$expected_p8_name" ]]; then
+            pass "App Store Connect .p8 filename matches the API key ID"
+        else
+            warn "App Store Connect .p8 filename is not $expected_p8_name; --p8-file-path may still work, but verify carefully"
+        fi
+    fi
+}
+
 printf "Captain's Log App Store readiness status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
@@ -290,40 +353,16 @@ else
     external "App Store Connect API key and issuer are not set; validate/upload/status remain blocked"
 fi
 
-if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" && -f "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
-    pass "App Store Connect .p8 key file is set"
-    p8_path="$(absolute_path "$APP_STORE_CONNECT_P8_FILE")"
-    case "$p8_path" in
-        "$ROOT_DIR"/*)
-            fail "App Store Connect .p8 key file must live outside the repo"
-            ;;
-        *)
-            pass "App Store Connect .p8 key file is outside the repo"
-            ;;
-    esac
-
-    if [[ -r "$p8_path" ]]; then
-        pass "App Store Connect .p8 key file is readable"
+if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
+    if [[ -f "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
+        check_p8_path "$APP_STORE_CONNECT_P8_FILE" "APP_STORE_CONNECT_P8_FILE"
     else
-        fail "App Store Connect .p8 key file is not readable"
+        fail "APP_STORE_CONNECT_P8_FILE is set but the file does not exist: $APP_STORE_CONNECT_P8_FILE"
     fi
-
-    if rg -q -- "-----BEGIN PRIVATE KEY-----" "$p8_path"; then
-        pass "App Store Connect .p8 key file has a private-key header"
-    else
-        fail "App Store Connect .p8 key file does not look like an App Store Connect private key"
-    fi
-
-    if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" ]]; then
-        expected_p8_name="AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
-        if [[ "$(basename "$p8_path")" == "$expected_p8_name" ]]; then
-            pass "App Store Connect .p8 filename matches the API key ID"
-        else
-            warn "App Store Connect .p8 filename is not $expected_p8_name; --p8-file-path may still work, but verify carefully"
-        fi
-    fi
+elif [[ -n "${APP_STORE_CONNECT_API_KEY:-}" ]] && default_p8_path="$(default_p8_path_for_key "$APP_STORE_CONNECT_API_KEY")"; then
+    check_p8_path "$default_p8_path" "altool default private key search path"
 else
-    external "App Store Connect .p8 key file is not set"
+    external "App Store Connect .p8 key file is not set and AuthKey_<key>.p8 was not found in altool's default private key search paths"
 fi
 
 external "create or confirm the App Store Connect app record with Scripts/upload_app_store_ipa.sh app-record"
@@ -347,7 +386,7 @@ if (( external_blockers > 0 )); then
 
 Next external actions:
 1. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-2. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE with the .p8 kept outside this repo.
+2. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, then either set APP_STORE_CONNECT_P8_FILE or place AuthKey_<key>.p8 in an altool default private key folder outside this repo.
 3. Run:
    Scripts/upload_app_store_ipa.sh app-record "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"

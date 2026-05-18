@@ -182,7 +182,9 @@ export APP_STORE_CONNECT_API_ISSUER="..."
 export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
-`Scripts/app_store_readiness_status.sh` validates that the API key looks like a 10-character key ID, the issuer looks like a UUID, and the `.p8` file is readable, outside the repo, and has a private-key header. It does not print private-key contents.
+`APP_STORE_CONNECT_P8_FILE` is the clearest path. If it is not set, `altool` also searches for `AuthKey_<key>.p8` in `./private_keys`, `~/private_keys`, `~/.private_keys`, `~/.appstoreconnect/private_keys`, and `$API_PRIVATE_KEYS_DIR`. Do not put the key in this repo; prefer `~/.appstoreconnect/private_keys/AuthKey_<key>.p8` or an absolute path outside the project.
+
+`Scripts/app_store_readiness_status.sh` validates that the API key looks like a 10-character key ID, the issuer looks like a UUID, and the `.p8` file is readable, outside the repo, and has a private-key header when either `APP_STORE_CONNECT_P8_FILE` or an `altool` default private-key path is available. It does not print private-key contents.
 
 Then validate, upload, and check processing:
 
