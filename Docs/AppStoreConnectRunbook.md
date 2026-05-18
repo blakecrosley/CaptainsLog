@@ -10,11 +10,11 @@ From the repo root:
 Scripts/app_store_readiness_status.sh
 ```
 
-Use the summary as the gate. If it only reports the known missing/stale IPA state, make one export-signing path available, then regenerate the IPA before continuing into App Store Connect. The two supported paths are a local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates. After the current IPA passes local checks, the expected remaining blockers before submission are external: credentials, app record, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+Use the summary as the gate. If it only reports the known missing/stale IPA state, make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported paths are a local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: provider public ID, app record, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
-If readiness reports a missing or stale IPA, make either Xcode distribution signing or `xcodebuild` API-key provisioning auth available, then run:
+If readiness reports a missing or stale IPA, make either Xcode distribution signing or `xcodebuild` API-key provisioning auth with cloud-managed distribution certificate access available, then run:
 
 ```sh
 Scripts/app_store_signing_status.sh
@@ -23,9 +23,9 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captain
 
 The signing status script checks the local Xcode/App Store upload toolchain, whether an Apple Distribution/iOS Distribution identity is available for team `M4WTLM6RAQ`, and whether the native Mac App Store application and installer signing identities are available. A `Developer ID Application` identity is for direct macOS distribution and does not satisfy the iOS App Store IPA export gate or the native Mac App Store package gate.
 
-The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ` before archiving. If `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE` are all set, it passes those credentials to `xcodebuild` so automatic signing can authenticate with App Store Connect for provisioning updates. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
+The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ` before archiving. If `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE` are all set, it passes those credentials to `xcodebuild` so automatic signing can authenticate with App Store Connect for provisioning updates. Those inputs make cloud signing attemptable; `xcodebuild -exportArchive` must still prove the account has cloud-managed distribution certificate access. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
-If signing status still reports a missing distribution identity, either configure the App Store Connect API-key environment variables from `Docs/AppStoreConnectEnv.template.sh` before export, or open Xcode > Settings > Accounts, sign into an Apple ID that belongs to team `M4WTLM6RAQ`, select the team, open Manage Certificates, then use `+` > Apple Distribution. For native Mac App Store export, also create or install a Mac Installer Distribution certificate if Xcode does not create it automatically. If profiles still look stale afterward, use Download Manual Profiles and rerun `Scripts/app_store_signing_status.sh`.
+If signing status still reports a missing distribution identity, either configure the App Store Connect API-key environment variables from `Docs/AppStoreConnectEnv.template.sh` and make sure that account has cloud-managed distribution certificate access, or open Xcode > Settings > Accounts, sign into an Apple ID that belongs to team `M4WTLM6RAQ`, select the team, open Manage Certificates, then use `+` > Apple Distribution. For native Mac App Store export, also create or install a Mac Installer Distribution certificate if Xcode does not create it automatically. If profiles still look stale afterward, use Download Manual Profiles and rerun `Scripts/app_store_signing_status.sh`.
 
 ## 1. Create Or Confirm The App Record
 

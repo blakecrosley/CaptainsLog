@@ -173,7 +173,7 @@ configure_xcode_auth_args
 if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
     if ! security find-identity -v -p codesigning 2>/dev/null | rg -q "\"(Apple Distribution|iOS Distribution):.*\\(${TEAM_ID}\\)\""; then
         if (( ${#xcode_auth_args[@]} > 0 )); then
-            printf 'No local Apple Distribution/iOS Distribution identity for team %s was found; continuing because App Store Connect API-key authentication is configured for xcodebuild provisioning updates.\n' "$TEAM_ID"
+            printf 'No local Apple Distribution/iOS Distribution identity for team %s was found; attempting cloud-managed signing because App Store Connect API-key authentication is configured. exportArchive must still prove cloud certificate access.\n' "$TEAM_ID"
         else
             cat >&2 <<MESSAGE
 App Store distribution signing identity for team ${TEAM_ID} was not found in the local keychain.

@@ -42,7 +42,7 @@ Refresh the local Mac screenshot candidates before Mac screenshot acceptance:
 Scripts/capture_macos_app_store_screenshots.sh /tmp/captainslog-macos-appstore-screenshots
 ```
 
-After signing/auth is available:
+After distribution signing or API-key cloud certificate access is available:
 
 ```sh
 Scripts/app_store_signing_status.sh

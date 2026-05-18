@@ -8,6 +8,7 @@ MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
 
 failures=0
 xcode_auth_env_ready=0
+cloud_signing_attempt_only=0
 
 pass() {
     printf '[ok] %s\n' "$1"
@@ -227,7 +228,8 @@ else
     fi
     if (( xcode_auth_env_ready == 1 )); then
         warn "Apple Distribution/iOS Distribution signing identity for team ${TEAM_ID} is missing"
-        pass "export can attempt automatic signing with the App Store Connect API-key inputs"
+        warn "iOS export can attempt cloud-managed signing with the App Store Connect API-key inputs, but exportArchive must still prove cloud certificate access"
+        cloud_signing_attempt_only=1
     else
         fail "Apple Distribution/iOS Distribution signing identity for team ${TEAM_ID} is missing"
     fi
@@ -241,7 +243,8 @@ else
     fi
     if (( xcode_auth_env_ready == 1 )); then
         warn "Mac App Store application signing identity for team ${TEAM_ID} is missing"
-        pass "Mac export can attempt automatic signing with the App Store Connect API-key inputs"
+        warn "Mac export can attempt cloud-managed signing with the App Store Connect API-key inputs, but exportArchive must still prove cloud certificate access"
+        cloud_signing_attempt_only=1
     else
         fail "Mac App Store application signing identity for team ${TEAM_ID} is missing"
     fi
@@ -255,7 +258,8 @@ else
     fi
     if (( xcode_auth_env_ready == 1 )); then
         warn "Mac App Store installer signing identity for team ${TEAM_ID} is missing"
-        pass "Mac export can attempt automatic signing with the App Store Connect API-key inputs"
+        warn "Mac export can attempt cloud-managed signing with the App Store Connect API-key inputs, but exportArchive must still prove cloud certificate access"
+        cloud_signing_attempt_only=1
     else
         fail "Mac App Store installer signing identity for team ${TEAM_ID} is missing"
     fi
@@ -327,6 +331,23 @@ Then rerun:
   Scripts/app_store_readiness_status.sh
 NEXT
     exit 1
+fi
+
+if (( cloud_signing_attempt_only == 1 )); then
+    cat <<NEXT
+API-key provisioning inputs are present, but one or more local App Store distribution identities are missing.
+This can attempt an export only if the App Store Connect account has cloud-managed distribution certificate access.
+If exportArchive reports a cloud signing permission error, grant that access or install the matching local distribution identity with its private key.
+
+Regenerate the current IPA to verify the real signing path:
+
+  CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+
+If intentionally adding the native Mac app to this release, also regenerate the Mac App Store package:
+
+  CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
+NEXT
+    exit 0
 fi
 
 cat <<NEXT
