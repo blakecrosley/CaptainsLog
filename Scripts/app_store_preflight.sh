@@ -7,7 +7,8 @@ SCHEME="CaptainsLog-iOS"
 METADATA_FILE="$ROOT_DIR/Docs/AppStoreMetadata.md"
 INFO_PLIST="$ROOT_DIR/CaptainsLog/App/CaptainsLog-iOS-Info.plist"
 PRIVACY_MANIFEST="$ROOT_DIR/CaptainsLog/Resources/PrivacyInfo.xcprivacy"
-APP_ICON="$ROOT_DIR/CaptainsLog/Resources/Assets.xcassets/AppIcon.appiconset/app-icon-1024-marketing.png"
+APP_ICON_DIR="$ROOT_DIR/CaptainsLog/Resources/Assets.xcassets/AppIcon.appiconset"
+APP_ICON="$APP_ICON_DIR/app-icon-1024-marketing.png"
 SCREENSHOT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreScreenshots}"
 
 failures=0
@@ -167,6 +168,24 @@ check_image_size() {
     fi
 }
 
+check_image_no_alpha() {
+    local path="$1"
+    local label="$2"
+
+    if [[ ! -f "$path" ]]; then
+        fail "$label missing: $path"
+        return
+    fi
+
+    local has_alpha
+    has_alpha="$(sips -g hasAlpha "$path" 2>/dev/null | awk '/hasAlpha/ { print $2 }')"
+    if [[ "$has_alpha" == "no" ]]; then
+        pass "$label has no alpha channel"
+    else
+        fail "$label has alpha channel: ${has_alpha:-unknown}"
+    fi
+}
+
 check_build_setting() {
     local settings_file="$1"
     local key="$2"
@@ -278,6 +297,15 @@ check_build_setting "$settings_file" "IPHONEOS_DEPLOYMENT_TARGET" "26.0"
 check_build_setting "$settings_file" "TARGETED_DEVICE_FAMILY" "1,2"
 
 check_image_size "$APP_ICON" 1024 1024 "Marketing app icon"
+
+icon_png_count=0
+for icon_path in "$APP_ICON_DIR"/*.png; do
+    icon_png_count=$((icon_png_count + 1))
+    check_image_no_alpha "$icon_path" "App icon $(basename "$icon_path")"
+done
+if (( icon_png_count == 0 )); then
+    fail "No app icon PNGs found in $APP_ICON_DIR"
+fi
 
 if [[ ! -d "$SCREENSHOT_DIR" ]]; then
     fail "Screenshot directory missing: $SCREENSHOT_DIR"

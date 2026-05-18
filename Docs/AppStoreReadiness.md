@@ -31,7 +31,7 @@ For the final handoff sequence, use `Docs/AppStoreConnectRunbook.md`. For the fu
 - Confirm automatic signing uses team `M4WTLM6RAQ`.
 - Use version `1.0.0`, build `1` for the first upload, then increment build numbers for later uploads.
 - Confirm export compliance in App Store Connect matches the binary: this build declares no non-exempt encryption in Info.plist and only uses Apple system networking/TLS. The May 17, 2026 archive at `/tmp/CaptainsLog-ExportCompliance.xcarchive` confirmed `ITSAppUsesNonExemptEncryption=false` in the archived app bundle.
-- Run `Scripts/app_store_preflight.sh <screenshot-dir>` to check metadata limits, published policy/support URL reachability and expected page content, source privacy/export flags, build settings, app icon size, and iPhone/iPad screenshot dimensions before uploading.
+- Run `Scripts/app_store_preflight.sh <screenshot-dir>` to check metadata limits, published policy/support URL reachability and expected page content, source privacy/export flags, build settings, app icon size, app icon alpha channels, and iPhone/iPad screenshot dimensions before uploading.
 - `Scripts/app_store_preflight.sh` also runs `Scripts/privacy_required_reason_audit.sh`, which scans the app target and local `Kit941` package source for Apple's required reason API categories and fails if source usage is not represented in `PrivacyInfo.xcprivacy`.
 - Run `Scripts/export_app_store_ipa.sh` to archive the iOS target, export an App Store Connect IPA, and confirm bundle ID, version/build, privacy manifest presence, and `ITSAppUsesNonExemptEncryption=false`.
 - The export manifest records both the CaptainsLog git commit and the local `../941Kit` package git commit/dirty state because Kit941 is compiled directly into the app.
