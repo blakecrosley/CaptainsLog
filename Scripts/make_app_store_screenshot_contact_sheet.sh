@@ -104,13 +104,23 @@ The first two rows are the 6.9-inch iPhone set. The last two rows are the 13-inc
 
 Acceptance notes:
 
-- Dashboard and Work Map should carry the product promise immediately.
-- Text should be legible at App Store preview size.
-- No real private repository names should appear.
-- No previous-app breadcrumbs, debug labels, fixture warnings, or clipped controls should be visible.
-- The set should feel quiet, precise, and journal-like rather than like a generic analytics dashboard.
+- Dashboard and Work Map should communicate the product promise without extra marketing text.
+- The set should show one calm progression: overview, long-range memory, journal evidence, repository access, optional AI keys, and privacy controls.
+- Text should remain legible at App Store preview size; reject any screenshot with clipped headings, clipped controls, or dense unreadable body copy.
+- The fixture account should stay neutral. Do not upload screenshots that show real private repository names, live tokens, personal email addresses, or personal GitHub data.
+- No previous-app breadcrumbs, debug labels, fixture warnings, simulator chrome, or sync progress bars should be visible.
+- The design should feel quiet, precise, and journal-like rather than like a generic analytics dashboard.
+
+Approval checklist:
+
+- iPhone and iPad sets each contain exactly these six screenshots in this order.
+- The first screenshot makes Captain's Log understandable in under five seconds.
+- At least one screenshot clearly shows the Work Map/histogram identity surface.
+- At least one screenshot makes journal entries traceable to commit evidence.
+- Repository access and Privacy & Data screenshots make GitHub permissions and data handling understandable.
+- AI provider screenshots make cloud AI optional and key-backed, not required for the core app.
+- No screenshot depends on color alone to explain state; labels and shape carry the meaning too.
 README
 
 printf '[ok] Contact sheet: %s\n' "$CONTACT_SHEET"
 printf '[ok] Review notes: %s\n' "$README_PATH"
-

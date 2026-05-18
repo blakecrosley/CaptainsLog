@@ -157,6 +157,16 @@ Use both folders:
 
 Do a human pass before submission. The local checks verify size and obvious UI regressions, not marketing quality. Use `Scripts/make_app_store_screenshot_contact_sheet.sh /tmp/captainslog-key-state-packaged /tmp/captainslog-appstore-review` to generate `/tmp/captainslog-appstore-review/contact-sheet.png` for a fast side-by-side review of both device families.
 
+Use this acceptance bar for the final screenshot marketing decision:
+
+- The first screenshot makes Captain's Log understandable in under five seconds.
+- The set reads as one progression: overview, long-range Work Map, daily journal evidence, repository access, optional AI keys, and privacy controls.
+- The Work Map/histogram is visible as the product's identity surface, not buried as a secondary settings view.
+- Journal screenshots show the daily note and the commit evidence that backs it.
+- Repository and Privacy & Data screenshots make GitHub permissions and data handling understandable.
+- No screenshot shows real private repository names, live tokens, personal email addresses, debug labels, fixture warnings, simulator chrome, clipped controls, or active sync progress.
+- The visual tone stays quiet, precise, and journal-like instead of becoming a generic analytics dashboard.
+
 ## Physical Device Smoke
 
 The May 17, 2026 local smoke pass used the connected iPhone 17 Pro Max (`00008150-00166D690EF0401C`):
