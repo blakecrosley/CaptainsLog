@@ -213,7 +213,7 @@ Do this final pass inside App Store Connect after the build finishes processing:
 
 - Select the processed `1.0.0 (1)` build for the app version.
 - Confirm App Privacy is complete and matches `Docs/AppStorePrivacyAnswers.md`.
-- Confirm pricing, availability, age rating, content rights, release option, license, and any regional/compliance prompts are complete.
+- Confirm pricing, country/region availability, Apple Vision Pro availability, Apple Silicon Mac availability, age rating, content rights, release option, license, and any regional/compliance prompts are complete.
 - Confirm screenshots are uploaded in the packaged order for both iPhone and iPad.
 - Confirm App Review contact, review notes, and any demo GitHub account credentials are present only in App Store Connect.
 - Confirm legal/privacy and screenshot marketing approval are complete.
