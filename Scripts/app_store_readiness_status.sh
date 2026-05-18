@@ -540,7 +540,7 @@ printf_platform_target_status() {
     fi
 
     check_reference_project_platform_precedent "Return" "$RETURN_REFERENCE_PROJECT" "ReturnWatch Watch App" "ReturnTV"
-    check_reference_project_platform_precedent "Banana List" "$BANANA_LIST_REFERENCE_PROJECT" "Banana List Watch Watch App" ""
+    check_reference_project_platform_precedent "Get Bananas (Banana List project)" "$BANANA_LIST_REFERENCE_PROJECT" "Banana List Watch Watch App" ""
 
     if [[ -x "$ROOT_DIR/Scripts/smoke_vision_compatible_launch.sh" ]]; then
         pass "Vision compatible launch smoke script exists"
