@@ -765,14 +765,9 @@ private struct PeriodSnapshotCard: View {
                 }
 
                 Spacer(minLength: 0)
-            }
 
-            Picker("Period", selection: $scope) {
-                ForEach(WorkRangeScope.allCases) { scope in
-                    Text(scope.title).tag(scope)
-                }
+                scopeMenu
             }
-            .pickerStyle(.segmented)
 
             VStack(alignment: .leading, spacing: Kit941.Spacing.sm) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -818,6 +813,40 @@ private struct PeriodSnapshotCard: View {
             onOpen()
         }
         .accessibilityAddTraits(.isButton)
+    }
+
+    private var scopeMenu: some View {
+        Menu {
+            ForEach(WorkRangeScope.allCases) { option in
+                Button {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        scope = option
+                    }
+                } label: {
+                    if option == scope {
+                        Label(option.title, systemImage: "checkmark")
+                    } else {
+                        Text(option.title)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(scope.title)
+                    .kit941Font(.caption, weight: .semibold)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(AppSurface.primaryText)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(AppSurface.mutedFill(opacity: 1), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Period")
+        .accessibilityValue(scope.title)
     }
 
     private var dateRangeLabel: String {
