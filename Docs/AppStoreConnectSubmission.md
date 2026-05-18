@@ -6,7 +6,7 @@ This is the evidence packet for the first TestFlight/App Store Connect submissio
 
 - Repo: `https://github.com/blakecrosley/CaptainsLog.git`
 - Branch: `main`
-- Current CaptainsLog source commit: `638fee384b1c03f49770f1581f470f28a5259f37`
+- Current app-resource baseline commit: `638fee384b1c03f49770f1581f470f28a5259f37`
 - Last successful exported app commit: `0485480d8d37fbba5f6e1437a54d3bc0d50c1733` (stale after the app icon resource update)
 - Last successful exported Kit941 commit: `9330d58ca0e14d8133250a9051599fecafea03b2`
 - Bundle ID: `com.blakecrosley.captainslog`
