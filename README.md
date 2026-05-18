@@ -34,6 +34,10 @@ Scripts/app_store_readiness_status.sh
 
 Review the screenshot packet before upload:
 
+```sh
+Scripts/open_app_store_screenshot_review.sh
+```
+
 ```text
 /tmp/captainslog-appstore-review/review.html
 /tmp/captainslog-appstore-review/contact-sheet.png

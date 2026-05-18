@@ -203,6 +203,12 @@ Upload in this order for each family:
 
 Before upload, open:
 
+```sh
+Scripts/open_app_store_screenshot_review.sh
+```
+
+or inspect the artifacts directly:
+
 ```text
 /tmp/captainslog-appstore-review/contact-sheet.png
 /tmp/captainslog-appstore-review/review.html
