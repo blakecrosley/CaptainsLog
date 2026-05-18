@@ -122,6 +122,15 @@ Keep the `.p8` outside this repo and outside any other git working tree. Preferr
 ~/.appstoreconnect/private_keys/AuthKey_<key>.p8
 ```
 
+Create that folder with owner-only permissions, then move the downloaded key into it:
+
+```sh
+mkdir -p "$HOME/.appstoreconnect/private_keys"
+chmod 700 "$HOME/.appstoreconnect" "$HOME/.appstoreconnect/private_keys"
+mv "/path/to/downloaded/AuthKey_<key>.p8" "$HOME/.appstoreconnect/private_keys/"
+chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_<key>.p8"
+```
+
 Verify the local credential guard without contacting Apple:
 
 ```sh

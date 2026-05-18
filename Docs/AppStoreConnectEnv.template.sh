@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Copy these exports into your shell after creating an App Store Connect API key.
 # Do not put real values in this file and do not commit a filled-in copy.
+#
+# Preferred private-key location:
+#   mkdir -p "$HOME/.appstoreconnect/private_keys"
+#   chmod 700 "$HOME/.appstoreconnect" "$HOME/.appstoreconnect/private_keys"
+#   mv "/path/to/downloaded/AuthKey_YOUR_KEY_ID.p8" "$HOME/.appstoreconnect/private_keys/"
+#   chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8"
 
 export APP_STORE_CONNECT_API_KEY="YOUR_KEY_ID"
 export APP_STORE_CONNECT_API_ISSUER="YOUR_ISSUER_UUID"
