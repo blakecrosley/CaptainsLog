@@ -80,10 +80,17 @@ Resolve these only inside App Store Connect:
 - EU DSA trader status and any trader contact details.
 - Region-specific availability/compliance prompts.
 - Apple Vision Pro availability if App Store Connect shows it: keep or select "Make this app available on Apple Vision Pro" for the compatible iPhone/iPad app.
-- Apple Silicon Mac availability if App Store Connect shows it.
+- Apple Silicon Mac availability if App Store Connect shows it: deselect "Make this app available" for the first release unless a Mac/TestFlight pass is completed.
 - Labels and Markings URLs, only if legal/product supplies one.
 - Content Rights final answer.
 - Age-rating questionnaire from the final binary.
+
+Platform availability notes for the first App Review submission:
+
+- iPhone and iPad: submit as the current universal iOS app.
+- Apple Vision Pro: make available as the compatible iPhone/iPad app. Do not add native visionOS screenshots or metadata unless a separate visionOS target exists.
+- Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until Mac signing/export, screenshots, TestFlight, and human QA are complete.
+- Apple Watch and Apple TV: no action in App Store Connect for this release because there is no watchOS or tvOS app target.
 
 Evidence that closes this step: App Store Connect shows the version ready to add for review with no missing-metadata warnings, and private details remain only in App Store Connect.
 
@@ -244,7 +251,7 @@ Do this final pass inside App Store Connect after the build finishes processing:
 
 - Select the processed `1.0.0 (1)` build for the app version.
 - Confirm App Privacy is complete and matches `Docs/AppStorePrivacyAnswers.md`.
-- Confirm pricing, country/region availability, Apple Vision Pro availability, Apple Silicon Mac availability, age rating, content rights, release option, license, and any regional/compliance prompts are complete.
+- Confirm pricing, country/region availability, Apple Vision Pro availability, Apple Silicon Mac opt-out, age rating, content rights, release option, license, and any regional/compliance prompts are complete.
 - Confirm screenshots are uploaded in the packaged order for both iPhone and iPad.
 - Confirm App Review contact, review notes, and any demo GitHub account credentials are present only in App Store Connect.
 - Confirm legal/privacy and screenshot marketing approval are complete.
