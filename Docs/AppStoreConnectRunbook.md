@@ -37,6 +37,8 @@ If export reports that the App Store provisioning profile lacks iCloud or `com.a
 
 If signing status still reports a missing distribution identity, either configure the App Store Connect API-key environment variables from `Docs/AppStoreConnectEnv.template.sh` and make sure that account has cloud-managed distribution certificate access, or open Xcode > Settings > Accounts, sign into an Apple ID that belongs to team `M4WTLM6RAQ`, select the team, open Manage Certificates, then use `+` > Apple Distribution. For native Mac App Store export, also create or install a Mac Installer Distribution certificate if Xcode does not create it automatically. If profiles still look stale afterward, use Download Manual Profiles and rerun `Scripts/app_store_signing_status.sh`.
 
+Signing evidence that closes this step: `Scripts/check_remote_signing_assets.py --require` reports the required certificate groups and active App Store profile types for the selected targets, then `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export` produces both the IPA and `ExportManifest.txt`. If native Mac is intentionally included, `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export` must also produce a signed package and `MacExportManifest.txt`.
+
 ## 1. Create Or Confirm The App Record
 
 In the App Store Connect web UI, create or confirm:
