@@ -7,10 +7,13 @@ IOS_BUNDLE_ID="com.blakecrosley.captainslog"
 MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
 WATCHOS_BUNDLE_ID="com.blakecrosley.captainslog.watchkitapp"
 TVOS_BUNDLE_ID="com.blakecrosley.captainslog.tv"
+APP_ENTITLEMENTS="$ROOT_DIR/CaptainsLog/App/CaptainsLog.entitlements"
+COMPANION_ENTITLEMENTS="$ROOT_DIR/CaptainsLogCompanion/CaptainsLogCompanion.entitlements"
 
 failures=0
 xcode_auth_env_ready=0
 cloud_signing_attempt_only=0
+profile_entitlement_gap=0
 
 # shellcheck source=Scripts/lib/app_store_connect_env.sh
 source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
@@ -204,6 +207,64 @@ profile_matches_bundle_id() {
     [[ "$app_identifier" == *.${bundle_id} || "$app_identifier" == "$bundle_id" ]]
 }
 
+entitlements_file_for_label() {
+    local label="$1"
+
+    case "$label" in
+        iOS | macOS)
+            printf '%s\n' "$APP_ENTITLEMENTS"
+            ;;
+        watchOS | tvOS)
+            printf '%s\n' "$COMPANION_ENTITLEMENTS"
+            ;;
+        *)
+            printf '\n'
+            ;;
+    esac
+}
+
+entitlement_description() {
+    local key="$1"
+
+    case "$key" in
+        com.apple.developer.ubiquity-kvstore-identifier)
+            printf 'iCloud key-value store'
+            ;;
+        *)
+            printf '%s' "$key"
+            ;;
+    esac
+}
+
+plist_contains_key() {
+    local plist_path="$1"
+    local key="$2"
+
+    /usr/bin/plutil -p "$plist_path" 2>/dev/null | rg -q -- "\"${key}\""
+}
+
+warn_missing_profile_entitlements() {
+    local label="$1"
+    local bundle_id="$2"
+    local profile_plist="$3"
+    local profile_name="$4"
+    local entitlements_file
+    local required_keys=(
+        "com.apple.developer.ubiquity-kvstore-identifier"
+    )
+    local key
+
+    entitlements_file="$(entitlements_file_for_label "$label")"
+    [[ -n "$entitlements_file" && -f "$entitlements_file" ]] || return
+
+    for key in "${required_keys[@]}"; do
+        if plist_contains_key "$entitlements_file" "$key" && ! plist_contains_key "$profile_plist" "$key"; then
+            warn "${label} provisioning profile ${profile_name:-unnamed profile} is missing required entitlement ${key} ($(entitlement_description "$key")); enable that capability for ${bundle_id} and regenerate/download the App Store profile"
+            profile_entitlement_gap=1
+        fi
+    done
+}
+
 summarize_profiles_for_bundle_id() {
     local label="$1"
     local bundle_id="$2"
@@ -224,6 +285,7 @@ summarize_profiles_for_bundle_id() {
                     expires="$(/usr/bin/plutil -extract ExpirationDate raw -o - "$tmp" 2>/dev/null || true)"
                     kind="$(profile_kind "$tmp")"
                     info "${label}: ${name:-unnamed profile} | team=${team:-unknown} | kind=${kind} | platforms=${platforms:-unknown} | expires=${expires:-unknown}"
+                    warn_missing_profile_entitlements "$label" "$bundle_id" "$tmp" "$name"
                 fi
             fi
             rm -f "$tmp"
@@ -402,6 +464,13 @@ NEXT
 fi
 
 if (( cloud_signing_attempt_only == 1 )); then
+    if (( profile_entitlement_gap == 1 )); then
+        cat <<NEXT
+One or more matching provisioning profiles are missing entitlements required by the app.
+Enable the reported capability for the bundle ID, then regenerate/download the App Store profile before another export attempt.
+
+NEXT
+    fi
     cat <<NEXT
 API-key provisioning inputs are present, but one or more local App Store distribution identities are missing.
 This can attempt an export only if the App Store Connect account has cloud-managed distribution certificate access.
