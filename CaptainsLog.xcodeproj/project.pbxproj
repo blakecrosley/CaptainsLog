@@ -43,6 +43,7 @@
 		6456634246E39507712C50FE /* GitHubAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841C1CBE01067722906EA321 /* GitHubAPIClient.swift */; };
 		6935405B86E26A23EA82D36E /* CalendarMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD049F4F589A6068AAD2411 /* CalendarMath.swift */; };
 		6DD0511D9ECC1E11ED4A6709 /* CaptainsLogCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6400776E0BCE872C4816EAA5 /* CaptainsLogCompanionApp.swift */; };
+		6E0AA04D0DE8DCEA2776BB5D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4CF1E7EEAA854D8EEE7E01A2 /* Assets.xcassets */; };
 		71AB22062C42EB0D060D50A9 /* CompanionSnapshotPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B93AEB254918E8DD14CE7ED /* CompanionSnapshotPublisher.swift */; };
 		7397103398D6D7ECF2374599 /* CalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D1AC282DD7AED30301545A /* CalendarViews.swift */; };
 		75D26635F7B7A93E2182BAE9 /* AuthAndRepoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */; };
@@ -56,6 +57,7 @@
 		855508D56990E05D85A3190E /* AuthAndRepoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */; };
 		8EA75CFBAF66C8ACD37C5C51 /* JournalSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */; };
 		9152C0E1078FD26F79B54EE8 /* WorkIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1A76A4B0B7DEF24FEFCC33 /* WorkIdentity.swift */; };
+		9175B8FBFF45D17BD861296B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4CF1E7EEAA854D8EEE7E01A2 /* Assets.xcassets */; };
 		93D1B9883312796EE262EF27 /* CompanionSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8D6579CAEE4F568C8398C53 /* CompanionSnapshotBuilder.swift */; };
 		9549BD61922DB20EB2C6E00D /* GitRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D06B639DF5034F9E81B270 /* GitRecords.swift */; };
 		9F25A317038EEF6717969BCD /* JournalSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */; };
@@ -122,6 +124,7 @@
 		33012CE5916D148C577543B4 /* CaptainsLogUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptainsLogUITests.swift; sourceTree = "<group>"; };
 		3AD049F4F589A6068AAD2411 /* CalendarMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMath.swift; sourceTree = "<group>"; };
 		45F719747D985CD2A02BA024 /* CompanionSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSnapshotTests.swift; sourceTree = "<group>"; };
+		4CF1E7EEAA854D8EEE7E01A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		51197FC7760CBC461CF9A85E /* WorkMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkMetrics.swift; sourceTree = "<group>"; };
 		6222A3C6F08FDFB2E443E6CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		6400776E0BCE872C4816EAA5 /* CaptainsLogCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptainsLogCompanionApp.swift; sourceTree = "<group>"; };
@@ -197,6 +200,7 @@
 		262E80F12808B13AFE1B4B35 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				4CF1E7EEAA854D8EEE7E01A2 /* Assets.xcassets */,
 				83F34C010148647721FAC535 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
@@ -516,6 +520,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9175B8FBFF45D17BD861296B /* Assets.xcassets in Resources */,
 				B865834224152348D5F37F0D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -524,6 +529,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E0AA04D0DE8DCEA2776BB5D /* Assets.xcassets in Resources */,
 				0046E9D19D34DD29960DA6B6 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

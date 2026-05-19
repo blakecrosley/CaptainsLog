@@ -36,6 +36,15 @@ WATCHOS_SMOKE_OCR="$WATCHOS_SMOKE_DIR/watchos-launch-ocr.txt"
 TVOS_SMOKE_DIR="${CAPTAINS_LOG_TVOS_SMOKE_DIR:-/tmp/captainslog-tvos-smoke}"
 TVOS_SMOKE_SCREENSHOT="$TVOS_SMOKE_DIR/tvos-launch.png"
 TVOS_SMOKE_OCR="$TVOS_SMOKE_DIR/tvos-launch-ocr.txt"
+WATCHOS_SCREENSHOT_DIR="${CAPTAINS_LOG_WATCHOS_SCREENSHOT_DIR:-/tmp/captainslog-watchos-appstore-screenshots}"
+WATCHOS_SCREENSHOT_MANIFEST="$WATCHOS_SCREENSHOT_DIR/watchos-screenshot-manifest.txt"
+WATCHOS_SCREENSHOT_AUDIT="$WATCHOS_SCREENSHOT_DIR/watchos-screenshot-text-audit.log"
+TVOS_SCREENSHOT_DIR="${CAPTAINS_LOG_TVOS_SCREENSHOT_DIR:-/tmp/captainslog-tvos-appstore-screenshots}"
+TVOS_SCREENSHOT_MANIFEST="$TVOS_SCREENSHOT_DIR/tvos-screenshot-manifest.txt"
+TVOS_SCREENSHOT_AUDIT="$TVOS_SCREENSHOT_DIR/tvos-screenshot-text-audit.log"
+COMPANION_ASSET_DIR="$ROOT_DIR/CaptainsLogCompanion/Resources/Assets.xcassets"
+WATCHOS_MARKETING_ICON="$COMPANION_ASSET_DIR/AppIcon.appiconset/watch-icon-1024.png"
+TVOS_BRAND_ASSET_DIR="$COMPANION_ASSET_DIR/App Icon & Top Shelf Image.brandassets"
 
 local_failures=0
 external_blockers=0
@@ -559,9 +568,15 @@ printf_platform_target_status() {
                 else
                     fail "Apple Watch companion entitlements are missing from Release build settings"
                 fi
+                if printf '%s\n' "$watch_settings" | rg -q "ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon"; then
+                    pass "Apple Watch AppIcon asset catalog is selected"
+                else
+                    fail "Apple Watch AppIcon asset catalog is not selected"
+                fi
             else
                 fail "unable to read CaptainsLog-watchOS Release build settings for platform availability"
             fi
+            check_png_size "$WATCHOS_MARKETING_ICON" 1024 1024 "Apple Watch marketing icon"
             if rg -q "WatchConnectivity|requestSnapshot|didReceiveApplicationContext" "$ROOT_DIR/CaptainsLogShared" "$ROOT_DIR/CaptainsLog/Services/CompanionSnapshotPublisher.swift"; then
                 pass "Apple Watch has a WatchConnectivity snapshot request/push path"
             else
@@ -589,7 +604,27 @@ printf_platform_target_status() {
             else
                 warn "Apple Watch launch smoke artifacts missing; run Scripts/smoke_watchos_launch.sh $WATCHOS_SMOKE_DIR before Watch launch acceptance"
             fi
-            warn "Apple Watch now has a phone-synced aggregate snapshot path; Watch release still requires platform icons, screenshots, signed archive/export, TestFlight, paired-device QA, and provisioning validation before availability"
+            if [[ -x "$ROOT_DIR/Scripts/capture_watchos_app_store_screenshots.sh" ]]; then
+                pass "Apple Watch App Store screenshot capture script exists"
+            else
+                fail "Apple Watch App Store screenshot capture script missing or not executable"
+            fi
+            if [[ -f "$WATCHOS_SCREENSHOT_DIR/01-companion-snapshot.png" ]]; then
+                check_png_size_any "$WATCHOS_SCREENSHOT_DIR/01-companion-snapshot.png" "watchOS/01-companion-snapshot.png" 422x514 410x502 416x496 396x484 368x448 312x390
+                if [[ -f "$WATCHOS_SCREENSHOT_MANIFEST" ]]; then
+                    pass "Apple Watch screenshot manifest exists"
+                else
+                    fail "Apple Watch screenshot manifest missing: $WATCHOS_SCREENSHOT_MANIFEST"
+                fi
+                if [[ -f "$WATCHOS_SCREENSHOT_AUDIT" ]] && rg -q 'Screenshot text audit passed' "$WATCHOS_SCREENSHOT_AUDIT"; then
+                    pass "Apple Watch screenshot text audit passed"
+                else
+                    fail "Apple Watch screenshot text audit missing or failed: $WATCHOS_SCREENSHOT_AUDIT"
+                fi
+            else
+                warn "Apple Watch App Store screenshots missing; run Scripts/capture_watchos_app_store_screenshots.sh $WATCHOS_SCREENSHOT_DIR before Watch screenshot acceptance"
+            fi
+            warn "Apple Watch now has a phone-synced aggregate snapshot path plus local icon/screenshot artifacts; Watch release still requires signed archive/export, TestFlight, paired-device QA, provisioning validation, and human screenshot acceptance before availability"
         else
             warn "Captain's Log has no Apple Watch app target or scheme; Apple Watch is not ready"
         fi
@@ -612,9 +647,18 @@ printf_platform_target_status() {
                 else
                     fail "Apple TV companion entitlements are missing from Release build settings"
                 fi
+                if printf '%s\n' "$tv_settings" | rg -q "ASSETCATALOG_COMPILER_APPICON_NAME = App Icon & Top Shelf Image"; then
+                    pass "Apple TV top-shelf app icon asset catalog is selected"
+                else
+                    fail "Apple TV top-shelf app icon asset catalog is not selected"
+                fi
             else
                 fail "unable to read CaptainsLog-tvOS Release build settings for platform availability"
             fi
+            check_png_size_any "$TVOS_BRAND_ASSET_DIR/App Icon.imagestack/Front.imagestacklayer/Content.imageset/front.png" "Apple TV app icon front layer" 400x240
+            check_png_size_any "$TVOS_BRAND_ASSET_DIR/App Icon - App Store.imagestack/Front.imagestacklayer/Content.imageset/front.png" "Apple TV App Store icon front layer" 1280x768
+            check_png_size_any "$TVOS_BRAND_ASSET_DIR/Top Shelf Image.imageset/topshelf.png" "Apple TV top shelf image" 1920x720
+            check_png_size_any "$TVOS_BRAND_ASSET_DIR/Top Shelf Image Wide.imageset/topshelf-wide.png" "Apple TV wide top shelf image" 2320x720
             if rg -q "NSUbiquitousKeyValueStore|ubiquitousStoreKey|CompanionSnapshotStore" "$ROOT_DIR/CaptainsLogShared" "$ROOT_DIR/CaptainsLogCompanion"; then
                 pass "Apple TV has an iCloud key-value read-only snapshot path"
             else
@@ -643,7 +687,27 @@ printf_platform_target_status() {
             else
                 warn "Apple TV launch smoke artifacts missing; run Scripts/smoke_tvos_launch.sh $TVOS_SMOKE_DIR before TV launch acceptance"
             fi
-            warn "Apple TV now has an iCloud read-only snapshot path; TV release still requires icons/top-shelf assets, screenshots, signed archive/export, TestFlight, living-room QA, and provisioning validation before availability"
+            if [[ -x "$ROOT_DIR/Scripts/capture_tvos_app_store_screenshots.sh" ]]; then
+                pass "Apple TV App Store screenshot capture script exists"
+            else
+                fail "Apple TV App Store screenshot capture script missing or not executable"
+            fi
+            if [[ -f "$TVOS_SCREENSHOT_DIR/01-read-only-dashboard.png" ]]; then
+                check_png_size_any "$TVOS_SCREENSHOT_DIR/01-read-only-dashboard.png" "tvOS/01-read-only-dashboard.png" 1920x1080 3840x2160
+                if [[ -f "$TVOS_SCREENSHOT_MANIFEST" ]]; then
+                    pass "Apple TV screenshot manifest exists"
+                else
+                    fail "Apple TV screenshot manifest missing: $TVOS_SCREENSHOT_MANIFEST"
+                fi
+                if [[ -f "$TVOS_SCREENSHOT_AUDIT" ]] && rg -q 'Screenshot text audit passed' "$TVOS_SCREENSHOT_AUDIT"; then
+                    pass "Apple TV screenshot text audit passed"
+                else
+                    fail "Apple TV screenshot text audit missing or failed: $TVOS_SCREENSHOT_AUDIT"
+                fi
+            else
+                warn "Apple TV App Store screenshots missing; run Scripts/capture_tvos_app_store_screenshots.sh $TVOS_SCREENSHOT_DIR before TV screenshot acceptance"
+            fi
+            warn "Apple TV now has an iCloud read-only snapshot path plus local icon/top-shelf/screenshot artifacts; TV release still requires signed archive/export, TestFlight, living-room QA, provisioning validation, and human screenshot acceptance before availability"
         else
             warn "Captain's Log has no Apple TV app target or scheme; Apple TV is not ready"
         fi
@@ -710,7 +774,9 @@ printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
 printf 'macOS screenshots: %s\n' "$MACOS_SCREENSHOT_DIR"
 printf 'macOS package: %s\n' "$MACOS_PACKAGE_LABEL"
 printf 'watchOS smoke: %s\n' "$WATCHOS_SMOKE_DIR"
+printf 'watchOS screenshots: %s\n' "$WATCHOS_SCREENSHOT_DIR"
 printf 'tvOS smoke: %s\n' "$TVOS_SMOKE_DIR"
+printf 'tvOS screenshots: %s\n' "$TVOS_SCREENSHOT_DIR"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git
