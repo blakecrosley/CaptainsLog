@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
 IOS_BUNDLE_ID="com.blakecrosley.captainslog"
-MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
+MACOS_BUNDLE_ID="com.blakecrosley.captainslog"
 WATCHOS_BUNDLE_ID="com.blakecrosley.captainslog.watchkitapp"
-TVOS_BUNDLE_ID="com.blakecrosley.captainslog.tv"
+TVOS_BUNDLE_ID="com.blakecrosley.captainslog"
 APP_ENTITLEMENTS="$ROOT_DIR/CaptainsLog/App/CaptainsLog.entitlements"
 COMPANION_ENTITLEMENTS="$ROOT_DIR/CaptainsLogCompanion/CaptainsLogCompanion.entitlements"
 DEFAULT_IPA="/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
@@ -463,9 +463,9 @@ printf_platform_target_status() {
 
             if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
                 if printf '%s\n' "$macos_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${MACOS_BUNDLE_ID//./[.]}"; then
-                    pass "macOS target bundle id is ${MACOS_BUNDLE_ID}"
+                    pass "macOS target uses shared App Store bundle id ${MACOS_BUNDLE_ID}"
                 else
-                    fail "macOS target bundle id is missing or mismatched"
+                    fail "macOS target bundle id is missing or not aligned to the shared App Store record"
                 fi
                 if printf '%s\n' "$macos_settings" | rg -q 'CODE_SIGN_STYLE = Automatic'; then
                     pass "macOS target uses automatic signing"
@@ -514,7 +514,7 @@ printf_platform_target_status() {
             fi
 
             if [[ -f "$MACOS_SMOKE_METADATA" && -f "$MACOS_SMOKE_CODESIGN" && -f "$MACOS_SMOKE_LAUNCH" ]]; then
-                if rg -q '^CFBundleIdentifier: com[.]blakecrosley[.]captainslog[.]mac$' "$MACOS_SMOKE_METADATA"; then
+                if rg -q "^CFBundleIdentifier: ${MACOS_BUNDLE_ID//./[.]}$" "$MACOS_SMOKE_METADATA"; then
                     pass "macOS launch smoke bundle id recorded"
                 else
                     fail "macOS launch smoke bundle id missing or mismatched"
@@ -660,9 +660,9 @@ printf_platform_target_status() {
             pass "Apple TV target and scheme exist: CaptainsLog-tvOS"
             if tv_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-tvOS -configuration Release -showBuildSettings 2>/dev/null)"; then
                 if printf '%s\n' "$tv_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${TVOS_BUNDLE_ID//./[.]}"; then
-                    pass "Apple TV bundle id is ${TVOS_BUNDLE_ID}"
+                    pass "Apple TV target uses shared App Store bundle id ${TVOS_BUNDLE_ID}"
                 else
-                    fail "Apple TV bundle id is missing or mismatched"
+                    fail "Apple TV bundle id is missing or not aligned to the shared App Store record"
                 fi
                 if printf '%s\n' "$tv_settings" | rg -q "DEVELOPMENT_TEAM = ${TEAM_ID}"; then
                     pass "Apple TV development team is ${TEAM_ID}"
@@ -1205,7 +1205,7 @@ Next local action:
 2. Run Scripts/check_remote_signing_assets.py --require to confirm which visible remote certificates/profiles or platform bundle IDs are still blocking export.
 3. If Watch remote bundle ID is missing, preview the account mutation with:
    Scripts/ensure_platform_bundle_ids.py
-   After confirming the team/account context and getting explicit Apple account mutation approval, run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ to create the Watch companion bundle ID and enable required capabilities. For Mac/TV, first choose whether those targets should share the iOS app record/bundle ID or ship as separate app records.
+   After confirming the team/account context and getting explicit Apple account mutation approval, run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ to create the Watch companion bundle ID and enable required capabilities. Mac/TV now share the iOS app record bundle ID and should not create separate `.mac` or `.tv` bundle IDs.
 4. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
 5. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
@@ -1225,7 +1225,7 @@ if (( external_blockers > 0 )); then
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-3. If Watch is intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ after confirming the dry-run output and explicit Apple account mutation approval. For Mac/TV, first choose whether those targets should share the iOS app record/bundle ID or ship as separate app records.
+3. If Watch is intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ after confirming the dry-run output and explicit Apple account mutation approval. Mac/TV now use the shared iOS app record bundle ID.
 4. Check signing state with Scripts/app_store_signing_status.sh and Scripts/check_remote_signing_assets.py --require, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 5. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:

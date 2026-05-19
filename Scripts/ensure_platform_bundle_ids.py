@@ -26,11 +26,10 @@ IOS_BUNDLE_ID = "com.blakecrosley.captainslog"
 TARGETS = {
     "macos": {
         "label": "native Mac",
-        "bundle_id": "com.blakecrosley.captainslog.mac",
-        "name": "XC com blakecrosley captainslog mac",
+        "bundle_id": IOS_BUNDLE_ID,
+        "name": "XC com blakecrosley captainslog",
         "platform": "UNIVERSAL",
         "entitlements": ROOT_DIR / "CaptainsLog" / "App" / "CaptainsLog.entitlements",
-        "requires_separate_record_confirmation": True,
     },
     "watchos": {
         "label": "Apple Watch",
@@ -41,11 +40,10 @@ TARGETS = {
     },
     "tvos": {
         "label": "Apple TV",
-        "bundle_id": "com.blakecrosley.captainslog.tv",
-        "name": "XC com blakecrosley captainslog tv",
+        "bundle_id": IOS_BUNDLE_ID,
+        "name": "XC com blakecrosley captainslog",
         "platform": "UNIVERSAL",
         "entitlements": ROOT_DIR / "CaptainsLogCompanion" / "CaptainsLogCompanion.entitlements",
-        "requires_separate_record_confirmation": True,
     },
 }
 
@@ -291,8 +289,8 @@ def main() -> int:
         "--confirm-separate-platform-records",
         action="store_true",
         help=(
-            "Required with --apply for macOS or tvOS targets while those targets use separate "
-            "bundle IDs instead of the iOS bundle ID used by a single App Store record/universal purchase."
+            "Required with --apply if a future macOS or tvOS target uses a separate bundle ID "
+            "instead of the iOS bundle ID used by the current single App Store record path."
         ),
     )
     parser.add_argument("--json", action="store_true", help="Print machine-readable output")
@@ -342,8 +340,8 @@ def main() -> int:
         print(f"\n{result['label']}: {result['bundleId']}")
         if TARGETS[result["target"]].get("requires_separate_record_confirmation"):
             print(
-                "[review] this target currently uses a separate bundle ID; confirm this is "
-                "intended before creating account state for it"
+                "[review] this target uses a separate bundle ID; confirm this is intended "
+                "before creating account state for it"
             )
         if result.get("bundleExists"):
             print(f"[ok] Developer Portal bundle ID exists: {result.get('bundleResourceId')}")
@@ -369,8 +367,9 @@ def main() -> int:
         print(
             f"\nDry run only. For Watch, re-run with --target watchos --apply --confirm-team {TEAM_ID} "
             "after explicit approval to mutate Apple Developer/App Store Connect state. "
-            "For Mac/TV separate bundle IDs, also pass --confirm-separate-platform-records "
-            "only after choosing that distribution model."
+            "Mac/TV currently share the iOS app record bundle ID; pass "
+            "--confirm-separate-platform-records only if those targets intentionally move to "
+            "separate bundle IDs later."
         )
     return 1 if verification_failed else 0
 

@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
 IOS_BUNDLE_ID="com.blakecrosley.captainslog"
-MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
+MACOS_BUNDLE_ID="com.blakecrosley.captainslog"
 WATCHOS_BUNDLE_ID="com.blakecrosley.captainslog.watchkitapp"
-TVOS_BUNDLE_ID="com.blakecrosley.captainslog.tv"
+TVOS_BUNDLE_ID="com.blakecrosley.captainslog"
 APP_ENTITLEMENTS="$ROOT_DIR/CaptainsLog/App/CaptainsLog.entitlements"
 COMPANION_ENTITLEMENTS="$ROOT_DIR/CaptainsLogCompanion/CaptainsLogCompanion.entitlements"
 

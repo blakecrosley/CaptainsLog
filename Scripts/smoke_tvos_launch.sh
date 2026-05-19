@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_PATH="$ROOT_DIR/CaptainsLog.xcodeproj"
 SCHEME="CaptainsLog-tvOS"
-BUNDLE_ID="com.blakecrosley.captainslog.tv"
+BUNDLE_ID="com.blakecrosley.captainslog"
 OUTPUT_DIR="${1:-/tmp/captainslog-tvos-smoke}"
 DERIVED_DATA_DIR="${CAPTAINS_LOG_TVOS_DERIVED_DATA:-/tmp/captainslog-tvos-smoke-release-build}"
 TV_DEVICE_NAME="${TV_DEVICE_NAME:-Apple TV 4K (3rd generation) (at 1080p)}"

@@ -718,7 +718,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.mac;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog;
 				PRODUCT_NAME = "Captain's Log";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -935,7 +935,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.tv;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog;
 				PRODUCT_NAME = "Captain's Log";
 				SDKROOT = appletvos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -982,7 +982,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.tv;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog;
 				PRODUCT_NAME = "Captain's Log";
 				SDKROOT = appletvos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1045,7 +1045,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.mac;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog;
 				PRODUCT_NAME = "Captain's Log";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;

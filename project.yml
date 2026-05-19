@@ -67,7 +67,7 @@ targets:
         product: Kit941
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.mac
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog
         PRODUCT_NAME: "Captain's Log"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: M4WTLM6RAQ
@@ -114,7 +114,7 @@ targets:
           - "**/.gitkeep"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.tv
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog
         PRODUCT_NAME: "Captain's Log"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: M4WTLM6RAQ

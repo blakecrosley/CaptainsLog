@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_PATH="$ROOT_DIR/CaptainsLog.xcodeproj"
 SCHEME="CaptainsLog-macOS"
-BUNDLE_ID="com.blakecrosley.captainslog.mac"
+BUNDLE_ID="com.blakecrosley.captainslog"
 OUTPUT_DIR="${1:-/tmp/captainslog-macos-appstore-screenshots}"
 DERIVED_DATA_DIR="${CAPTAINS_LOG_MACOS_SCREENSHOT_DERIVED_DATA:-/tmp/captainslog-macos-debug-screenshot-build}"
 WINDOW_WIDTH="${CAPTAINS_LOG_MACOS_SCREENSHOT_WINDOW_WIDTH:-1440}"

@@ -27,7 +27,7 @@ TARGETS = {
     },
     "macos": {
         "label": "native Mac",
-        "bundle_id": "com.blakecrosley.captainslog.mac",
+        "bundle_id": "com.blakecrosley.captainslog",
         "required_profile_types": ["MAC_APP_STORE"],
         "required_certificate_groups": ["mac_app_distribution", "mac_installer_distribution"],
     },
@@ -44,7 +44,7 @@ TARGETS = {
     },
     "tvos": {
         "label": "Apple TV",
-        "bundle_id": "com.blakecrosley.captainslog.tv",
+        "bundle_id": "com.blakecrosley.captainslog",
         "required_profile_types": ["TVOS_APP_STORE"],
         "required_certificate_groups": ["ios_distribution"],
     },
