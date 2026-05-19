@@ -7,8 +7,8 @@ This plan turns the current platform-readiness answer into implementation gates.
 - iPhone and iPad: the universal iOS app is the first release path. Local readiness supports iPad through target family `1,2`, but signed IPA export and upload remain open.
 - Apple Vision Pro: use the compatible iPhone/iPad app availability path after final smoke-test acceptance. This is not a native visionOS target.
 - Mac: a native macOS target exists, but Mac App Store availability remains blocked on native Mac bundle/app-record visibility, Mac App Store signing/export, TestFlight, screenshot acceptance, and human QA.
-- Apple Watch: first-pass companion target exists and compiles with signing disabled, but it is not ready. The missing gates are phone-synced data, icons, screenshots, signed build/export, TestFlight, app record/platform availability, and watch-specific QA.
-- Apple TV: first-pass read-only target exists and compiles with signing disabled, but it is not ready. The missing gates are real setup/data path, icons/top-shelf assets, screenshots, signed build/export, TestFlight, app record/platform availability, and TV-specific QA.
+- Apple Watch: first-pass companion target exists and compiles/launches with signing disabled, but it is not ready. The missing gates are phone-synced data, icons, App Store screenshots, signed build/export, TestFlight, app record/platform availability, and watch-specific QA.
+- Apple TV: first-pass read-only target exists and compiles/launches with signing disabled, but it is not ready. The missing gates are real setup/data path, icons/top-shelf assets, App Store screenshots, signed build/export, TestFlight, app record/platform availability, and TV-specific QA.
 
 ## Readiness Standard
 
@@ -42,7 +42,7 @@ Implementation gates:
 - Add a watchOS app target, scheme, bundle ID, icons, privacy manifest, and entitlements. The target, scheme, bundle ID, and privacy manifest now exist; icons/entitlements still need release review.
 - Add a small shared snapshot model that can be produced by the iOS app without exposing tokens or provider keys.
 - Use WatchConnectivity or an equivalent local Apple framework for iPhone-to-watch snapshot transfer.
-- Add watch screenshots, at least one watch UI test or launch smoke, and a TestFlight pass before claiming readiness.
+- Add watch screenshots and a TestFlight pass before claiming readiness. `Scripts/smoke_watchos_launch.sh` now covers the unsigned simulator launch/screenshot/OCR smoke only.
 
 ## TV V1
 
@@ -57,7 +57,7 @@ Implementation gates:
 
 - Add a tvOS app target, scheme, bundle ID, icons/top-shelf assets, privacy manifest, and entitlements. The target, scheme, bundle ID, and privacy manifest now exist; icons/top-shelf assets and entitlements still need release review.
 - Prove GitHub auth or iPhone-assisted setup on tvOS.
-- Add tvOS screenshots, a focus/navigation smoke, and a TestFlight pass before claiming readiness.
+- Add tvOS screenshots and a TestFlight pass before claiming readiness. `Scripts/smoke_tvos_launch.sh` now covers the unsigned simulator launch/screenshot/OCR smoke only.
 
 ## Sequence
 

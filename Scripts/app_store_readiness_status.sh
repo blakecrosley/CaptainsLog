@@ -30,6 +30,12 @@ MACOS_EXPORT_PATH="$MACOS_EXPORT_DIR/Export"
 MACOS_PACKAGE="$(find "$MACOS_EXPORT_PATH" -maxdepth 1 -name '*.pkg' -print -quit 2>/dev/null || true)"
 MACOS_PACKAGE_LABEL="${MACOS_PACKAGE:-$MACOS_EXPORT_PATH/*.pkg}"
 MACOS_EXPORT_MANIFEST="$MACOS_EXPORT_PATH/MacExportManifest.txt"
+WATCHOS_SMOKE_DIR="${CAPTAINS_LOG_WATCHOS_SMOKE_DIR:-/tmp/captainslog-watchos-smoke}"
+WATCHOS_SMOKE_SCREENSHOT="$WATCHOS_SMOKE_DIR/watchos-launch.png"
+WATCHOS_SMOKE_OCR="$WATCHOS_SMOKE_DIR/watchos-launch-ocr.txt"
+TVOS_SMOKE_DIR="${CAPTAINS_LOG_TVOS_SMOKE_DIR:-/tmp/captainslog-tvos-smoke}"
+TVOS_SMOKE_SCREENSHOT="$TVOS_SMOKE_DIR/tvos-launch.png"
+TVOS_SMOKE_OCR="$TVOS_SMOKE_DIR/tvos-launch-ocr.txt"
 
 local_failures=0
 external_blockers=0
@@ -551,6 +557,28 @@ printf_platform_target_status() {
             else
                 fail "unable to read CaptainsLog-watchOS Release build settings for platform availability"
             fi
+            if [[ -x "$ROOT_DIR/Scripts/smoke_watchos_launch.sh" ]]; then
+                pass "Apple Watch launch smoke script exists"
+            else
+                fail "Apple Watch launch smoke script missing or not executable"
+            fi
+            if [[ -f "$WATCHOS_SMOKE_SCREENSHOT" && -f "$WATCHOS_SMOKE_OCR" ]]; then
+                local watch_width watch_height
+                watch_width="$(sips -g pixelWidth "$WATCHOS_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelWidth:/ { print $2; exit }')"
+                watch_height="$(sips -g pixelHeight "$WATCHOS_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelHeight:/ { print $2; exit }')"
+                if [[ -n "$watch_width" && -n "$watch_height" ]]; then
+                    pass "Apple Watch launch screenshot dimensions: ${watch_width}x${watch_height}"
+                else
+                    fail "unable to read Apple Watch launch screenshot dimensions"
+                fi
+                if rg -q -i "Captain'?s Log|Sync from iPhone|Waiting|Log" "$WATCHOS_SMOKE_OCR"; then
+                    pass "Apple Watch launch OCR found companion UI"
+                else
+                    fail "Apple Watch launch OCR is missing companion UI text"
+                fi
+            else
+                warn "Apple Watch launch smoke artifacts missing; run Scripts/smoke_watchos_launch.sh $WATCHOS_SMOKE_DIR before Watch launch acceptance"
+            fi
             warn "Apple Watch target is a first-pass companion shell; Watch release still requires phone-synced data, icons, screenshots, signed archive/export, TestFlight, and watch QA before availability"
         else
             warn "Captain's Log has no Apple Watch app target or scheme; Apple Watch is not ready"
@@ -571,6 +599,29 @@ printf_platform_target_status() {
                 fi
             else
                 fail "unable to read CaptainsLog-tvOS Release build settings for platform availability"
+            fi
+            if [[ -x "$ROOT_DIR/Scripts/smoke_tvos_launch.sh" ]]; then
+                pass "Apple TV launch smoke script exists"
+            else
+                fail "Apple TV launch smoke script missing or not executable"
+            fi
+            if [[ -f "$TVOS_SMOKE_SCREENSHOT" && -f "$TVOS_SMOKE_OCR" ]]; then
+                local tv_width tv_height
+                tv_width="$(sips -g pixelWidth "$TVOS_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelWidth:/ { print $2; exit }')"
+                tv_height="$(sips -g pixelHeight "$TVOS_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelHeight:/ { print $2; exit }')"
+                if [[ -n "$tv_width" && -n "$tv_height" ]]; then
+                    pass "Apple TV launch screenshot dimensions: ${tv_width}x${tv_height}"
+                else
+                    fail "unable to read Apple TV launch screenshot dimensions"
+                fi
+                if rg -q -i "Captain'?s Log|Captains Log" "$TVOS_SMOKE_OCR" \
+                    && rg -q -i "No GitHub credentials|Use the main app|read-only" "$TVOS_SMOKE_OCR"; then
+                    pass "Apple TV launch OCR found read-only companion UI"
+                else
+                    fail "Apple TV launch OCR is missing read-only companion UI text"
+                fi
+            else
+                warn "Apple TV launch smoke artifacts missing; run Scripts/smoke_tvos_launch.sh $TVOS_SMOKE_DIR before TV launch acceptance"
             fi
             warn "Apple TV target is a first-pass read-only shell; TV release still requires real setup/data path, icons/top-shelf assets, screenshots, signed archive/export, TestFlight, and TV QA before availability"
         else
@@ -638,6 +689,8 @@ printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
 printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
 printf 'macOS screenshots: %s\n' "$MACOS_SCREENSHOT_DIR"
 printf 'macOS package: %s\n' "$MACOS_PACKAGE_LABEL"
+printf 'watchOS smoke: %s\n' "$WATCHOS_SMOKE_DIR"
+printf 'tvOS smoke: %s\n' "$TVOS_SMOKE_DIR"
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git

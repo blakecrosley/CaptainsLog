@@ -1,0 +1,235 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_PATH="$ROOT_DIR/CaptainsLog.xcodeproj"
+SCHEME="CaptainsLog-tvOS"
+BUNDLE_ID="com.blakecrosley.captainslog.tv"
+OUTPUT_DIR="${1:-/tmp/captainslog-tvos-smoke}"
+DERIVED_DATA_DIR="${CAPTAINS_LOG_TVOS_DERIVED_DATA:-/tmp/captainslog-tvos-smoke-release-build}"
+TV_DEVICE_NAME="${TV_DEVICE_NAME:-Apple TV 4K (3rd generation) (at 1080p)}"
+TV_DEVICE_ID="${TV_DEVICE_ID:-}"
+SCREENSHOT_DELAY_SECONDS="${SCREENSHOT_DELAY_SECONDS:-4}"
+
+failures=0
+
+pass() {
+    printf '[ok] %s\n' "$1"
+}
+
+fail() {
+    printf '[fail] %s\n' "$1" >&2
+    failures=$((failures + 1))
+}
+
+device_id_for_name() {
+    local device_name="$1"
+
+    xcrun simctl list devices available \
+        | awk -v name="$device_name" '
+            index($0, name) > 0 && $0 !~ /unavailable/ {
+                if ($0 ~ /Booted/) {
+                    print
+                    exit
+                }
+                if (first == "") {
+                    first = $0
+                }
+            }
+            END {
+                if (first != "") {
+                    print first
+                }
+            }
+        ' \
+        | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/' \
+        | head -n 1
+}
+
+write_ocr_source() {
+    local swift_source="$1"
+
+    cat > "$swift_source" <<'SWIFT'
+import Foundation
+import Vision
+
+let paths = Array(CommandLine.arguments.dropFirst())
+if paths.isEmpty {
+    FileHandle.standardError.write(Data("No screenshot paths provided.\n".utf8))
+    exit(2)
+}
+
+var lines: [String] = []
+var failures: [String] = []
+
+for path in paths {
+    let request = VNRecognizeTextRequest()
+    request.recognitionLevel = .accurate
+    request.usesLanguageCorrection = false
+
+    do {
+        let handler = VNImageRequestHandler(url: URL(fileURLWithPath: path), options: [:])
+        try handler.perform([request])
+        for observation in request.results ?? [] {
+            guard let text = observation.topCandidates(1).first?.string else {
+                continue
+            }
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                continue
+            }
+            lines.append(trimmed)
+        }
+    } catch {
+        failures.append("\(path): \(error)")
+    }
+}
+
+for line in lines {
+    print(line)
+}
+
+if !failures.isEmpty {
+    FileHandle.standardError.write(Data("OCR failed for \(failures.count) screenshot(s):\n".utf8))
+    for failure in failures {
+        FileHandle.standardError.write(Data("\(failure)\n".utf8))
+    }
+    exit(1)
+}
+SWIFT
+}
+
+require_ocr_text_any() {
+    local label="$1"
+    shift
+    local pattern
+
+    for pattern in "$@"; do
+        if rg -q -i "$pattern" "$OCR_OUTPUT"; then
+            pass "tvOS launch OCR includes $label"
+            return
+        fi
+    done
+
+    fail "tvOS launch OCR missing $label"
+}
+
+mkdir -p "$OUTPUT_DIR"
+SCREENSHOT_PATH="$OUTPUT_DIR/tvos-launch.png"
+OCR_OUTPUT="$OUTPUT_DIR/tvos-launch-ocr.txt"
+BUILD_LOG="$OUTPUT_DIR/tvos-release-build.log"
+LAUNCH_LOG="$OUTPUT_DIR/tvos-launch.log"
+
+if ! command -v xcrun >/dev/null 2>&1; then
+    fail "xcrun missing"
+fi
+if ! command -v xcodebuild >/dev/null 2>&1; then
+    fail "xcodebuild missing"
+fi
+if ! command -v rg >/dev/null 2>&1; then
+    fail "rg missing"
+fi
+if ! xcrun swift --version >/dev/null 2>&1; then
+    fail "xcrun swift unavailable"
+fi
+if (( failures > 0 )); then
+    exit 1
+fi
+
+if [[ -z "$TV_DEVICE_ID" ]]; then
+    TV_DEVICE_ID="$(device_id_for_name "$TV_DEVICE_NAME")"
+fi
+if [[ -z "$TV_DEVICE_ID" ]]; then
+    fail "missing available tvOS simulator named: $TV_DEVICE_NAME"
+    exit 1
+fi
+pass "tvOS simulator selected: $TV_DEVICE_ID"
+
+xcrun simctl boot "$TV_DEVICE_ID" >/dev/null 2>&1 || true
+xcrun simctl bootstatus "$TV_DEVICE_ID" -b >/dev/null
+pass "tvOS simulator booted"
+
+xcodebuild \
+    -project "$PROJECT_PATH" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -destination "id=$TV_DEVICE_ID" \
+    -derivedDataPath "$DERIVED_DATA_DIR" \
+    CODE_SIGNING_ALLOWED=NO \
+    build | tee "$BUILD_LOG"
+
+build_settings="$(mktemp)"
+xcodebuild \
+    -project "$PROJECT_PATH" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -destination "id=$TV_DEVICE_ID" \
+    -derivedDataPath "$DERIVED_DATA_DIR" \
+    CODE_SIGNING_ALLOWED=NO \
+    -showBuildSettings > "$build_settings"
+target_build_dir="$(awk -F ' = ' '$1 ~ /TARGET_BUILD_DIR/ { print $2; exit }' "$build_settings")"
+full_product_name="$(awk -F ' = ' '$1 ~ /FULL_PRODUCT_NAME/ { print $2; exit }' "$build_settings")"
+rm -f "$build_settings"
+app_path="$target_build_dir/$full_product_name"
+
+if [[ ! -d "$app_path" ]]; then
+    fail "built tvOS app not found: $app_path"
+    exit 1
+fi
+pass "Release tvOS app built: $app_path"
+
+xcrun simctl uninstall "$TV_DEVICE_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+xcrun simctl install "$TV_DEVICE_ID" "$app_path"
+pass "app installed on TV simulator"
+
+xcrun simctl launch --terminate-running-process "$TV_DEVICE_ID" "$BUNDLE_ID" | tee "$LAUNCH_LOG"
+pass "app launch command returned"
+
+sleep "$SCREENSHOT_DELAY_SECONDS"
+xcrun simctl io "$TV_DEVICE_ID" screenshot "$SCREENSHOT_PATH" >/dev/null
+pass "tvOS screenshot captured: $SCREENSHOT_PATH"
+
+width="$(sips -g pixelWidth "$SCREENSHOT_PATH" 2>/dev/null | awk '/pixelWidth:/ { print $2; exit }')"
+height="$(sips -g pixelHeight "$SCREENSHOT_PATH" 2>/dev/null | awk '/pixelHeight:/ { print $2; exit }')"
+if [[ -n "$width" && -n "$height" ]]; then
+    pass "tvOS screenshot dimensions: ${width}x${height}"
+else
+    fail "unable to read tvOS screenshot dimensions"
+fi
+
+swift_source="$(mktemp -t captainslog-tvos-smoke-ocr.XXXXXX.swift)"
+cleanup() {
+    rm -f "$swift_source"
+}
+trap cleanup EXIT
+write_ocr_source "$swift_source"
+
+if xcrun swift "$swift_source" "$SCREENSHOT_PATH" > "$OCR_OUTPUT"; then
+    pass "tvOS screenshot OCR written: $OCR_OUTPUT"
+else
+    fail "tvOS screenshot OCR failed"
+    exit 1
+fi
+
+line_count="$(wc -l < "$OCR_OUTPUT" | tr -d ' ')"
+if [[ "$line_count" == "0" ]]; then
+    fail "tvOS screenshot OCR returned no text"
+else
+    pass "tvOS screenshot OCR lines: $line_count"
+fi
+
+require_ocr_text_any "Captain's Log" "Captain'?s Log" "Captains Log"
+require_ocr_text_any "read-only/sync posture" "No GitHub credentials" "Use the main app" "read-only"
+
+printf '\ntvOS launch smoke output:\n'
+printf '  build log: %s\n' "$BUILD_LOG"
+printf '  launch log: %s\n' "$LAUNCH_LOG"
+printf '  screenshot: %s\n' "$SCREENSHOT_PATH"
+printf '  OCR: %s\n' "$OCR_OUTPUT"
+
+if (( failures > 0 )); then
+    printf '\ntvOS launch smoke failed with %d issue(s).\n' "$failures" >&2
+    exit 1
+fi
+
+printf '\ntvOS launch smoke passed.\n'
