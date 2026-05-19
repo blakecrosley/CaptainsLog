@@ -206,6 +206,13 @@ def required_capabilities_from_entitlements(path: Path = APP_ENTITLEMENTS) -> li
     return required
 
 
+def resolve_entitlements_path(path_text: str) -> Path:
+    path = Path(path_text).expanduser()
+    if not path.is_absolute():
+        path = ROOT_DIR / path
+    return path.resolve()
+
+
 def fetch_bundle_capabilities(token: str, bundle_id_resource_id: str) -> list[dict[str, Any]]:
     payload = api_get(
         token,
@@ -226,6 +233,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE_ID)
     parser.add_argument(
+        "--entitlements",
+        default=str(APP_ENTITLEMENTS.relative_to(ROOT_DIR)),
+        help="Entitlements plist to use when deriving required Developer Portal capabilities.",
+    )
+    parser.add_argument(
+        "--skip-app-record",
+        action="store_true",
+        help="Skip the App Store Connect app-record lookup when only Developer Portal bundle state is required.",
+    )
+    parser.add_argument(
         "--require",
         choices=("all", "both", "app-record", "bundle-id", "capabilities"),
         default="both",
@@ -233,6 +250,8 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true", help="Print machine-readable status")
     args = parser.parse_args()
+    if args.skip_app_record and args.require in ("all", "both", "app-record"):
+        fail("--skip-app-record can only be used with --require bundle-id or --require capabilities")
 
     load_local_env_defaults()
 
@@ -246,11 +265,13 @@ def main() -> int:
     p8_path = resolve_p8_path(key_id)
     token = build_token(key_id, issuer_id, p8_path)
 
-    app_payload = api_get(
-        token,
-        "/v1/apps",
-        {"filter[bundleId]": args.bundle_id, "fields[apps]": "bundleId,name,sku,primaryLocale"},
-    )
+    app_payload = {"data": []}
+    if not args.skip_app_record:
+        app_payload = api_get(
+            token,
+            "/v1/apps",
+            {"filter[bundleId]": args.bundle_id, "fields[apps]": "bundleId,name,sku,primaryLocale"},
+        )
     bundle_payload = api_get(
         token,
         "/v1/bundleIds",
@@ -260,7 +281,8 @@ def main() -> int:
     apps = app_payload.get("data", [])
     bundle_ids = bundle_payload.get("data", [])
     capabilities: list[dict[str, Any]] = []
-    required_capabilities = required_capabilities_from_entitlements()
+    entitlements_path = resolve_entitlements_path(args.entitlements)
+    required_capabilities = required_capabilities_from_entitlements(entitlements_path)
     if bundle_ids:
         capabilities = fetch_bundle_capabilities(token, bundle_ids[0].get("id", ""))
     capability_types = {capability.get("capabilityType") for capability in capabilities}
@@ -271,6 +293,8 @@ def main() -> int:
     ]
     result = {
         "bundleId": args.bundle_id,
+        "entitlementsPath": str(entitlements_path),
+        "appRecordCheckSkipped": args.skip_app_record,
         "appRecordCount": len(apps),
         "bundleIdRecordCount": len(bundle_ids),
         "bundleCapabilityCount": len(capabilities),
@@ -304,18 +328,22 @@ def main() -> int:
     else:
         print("Captain's Log App Store Connect record status")
         print(f"Bundle ID: {args.bundle_id}")
+        print(f"Entitlements: {entitlements_path}")
         if bundle_ids:
             bundle = result["bundleIds"][0]
             print(f"[ok] Developer Portal bundle ID exists: {bundle['identifier']} ({bundle['id']})")
         else:
             print("[fail] Developer Portal bundle ID is missing")
-        if apps:
-            app = result["apps"][0]
-            print(f"[ok] App Store Connect app record exists: {app['name']} ({app['id']})")
-            print(f"[ok] App record bundle ID: {app['bundleId']}")
-            print(f"[ok] App record SKU: {app['sku']}")
+        if args.skip_app_record:
+            print("[info] App Store Connect app record check skipped")
         else:
-            print("[fail] App Store Connect app record is missing or not visible to this API key")
+            if apps:
+                app = result["apps"][0]
+                print(f"[ok] App Store Connect app record exists: {app['name']} ({app['id']})")
+                print(f"[ok] App record bundle ID: {app['bundleId']}")
+                print(f"[ok] App record SKU: {app['sku']}")
+            else:
+                print("[fail] App Store Connect app record is missing or not visible to this API key")
         if bundle_ids and required_capabilities:
             for required in required_capabilities:
                 capability_type = required["capabilityType"]

@@ -5,6 +5,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
 IOS_BUNDLE_ID="com.blakecrosley.captainslog"
 MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
+WATCHOS_BUNDLE_ID="com.blakecrosley.captainslog.watchkitapp"
+TVOS_BUNDLE_ID="com.blakecrosley.captainslog.tv"
+APP_ENTITLEMENTS="$ROOT_DIR/CaptainsLog/App/CaptainsLog.entitlements"
+COMPANION_ENTITLEMENTS="$ROOT_DIR/CaptainsLogCompanion/CaptainsLogCompanion.entitlements"
 DEFAULT_IPA="/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
 SCREENSHOT_DIR="${1:-/tmp/captainslog-key-state-audit}"
 IPA_PATH="${2:-$DEFAULT_IPA}"
@@ -399,6 +403,34 @@ check_reference_project_platform_precedent() {
     fi
 }
 
+check_developer_portal_capabilities() {
+    local label="$1"
+    local bundle_id="$2"
+    local entitlements_path="$3"
+    local output
+
+    if [[ ! -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" ]]; then
+        warn "$label Developer Portal bundle/capability check skipped; Scripts/check_app_store_connect_record.py is missing or not executable"
+        return
+    fi
+
+    if [[ -z "${APP_STORE_CONNECT_API_KEY:-}" || -z "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
+        external "$label Developer Portal bundle/capability check is unverified because App Store Connect API-key inputs are not configured"
+        return
+    fi
+
+    if output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" \
+        --bundle-id "$bundle_id" \
+        --entitlements "$entitlements_path" \
+        --skip-app-record \
+        --require capabilities 2>&1)"; then
+        pass "$label Developer Portal bundle ID and required capabilities exist for ${bundle_id}"
+    else
+        external "$label Developer Portal bundle ID or required capabilities are missing/not visible; create the bundle ID, enable required capabilities, then regenerate/download profiles before signed export"
+        printf '%s\n' "$output" | sed 's/^/  /'
+    fi
+}
+
 printf_platform_target_status() {
     local project_list
     local ios_settings
@@ -428,12 +460,12 @@ printf_platform_target_status() {
         if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+CaptainsLog-macOS$'; then
             warn "native macOS target exists, but first release still requires Mac signing/export, screenshots, TestFlight, and human QA before Mac App Store availability"
 
-	            if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
-	                if printf '%s\n' "$macos_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${MACOS_BUNDLE_ID//./[.]}"; then
-	                    pass "macOS target bundle id is ${MACOS_BUNDLE_ID}"
-	                else
-	                    fail "macOS target bundle id is missing or mismatched"
-	                fi
+            if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
+                if printf '%s\n' "$macos_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${MACOS_BUNDLE_ID//./[.]}"; then
+                    pass "macOS target bundle id is ${MACOS_BUNDLE_ID}"
+                else
+                    fail "macOS target bundle id is missing or mismatched"
+                fi
                 if printf '%s\n' "$macos_settings" | rg -q 'CODE_SIGN_STYLE = Automatic'; then
                     pass "macOS target uses automatic signing"
                 else
@@ -449,18 +481,11 @@ printf_platform_target_status() {
                 else
                     fail "macOS target does not have hardened runtime enabled"
                 fi
-	            else
-	                fail "unable to read CaptainsLog-macOS Release build settings for platform availability"
-	            fi
+            else
+                fail "unable to read CaptainsLog-macOS Release build settings for platform availability"
+            fi
 
-	            if [[ -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
-	                if macos_bundle_output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$MACOS_BUNDLE_ID" --require bundle-id 2>&1)"; then
-	                    pass "native Mac Developer Portal bundle ID exists for ${MACOS_BUNDLE_ID}"
-	                else
-	                    external "native Mac Developer Portal bundle ID is missing or not visible to this API key; create it before native Mac App Store export"
-	                    printf '%s\n' "$macos_bundle_output" | sed 's/^/  /'
-	                fi
-	            fi
+            check_developer_portal_capabilities "native Mac" "$MACOS_BUNDLE_ID" "$APP_ENTITLEMENTS"
 
             if [[ -x "$ROOT_DIR/Scripts/smoke_macos_launch.sh" ]]; then
                 pass "macOS launch smoke script exists"
@@ -553,8 +578,8 @@ printf_platform_target_status() {
         if [[ "$(printf '%s\n' "$project_list" | rg -c '^[[:space:]]+CaptainsLog-watchOS$' || true)" -ge 2 ]]; then
             pass "Apple Watch target and scheme exist: CaptainsLog-watchOS"
             if watch_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-watchOS -configuration Release -showBuildSettings 2>/dev/null)"; then
-                if printf '%s\n' "$watch_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = com[.]blakecrosley[.]captainslog[.]watchkitapp"; then
-                    pass "Apple Watch bundle id is com.blakecrosley.captainslog.watchkitapp"
+                if printf '%s\n' "$watch_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${WATCHOS_BUNDLE_ID//./[.]}"; then
+                    pass "Apple Watch bundle id is ${WATCHOS_BUNDLE_ID}"
                 else
                     fail "Apple Watch bundle id is missing or mismatched"
                 fi
@@ -576,6 +601,7 @@ printf_platform_target_status() {
             else
                 fail "unable to read CaptainsLog-watchOS Release build settings for platform availability"
             fi
+            check_developer_portal_capabilities "Apple Watch" "$WATCHOS_BUNDLE_ID" "$COMPANION_ENTITLEMENTS"
             check_png_size "$WATCHOS_MARKETING_ICON" 1024 1024 "Apple Watch marketing icon"
             if rg -q "WatchConnectivity|requestSnapshot|didReceiveApplicationContext" "$ROOT_DIR/CaptainsLogShared" "$ROOT_DIR/CaptainsLog/Services/CompanionSnapshotPublisher.swift"; then
                 pass "Apple Watch has a WatchConnectivity snapshot request/push path"
@@ -632,8 +658,8 @@ printf_platform_target_status() {
         if [[ "$(printf '%s\n' "$project_list" | rg -c '^[[:space:]]+CaptainsLog-tvOS$' || true)" -ge 2 ]]; then
             pass "Apple TV target and scheme exist: CaptainsLog-tvOS"
             if tv_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-tvOS -configuration Release -showBuildSettings 2>/dev/null)"; then
-                if printf '%s\n' "$tv_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = com[.]blakecrosley[.]captainslog[.]tv"; then
-                    pass "Apple TV bundle id is com.blakecrosley.captainslog.tv"
+                if printf '%s\n' "$tv_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${TVOS_BUNDLE_ID//./[.]}"; then
+                    pass "Apple TV bundle id is ${TVOS_BUNDLE_ID}"
                 else
                     fail "Apple TV bundle id is missing or mismatched"
                 fi
@@ -655,6 +681,7 @@ printf_platform_target_status() {
             else
                 fail "unable to read CaptainsLog-tvOS Release build settings for platform availability"
             fi
+            check_developer_portal_capabilities "Apple TV" "$TVOS_BUNDLE_ID" "$COMPANION_ENTITLEMENTS"
             check_png_size_any "$TVOS_BRAND_ASSET_DIR/App Icon.imagestack/Front.imagestacklayer/Content.imageset/front.png" "Apple TV app icon front layer" 400x240
             check_png_size_any "$TVOS_BRAND_ASSET_DIR/App Icon - App Store.imagestack/Front.imagestacklayer/Content.imageset/front.png" "Apple TV App Store icon front layer" 1280x768
             check_png_size_any "$TVOS_BRAND_ASSET_DIR/Top Shelf Image.imageset/topshelf.png" "Apple TV top shelf image" 1920x720
