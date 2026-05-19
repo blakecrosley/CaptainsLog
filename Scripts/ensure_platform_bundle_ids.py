@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -147,6 +148,52 @@ def existing_capability_types(token: str, bundle_resource_id: str) -> set[str]:
     return {capability.get("capabilityType") for capability in capabilities if capability.get("capabilityType")}
 
 
+def verify_target_state(token: str, name: str, attempts: int = 3, delay_seconds: int = 2) -> dict[str, Any]:
+    target = TARGETS[name]
+    required = asc.required_capabilities_from_entitlements(Path(target["entitlements"]))
+    result: dict[str, Any] = {
+        "bundleId": target["bundle_id"],
+        "expectedSeedId": TEAM_ID,
+        "requiredCapabilities": [item["capabilityType"] for item in required],
+        "verified": False,
+    }
+
+    for attempt in range(1, attempts + 1):
+        bundle = find_bundle(token, target["bundle_id"])
+        result["attempts"] = attempt
+        if not bundle:
+            result["bundleExists"] = False
+            result["reason"] = "bundle ID is missing or not visible"
+        else:
+            bundle_id = bundle["id"]
+            seed_id = bundle.get("attributes", {}).get("seedId")
+            capability_types = existing_capability_types(token, bundle_id)
+            missing_capabilities = [
+                item["capabilityType"] for item in required if item["capabilityType"] not in capability_types
+            ]
+            result.update(
+                {
+                    "bundleExists": True,
+                    "bundleResourceId": bundle_id,
+                    "seedId": seed_id,
+                    "enabledCapabilities": sorted(capability_types),
+                    "missingCapabilities": missing_capabilities,
+                    "verified": seed_id == TEAM_ID and not missing_capabilities,
+                }
+            )
+            if result["verified"]:
+                result.pop("reason", None)
+                return result
+            if seed_id != TEAM_ID:
+                result["reason"] = f"expected seedId {TEAM_ID}, got {seed_id or 'unknown'}"
+            else:
+                result["reason"] = "required capabilities are missing"
+
+        if attempt < attempts:
+            time.sleep(delay_seconds)
+    return result
+
+
 def target_names(selected: list[str]) -> list[str]:
     if not selected or "all" in selected:
         return list(TARGETS)
@@ -210,6 +257,8 @@ def process_target(token: str, name: str, apply: bool) -> dict[str, Any]:
         if apply:
             enable_capability(token, bundle_id, capability_type)
     result["missingCapabilities"] = missing_capabilities
+    if apply:
+        result["postApplyVerification"] = verify_target_state(token, name)
     return result
 
 
@@ -241,6 +290,9 @@ def main() -> int:
         team_context = confirm_team_for_apply(token, args.confirm_team)
     names = target_names(args.target or ["all"])
     results = [process_target(token, name, args.apply) for name in names]
+    verification_failed = args.apply and any(
+        not result.get("postApplyVerification", {}).get("verified", False) for result in results
+    )
 
     if args.json:
         print(
@@ -254,7 +306,7 @@ def main() -> int:
                 sort_keys=True,
             )
         )
-        return 0
+        return 1 if verification_failed else 0
 
     print("Captain's Log platform bundle ID provisioning plan")
     print(f"Mode: {'apply' if args.apply else 'dry-run'}")
@@ -272,12 +324,22 @@ def main() -> int:
                 print(f"[{'done' if args.apply else 'plan'}] {action}")
         else:
             print("[ok] required bundle ID and capabilities are present")
+        verification = result.get("postApplyVerification")
+        if verification:
+            if verification.get("verified"):
+                print(
+                    "[ok] post-apply verification passed: "
+                    f"{verification.get('bundleResourceId')} with required capabilities"
+                )
+            else:
+                reason = verification.get("reason", "unknown verification failure")
+                print(f"[fail] post-apply verification failed: {reason}")
     if not args.apply:
         print(
             f"\nDry run only. Re-run with --apply --confirm-team {TEAM_ID} "
             "to mutate Apple Developer/App Store Connect state."
         )
-    return 0
+    return 1 if verification_failed else 0
 
 
 if __name__ == "__main__":
