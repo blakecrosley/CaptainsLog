@@ -367,6 +367,18 @@ def main() -> int:
         for required in required_capabilities
         if required.get("capabilityType") not in capability_types
     ]
+    app_summaries = [app_summary(app) for app in apps]
+    app_record_metadata_mismatches: list[dict[str, Any]] = []
+    if app_summaries:
+        app = app_summaries[0]
+        if app.get("sku") != args.expected_sku:
+            app_record_metadata_mismatches.append(
+                {"field": "sku", "expected": args.expected_sku, "actual": app.get("sku")}
+            )
+        if app.get("name") != args.expected_name:
+            app_record_metadata_mismatches.append(
+                {"field": "name", "expected": args.expected_name, "actual": app.get("name")}
+            )
     result = {
         "bundleId": args.bundle_id,
         "entitlementsPath": str(entitlements_path),
@@ -377,10 +389,9 @@ def main() -> int:
         "bundleCapabilityCount": len(capabilities),
         "expectedAppName": args.expected_name,
         "expectedSku": args.expected_sku,
-        "apps": [
-            app_summary(app)
-            for app in apps
-        ],
+        "apps": app_summaries,
+        "appRecordMetadataMatches": bool(app_summaries) and not app_record_metadata_mismatches,
+        "appRecordMetadataMismatches": app_record_metadata_mismatches,
         "expectedSkuAppRecordCount": len(sku_apps),
         "expectedSkuApps": [app_summary(app) for app in sku_apps],
         "expectedNameAppRecordCount": len(name_apps),
@@ -422,6 +433,14 @@ def main() -> int:
                 print(f"[ok] App Store Connect app record exists: {app['name']} ({app['id']})")
                 print(f"[ok] App record bundle ID: {app['bundleId']}")
                 print(f"[ok] App record SKU: {app['sku']}")
+                if app_record_metadata_mismatches:
+                    for mismatch in app_record_metadata_mismatches:
+                        print(
+                            f"[fail] App record {mismatch['field']} is {mismatch.get('actual') or 'missing'}, "
+                            f"expected {mismatch['expected']}"
+                        )
+                else:
+                    print("[ok] App record name and SKU match expected release metadata")
             else:
                 print("[fail] App Store Connect app record is missing or not visible to this API key")
         if bundle_ids and required_capabilities:
@@ -434,11 +453,11 @@ def main() -> int:
                     print(f"[fail] Required bundle capability missing: {capability_type} for {entitlement_key}")
 
     if args.require == "all":
-        return 0 if apps and bundle_ids and not missing_required_capabilities else 1
+        return 0 if apps and bundle_ids and not missing_required_capabilities and not app_record_metadata_mismatches else 1
     if args.require == "both":
-        return 0 if apps and bundle_ids else 1
+        return 0 if apps and bundle_ids and not app_record_metadata_mismatches else 1
     if args.require == "app-record":
-        return 0 if apps else 1
+        return 0 if apps and not app_record_metadata_mismatches else 1
     if args.require == "capabilities":
         return 0 if bundle_ids and not missing_required_capabilities else 1
     return 0 if bundle_ids else 1
