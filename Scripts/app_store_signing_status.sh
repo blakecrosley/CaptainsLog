@@ -14,6 +14,7 @@ failures=0
 xcode_auth_env_ready=0
 cloud_signing_attempt_only=0
 profile_entitlement_gap=0
+app_store_profile_gap=0
 
 # shellcheck source=Scripts/lib/app_store_connect_env.sh
 source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
@@ -269,6 +270,7 @@ summarize_profiles_for_bundle_id() {
     local label="$1"
     local bundle_id="$2"
     local matches=0
+    local app_store_matches=0
     local profile_dir profile tmp name team platforms kind expires
 
     printf '%s provisioning profile matches\n' "$label"
@@ -284,6 +286,9 @@ summarize_profiles_for_bundle_id() {
                     platforms="$(/usr/bin/plutil -extract Platform raw -o - "$tmp" 2>/dev/null | tr -d '\n' || true)"
                     expires="$(/usr/bin/plutil -extract ExpirationDate raw -o - "$tmp" 2>/dev/null || true)"
                     kind="$(profile_kind "$tmp")"
+                    if [[ "$kind" == "app-store" ]]; then
+                        app_store_matches=$((app_store_matches + 1))
+                    fi
                     info "${label}: ${name:-unnamed profile} | team=${team:-unknown} | kind=${kind} | platforms=${platforms:-unknown} | expires=${expires:-unknown}"
                     warn_missing_profile_entitlements "$label" "$bundle_id" "$tmp" "$name"
                 fi
@@ -296,6 +301,10 @@ summarize_profiles_for_bundle_id() {
         warn "no local provisioning profile matches ${label} bundle ID ${bundle_id}"
     else
         pass "${label} local provisioning profile match count: ${matches}"
+        if [[ "$label" == "iOS" && "$app_store_matches" == "0" ]]; then
+            warn "no local App Store provisioning profile matches ${label} bundle ID ${bundle_id}; development profiles cannot export the App Store IPA"
+            app_store_profile_gap=1
+        fi
     fi
 }
 
@@ -464,6 +473,13 @@ NEXT
 fi
 
 if (( cloud_signing_attempt_only == 1 )); then
+    if (( app_store_profile_gap == 1 )); then
+        cat <<NEXT
+No local App Store provisioning profile matches the iOS bundle ID.
+Regenerate or download the App Store profile for ${IOS_BUNDLE_ID}; a development profile is not enough for exportArchive.
+
+NEXT
+    fi
     if (( profile_entitlement_gap == 1 )); then
         cat <<NEXT
 One or more matching provisioning profiles are missing entitlements required by the app.
