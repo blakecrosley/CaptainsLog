@@ -10,7 +10,7 @@ From the repo root:
 Scripts/app_store_readiness_status.sh
 ```
 
-Use the summary as the gate. If it reports Kit941 upstream drift, push the clean Kit941 commits or explicitly accept the unpushed local package state before final export because Captain's Log links `../941Kit` directly and the export manifest records that package commit. If readiness only reports the known missing/stale IPA state after source custody is settled, make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported paths are a local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+Use the summary as the gate. If it reports Kit941 upstream drift, push the clean Kit941 commits or explicitly accept the unpushed local package state before final export because Captain's Log links `../941Kit` directly and the export manifest records that package commit. If readiness only reports the known missing/stale IPA state after source custody is settled, regenerate/download the active App Store profile and make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported signing paths are a local Apple Distribution/iOS Distribution identity/profile pair for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
@@ -62,7 +62,7 @@ Use this packet for the next App Store Connect / Apple Developer session. It is 
 
 Do not treat this packet as platform approval. iPad and Vision are local iOS availability paths until the signed iOS upload is processed. Native Mac, Watch, and TV still need signed export, TestFlight, platform QA, provisioning validation, and human screenshot acceptance before enabling store availability.
 
-If readiness reports a missing or stale IPA, make either Xcode distribution signing or `xcodebuild` API-key provisioning auth with cloud-managed distribution certificate access available, then run:
+If readiness reports a missing or stale IPA, regenerate/download the active App Store profile and make either Xcode distribution signing or `xcodebuild` API-key provisioning auth with cloud-managed distribution certificate access available, then run:
 
 ```sh
 Scripts/app_store_signing_status.sh

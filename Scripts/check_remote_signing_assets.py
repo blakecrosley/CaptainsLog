@@ -57,7 +57,7 @@ CERTIFICATE_GROUPS = {
     },
     "mac_app_distribution": {
         "label": "Mac App Store application distribution",
-        "types": ["MAC_APP_DISTRIBUTION"],
+        "types": ["MAC_APP_DISTRIBUTION", "DISTRIBUTION"],
     },
     "mac_installer_distribution": {
         "label": "Mac App Store installer distribution",
