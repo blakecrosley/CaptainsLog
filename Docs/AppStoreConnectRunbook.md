@@ -14,6 +14,54 @@ Use the summary as the gate. If it reports Kit941 upstream drift, push the clean
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
+## Current Account Action Packet
+
+Use this packet for the next App Store Connect / Apple Developer session. It is intentionally narrow: it closes the account/signing blockers that current read-only checks report, without creating separate Mac or TV bundle IDs.
+
+1. Create or confirm the App Store Connect app record:
+   - Platform: iOS
+   - Name: `Captain's Log`
+   - Bundle ID: `com.blakecrosley.captainslog`
+   - SKU: `captainslog-ios`
+   - Primary language: English (U.S.)
+   - Team: `M4WTLM6RAQ`
+
+   Evidence command after the web-UI action:
+
+   ```sh
+   Scripts/check_app_store_connect_record.py
+   ```
+
+2. Create the Watch companion bundle ID only after explicit Apple account mutation approval:
+
+   ```sh
+   Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ
+   ```
+
+   Do not create `com.blakecrosley.captainslog.mac` or `com.blakecrosley.captainslog.tv`. Current Captain's Log Mac and TV targets share `com.blakecrosley.captainslog`, and the dry-run currently reports that shared bundle ID exists with required capabilities for both Mac and TV.
+
+3. Make distribution signing/export possible:
+   - iOS and TV need an active App Store distribution certificate/profile path for `com.blakecrosley.captainslog`.
+   - Native Mac needs Mac App Store application and installer distribution certificate/profile paths for `com.blakecrosley.captainslog`.
+   - Watch needs the companion bundle ID created first; signed export/TestFlight remains the release authority for the Watch path.
+
+   Evidence commands:
+
+   ```sh
+   Scripts/app_store_signing_status.sh
+   Scripts/check_remote_signing_assets.py --require
+   ```
+
+4. Regenerate release artifacts only after the signing checks above are green enough to prove the real export path:
+
+   ```sh
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
+   Scripts/app_store_readiness_status.sh
+   ```
+
+Do not treat this packet as platform approval. iPad and Vision are local iOS availability paths until the signed iOS upload is processed. Native Mac, Watch, and TV still need signed export, TestFlight, platform QA, provisioning validation, and human screenshot acceptance before enabling store availability.
+
 If readiness reports a missing or stale IPA, make either Xcode distribution signing or `xcodebuild` API-key provisioning auth with cloud-managed distribution certificate access available, then run:
 
 ```sh
