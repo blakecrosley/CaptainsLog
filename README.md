@@ -25,7 +25,7 @@ Current platform availability status:
 - Mac: a native macOS target exists and local Mac screenshot candidates can be generated, but do not submit it until Mac signing/export, TestFlight, screenshot acceptance, and human QA are complete.
 - Apple Watch and Apple TV: companion targets now build, launch, have platform icon/top-shelf assets, have local App Store screenshot captures, and share an aggregate snapshot data path based on WatchConnectivity plus iCloud key-value sync. Do not submit them until signed export, TestFlight, provisioning validation, human screenshot acceptance, and platform QA are complete.
 
-For the Watch/TV path after the first submission, use `Docs/PlatformExpansionPlan.md`.
+For the current platform verdict and the Watch/TV path after the first submission, use `Docs/PlatformExpansionPlan.md`.
 
 Refresh the local Vision compatible-app smoke before final Vision acceptance:
 
@@ -69,6 +69,7 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/c
 ## Release Handoff
 
 - Operator runbook: `Docs/AppStoreConnectRunbook.md`
+- Platform verdict: `Docs/PlatformExpansionPlan.md`
 - Completion audit: `Docs/AppStoreCompletionAudit.md`
 - Submission evidence packet: `Docs/AppStoreConnectSubmission.md`
 - Paste-ready metadata: `Docs/AppStoreMetadata.md`

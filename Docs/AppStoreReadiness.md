@@ -2,7 +2,7 @@
 
 This note tracks the current iOS App Store Connect blockers and the decisions still needed before the first TestFlight or App Review upload.
 
-For the final handoff sequence, use `Docs/AppStoreConnectRunbook.md`. For the full evidence packet, use `Docs/AppStoreConnectSubmission.md`. For the current completion audit, use `Docs/AppStoreCompletionAudit.md`. For App Store Connect privacy answers, use `Docs/AppStorePrivacyAnswers.md`.
+For the final handoff sequence, use `Docs/AppStoreConnectRunbook.md`. For the current platform verdict, use `Docs/PlatformExpansionPlan.md`. For the full evidence packet, use `Docs/AppStoreConnectSubmission.md`. For the current completion audit, use `Docs/AppStoreCompletionAudit.md`. For App Store Connect privacy answers, use `Docs/AppStorePrivacyAnswers.md`.
 
 ## Current Code Evidence
 
