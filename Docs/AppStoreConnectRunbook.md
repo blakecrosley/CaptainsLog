@@ -64,7 +64,7 @@ For native Mac, Watch, and TV, current evidence reports the three Captain's Log 
 Scripts/ensure_platform_bundle_ids.py
 ```
 
-That script is dry-run by default. After confirming the account/team context, `Scripts/ensure_platform_bundle_ids.py --apply --confirm-team M4WTLM6RAQ` creates the missing platform bundle IDs, enables the entitlement-derived `ICLOUD` capability, then rechecks the exact bundle IDs and required capabilities before exiting successfully. The helper refuses `--apply` unless the existing iOS bundle ID is visible under team `M4WTLM6RAQ`. It still does not create the iOS App Store Connect app record; that remains a web-UI step.
+That script is dry-run by default. Only run `Scripts/ensure_platform_bundle_ids.py --apply --confirm-team M4WTLM6RAQ` after explicit approval to mutate Apple Developer/App Store Connect state; git push approval is not account-mutation approval. After approval, the command creates the missing platform bundle IDs, enables the entitlement-derived `ICLOUD` capability, then rechecks the exact bundle IDs and required capabilities before exiting successfully. The helper refuses `--apply` unless the existing iOS bundle ID is visible under team `M4WTLM6RAQ`. It still does not create the iOS App Store Connect app record; that remains a web-UI step.
 
 ## 2. Enter Product Metadata
 
