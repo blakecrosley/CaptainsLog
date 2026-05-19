@@ -74,8 +74,11 @@ The signing status script checks the local Xcode/App Store upload toolchain, whe
 For read-only remote evidence before another export attempt, run:
 
 ```sh
+Scripts/check_app_store_account_access.py
 Scripts/check_remote_signing_assets.py --require
 ```
+
+`Scripts/check_app_store_account_access.py` queries App Store Connect user visibility and prints only aggregate role/all-app/provisioning counts. It intentionally omits user names, emails, resource IDs, and API-key material. Passing this check proves the selected API credential can read account user visibility; it does not prove app-record creation, signing-asset creation, or cloud-managed distribution certificate access.
 
 This checks visible App Store Connect certificate/profile resources, target-specific certificate groups, and the expected App Store profile types for Captain's Log bundle IDs. It does not create certificates, profiles, bundle IDs, or app records. Apple's current Profile API documents iOS, Mac, tvOS, and Mac Catalyst profile types but no dedicated watchOS App Store profile type, so the checker keeps Watch signing incomplete until signed export/TestFlight proves the path. Visible remote assets still do not prove local private-key access or cloud-managed distribution certificate permission; `xcodebuild -exportArchive` remains the authority for final export readiness.
 

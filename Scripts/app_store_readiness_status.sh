@@ -1160,6 +1160,21 @@ elif (( xcode_auth_env_ready == 1 )); then
     pass "xcodebuild App Store Connect API-key auth inputs are present for export_macos_app_store_pkg.sh"
 fi
 
+account_access_checked=0
+if [[ -x "$ROOT_DIR/Scripts/check_app_store_account_access.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
+    account_access_checked=1
+    if account_access_output="$("$ROOT_DIR/Scripts/check_app_store_account_access.py" 2>&1)"; then
+        pass "App Store Connect API account visibility is readable"
+        printf '%s\n' "$account_access_output" | sed 's/^/  /'
+    else
+        external "App Store Connect API account visibility check failed; confirm the selected API key can read account/user state"
+        printf '%s\n' "$account_access_output" | sed 's/^/  /'
+    fi
+fi
+if (( account_access_checked == 0 )); then
+    external "App Store Connect API account visibility is unverified; configure API-key inputs, then run Scripts/check_app_store_account_access.py"
+fi
+
 remote_signing_checked=0
 if [[ -x "$ROOT_DIR/Scripts/check_remote_signing_assets.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
     remote_signing_checked=1
