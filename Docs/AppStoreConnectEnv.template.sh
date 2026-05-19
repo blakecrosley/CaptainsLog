@@ -16,15 +16,19 @@
 # fail early on a filename mismatch unless
 # CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 is set after manual verification.
 #
-# If reusing Fastlane-style variables from Return or Get Bananas:
-#   export APP_STORE_CONNECT_API_KEY="$ASC_KEY_ID"
-#   export APP_STORE_CONNECT_API_ISSUER="$ASC_ISSUER_ID"
-#   export APP_STORE_CONNECT_P8_FILE="$ASC_KEY_PATH"
-# First make sure ASC_KEY_PATH points outside every git working tree.
+# If reusing Fastlane-style variables from Return or Get Bananas, the release
+# scripts also accept ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH directly when
+# APP_STORE_CONNECT_* is unset. First make sure ASC_KEY_PATH points outside every
+# git working tree.
 
 export APP_STORE_CONNECT_API_KEY="YOUR_KEY_ID"
 export APP_STORE_CONNECT_API_ISSUER="YOUR_ISSUER_UUID"
 export APP_STORE_CONNECT_P8_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8"
+
+# Fastlane-compatible aliases. Leave commented if using the canonical names.
+# export ASC_KEY_ID="YOUR_KEY_ID"
+# export ASC_ISSUER_ID="YOUR_ISSUER_UUID"
+# export ASC_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8"
 
 # Optional. Fill only if using Scripts/upload_app_store_ipa.sh app-record-altool.
 # Xcode 26.5 altool --list-providers does not support API-key authentication.

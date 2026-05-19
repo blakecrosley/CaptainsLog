@@ -63,18 +63,26 @@ def default_p8_path_for_key(key_id: str) -> Path | None:
     return None
 
 
+def env_with_alias(primary: str, alias: str) -> str:
+    return os.environ.get(primary) or os.environ.get(alias, "")
+
+
 def resolve_p8_path(key_id: str) -> Path:
-    if os.environ.get("APP_STORE_CONNECT_P8_FILE"):
-        p8_path = Path(os.environ["APP_STORE_CONNECT_P8_FILE"]).expanduser()
+    direct_p8_path = env_with_alias("APP_STORE_CONNECT_P8_FILE", "ASC_KEY_PATH")
+    if direct_p8_path:
+        p8_path = Path(direct_p8_path).expanduser()
     else:
         p8_path = default_p8_path_for_key(key_id) or Path()
 
     if not p8_path:
-        fail("APP_STORE_CONNECT_P8_FILE is not set and AuthKey_<key>.p8 was not found in supported private-key directories")
+        fail(
+            "APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH is not set and "
+            "AuthKey_<key>.p8 was not found in supported private-key directories"
+        )
 
     p8_path = p8_path.resolve()
     if not p8_path.is_file():
-        fail(f"APP_STORE_CONNECT_P8_FILE does not exist: {p8_path}")
+        fail(f"APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH does not exist: {p8_path}")
     if ROOT_DIR in [p8_path, *p8_path.parents]:
         fail(f"App Store Connect .p8 key file must live outside this repo: {p8_path}")
     git_root = git_root_for_path(p8_path)
@@ -85,7 +93,7 @@ def resolve_p8_path(key_id: str) -> Path:
     expected_name = f"AuthKey_{key_id}.p8"
     if p8_path.name != expected_name and os.environ.get("CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME") != "1":
         fail(
-            "APP_STORE_CONNECT_P8_FILE basename should be "
+            "APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH basename should be "
             f"{expected_name}. Set CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 only after manual verification."
         )
     return p8_path
@@ -135,12 +143,12 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="Print machine-readable status")
     args = parser.parse_args()
 
-    key_id = os.environ.get("APP_STORE_CONNECT_API_KEY", "")
-    issuer_id = os.environ.get("APP_STORE_CONNECT_API_ISSUER", "")
+    key_id = env_with_alias("APP_STORE_CONNECT_API_KEY", "ASC_KEY_ID")
+    issuer_id = env_with_alias("APP_STORE_CONNECT_API_ISSUER", "ASC_ISSUER_ID")
     if len(key_id) != 10 or not key_id.isalnum():
-        fail("APP_STORE_CONNECT_API_KEY should be a 10-character key ID")
+        fail("APP_STORE_CONNECT_API_KEY/ASC_KEY_ID should be a 10-character key ID")
     if not issuer_id:
-        fail("APP_STORE_CONNECT_API_ISSUER is required")
+        fail("APP_STORE_CONNECT_API_ISSUER/ASC_ISSUER_ID is required")
 
     p8_path = resolve_p8_path(key_id)
     token = build_token(key_id, issuer_id, p8_path)

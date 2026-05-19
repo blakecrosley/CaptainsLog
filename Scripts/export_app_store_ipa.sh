@@ -13,6 +13,9 @@ EXPORT_MANIFEST="$EXPORT_PATH/ExportManifest.txt"
 KIT941_DIR="$ROOT_DIR/../941Kit"
 xcode_auth_args=()
 
+# shellcheck source=Scripts/lib/app_store_connect_env.sh
+source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
+
 absolute_path() {
     local path="$1"
     realpath "$path"
@@ -27,6 +30,8 @@ git_root_for_path() {
 
 configure_xcode_auth_args() {
     local has_any_auth_value=0
+    app_store_connect_apply_fastlane_aliases
+
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" || -n "${APP_STORE_CONNECT_API_ISSUER:-}" || -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
         has_any_auth_value=1
     fi
@@ -36,10 +41,7 @@ configure_xcode_auth_args() {
     fi
 
     if [[ -z "${APP_STORE_CONNECT_API_KEY:-}" || -z "${APP_STORE_CONNECT_API_ISSUER:-}" || -z "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
-        cat >&2 <<MESSAGE
-Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE together to let xcodebuild authenticate with App Store Connect.
-Use Docs/AppStoreConnectEnv.template.sh as the placeholder-only template.
-MESSAGE
+        app_store_connect_auth_env_hint >&2
         exit 1
     fi
 
@@ -178,7 +180,7 @@ if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
             cat >&2 <<MESSAGE
 App Store distribution signing identity for team ${TEAM_ID} was not found in the local keychain.
 Open Xcode Settings > Accounts, sign into the App Store Connect team, and install or create an Apple Distribution certificate for team ${TEAM_ID} before exporting.
-Alternatively, set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE so xcodebuild can authenticate for provisioning updates.
+Alternatively, set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE so xcodebuild can authenticate for provisioning updates. The Fastlane-compatible ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
 Set CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1 to attempt the export anyway.
 MESSAGE
             exit 1

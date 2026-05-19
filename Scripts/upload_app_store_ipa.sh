@@ -16,6 +16,9 @@ WAIT_FOR_PROCESSING="${APP_STORE_CONNECT_WAIT:-0}"
 ALLOW_MISSING_EXPORT_MANIFEST="${CAPTAINS_LOG_ALLOW_MISSING_EXPORT_MANIFEST:-0}"
 ALLOW_DIRTY_EXPORT="${CAPTAINS_LOG_ALLOW_DIRTY_EXPORT:-0}"
 
+# shellcheck source=Scripts/lib/app_store_connect_env.sh
+source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
+
 usage() {
     cat <<'USAGE'
 Usage:
@@ -31,9 +34,13 @@ Usage:
 	Authentication for app-record/validate/upload/status:
   APP_STORE_CONNECT_API_KEY       App Store Connect API key ID.
   APP_STORE_CONNECT_API_ISSUER    App Store Connect issuer UUID.
+                                  Fastlane aliases ASC_KEY_ID and ASC_ISSUER_ID
+                                  are accepted when these are unset.
 
 	Optional:
 	  APP_STORE_CONNECT_P8_FILE       Direct path to AuthKey_<key>.p8.
+	                                  Fastlane alias ASC_KEY_PATH is accepted
+	                                  when this is unset.
 	  APP_STORE_CONNECT_PROVIDER_PUBLIC_ID
 	                                  Required only for app-record-altool because
 	                                  altool --list-apps requires a provider public ID.
@@ -287,6 +294,17 @@ credential_guard_self_test() {
         check_api_credentials
     }
 
+    good_fastlane_alias_path() {
+        unset APP_STORE_CONNECT_API_KEY
+        unset APP_STORE_CONNECT_API_ISSUER
+        unset APP_STORE_CONNECT_P8_FILE
+        ASC_KEY_ID="$test_key"
+        ASC_ISSUER_ID="$test_issuer"
+        ASC_KEY_PATH="$good_p8"
+        unset API_PRIVATE_KEYS_DIR
+        build_auth_args 0
+    }
+
     bad_key_shape() {
         APP_STORE_CONNECT_API_KEY="SHORT"
         APP_STORE_CONNECT_API_ISSUER="$test_issuer"
@@ -407,6 +425,7 @@ credential_guard_self_test() {
 
     expect_pass "direct .p8 path outside repo" good_direct_path
     expect_pass "altool default .p8 path outside repo" good_default_path
+    expect_pass "Fastlane ASC_* aliases" good_fastlane_alias_path
     expect_fail "malformed API key ID" bad_key_shape
     expect_fail "malformed issuer UUID" bad_issuer_shape
     expect_fail "missing .p8 path" missing_p8
@@ -425,6 +444,7 @@ credential_guard_self_test() {
 
 build_auth_args() {
     local include_provider="${1:-1}"
+    app_store_connect_apply_fastlane_aliases
 
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
         check_api_credentials
@@ -436,7 +456,7 @@ build_auth_args() {
             auth_args+=(--p8-file-path "$APP_STORE_CONNECT_P8_FILE")
         fi
     else
-        fail "Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER before using $COMMAND"
+        fail "Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER before using $COMMAND, or use ASC_KEY_ID and ASC_ISSUER_ID aliases"
     fi
 
     if [[ "$include_provider" == "1" && -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then

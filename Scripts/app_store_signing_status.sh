@@ -10,6 +10,9 @@ failures=0
 xcode_auth_env_ready=0
 cloud_signing_attempt_only=0
 
+# shellcheck source=Scripts/lib/app_store_connect_env.sh
+source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
+
 pass() {
     printf '[ok] %s\n' "$1"
 }
@@ -81,13 +84,15 @@ default_p8_candidate_count() {
 check_xcode_auth_env() {
     local has_any_auth_value=0
     local p8_candidate_count
+    app_store_connect_apply_fastlane_aliases
+
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" || -n "${APP_STORE_CONNECT_API_ISSUER:-}" || -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
         has_any_auth_value=1
     fi
 
     printf '\nApp Store Connect xcodebuild authentication\n'
     if (( has_any_auth_value == 0 )); then
-        warn "APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE are not set"
+        warn "APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE are not set; Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also unset"
         p8_candidate_count="$(default_p8_candidate_count)"
         if (( p8_candidate_count > 0 )); then
             warn "$p8_candidate_count candidate App Store Connect .p8 private-key file(s) are staged outside the repo, but no selected API key ID or issuer UUID is set"
@@ -104,7 +109,7 @@ check_xcode_auth_env() {
     fi
 
     if [[ -z "${APP_STORE_CONNECT_API_KEY:-}" || -z "${APP_STORE_CONNECT_API_ISSUER:-}" || -z "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
-        fail "set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE together for xcodebuild API-key authentication"
+        fail "set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE together for xcodebuild API-key authentication, or use ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases"
         return
     fi
 
@@ -308,7 +313,7 @@ Make App Store export signing available with one of these paths:
 
 A. Configure API-key authentication for xcodebuild provisioning updates:
    1. Copy Docs/AppStoreConnectEnv.template.sh to a private shell session.
-   2. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE.
+   2. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE, or reuse the Fastlane-style ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases.
    3. Keep the .p8 outside this repo and outside any git working tree.
 
 B. Or use Xcode account signing:
