@@ -117,6 +117,9 @@ The product direction should stay quiet, precise, and journal-like. Current stat
 ## Official References
 
 - Add a new app record: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
+- Add platforms to a single app record: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-platforms
+- Add watchOS app information: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-watchos-app-information
+- App Store Connect API apps resource: https://developer.apple.com/documentation/appstoreconnectapi/apps
 - Submitting apps: https://developer.apple.com/app-store/submitting/
 - Upload builds: https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/
 - App Store Connect API: https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api

@@ -18,13 +18,15 @@ Do not commit private App Store Connect contact details, demo-account credential
 
 Use this packet for the next App Store Connect / Apple Developer session. It is intentionally narrow: it closes the account/signing blockers that current read-only checks report, without creating separate Mac or TV bundle IDs.
 
-1. Create or confirm the App Store Connect app record:
+1. Create or confirm the App Store Connect app record in the App Store Connect web UI. Apple documents this as a web-UI step before build upload, with Account Holder, App Manager, or Admin role required:
    - Platform: iOS
    - Name: `Captain's Log`
    - Bundle ID: `com.blakecrosley.captainslog`
    - SKU: `captainslog-ios`
    - Primary language: English (U.S.)
    - Team: `M4WTLM6RAQ`
+
+   Official reference: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
 
    Evidence command after the web-UI action:
 
@@ -38,7 +40,9 @@ Use this packet for the next App Store Connect / Apple Developer session. It is 
    Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ
    ```
 
-   Do not create `com.blakecrosley.captainslog.mac` or `com.blakecrosley.captainslog.tv`. Current Captain's Log Mac and TV targets share `com.blakecrosley.captainslog`, and the dry-run currently reports that shared bundle ID exists with required capabilities for both Mac and TV.
+   Do not create `com.blakecrosley.captainslog.mac` or `com.blakecrosley.captainslog.tv`. Apple's add-platform guidance says macOS, tvOS, and visionOS platform versions added to the same app record use the same Apple ID, SKU, and bundle ID as the iOS app. Current Captain's Log Mac and TV targets share `com.blakecrosley.captainslog`, and the dry-run currently reports that shared bundle ID exists with required capabilities for both Mac and TV.
+
+   Official reference: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-platforms
 
 3. Make distribution signing/export possible:
    - iOS and TV need an active App Store distribution certificate/profile path for `com.blakecrosley.captainslog`.
@@ -109,9 +113,9 @@ Evidence that closes this step:
 Scripts/check_app_store_connect_record.py
 ```
 
-Run the evidence command after API credentials are configured in step 4. It checks the App Store Connect REST API directly and does not need `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID`. Current iOS evidence shows the Developer Portal bundle ID exists and the required `ICLOUD` bundle capability is enabled, but `appRecordLookupMethod: bundle-id-relationship-empty` shows no App Store Connect app record is attached to that exact bundle ID. The checker also reports visible matches for the expected SKU `captainslog-ios` and name `Captain's Log`; current evidence reports zero visible matches for both, so this is not just an exact-bundle mismatch. Existing Return and Get Bananas records prove useful 941 account precedent, but they do not create or cover Captain's Log records. Apple's App Store Connect help says a new app record is created in App Store Connect before upload, so the Captain's Log iOS app record remains a web-UI gate followed by read-only REST verification. If App Store Connect gives an Apple ID for this app after creation, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
+Run the evidence command after API credentials are configured in step 4. It checks the App Store Connect REST API directly and does not need `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID`. Current iOS evidence shows the Developer Portal bundle ID exists and the required `ICLOUD` bundle capability is enabled, but `appRecordLookupMethod: bundle-id-relationship-empty` shows no App Store Connect app record is attached to that exact bundle ID. The checker also reports visible matches for the expected SKU `captainslog-ios` and name `Captain's Log`; current evidence reports zero visible matches for both, so this is not just an exact-bundle mismatch. Existing Return and Get Bananas records prove useful 941 account precedent, but they do not create or cover Captain's Log records. Apple's App Store Connect help says a new app record is created in App Store Connect before upload, and Apple's App Store Connect API `apps` resource documentation says not to use that API to create new apps. The Captain's Log iOS app record therefore remains a web-UI gate followed by read-only REST verification. If App Store Connect gives an Apple ID for this app after creation, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
 
-For native Mac, Watch, and TV, do not blindly create separate bundle IDs. Apple's current single-record/universal-purchase guidance says added macOS, tvOS, and visionOS platform versions share the iOS app's bundle ID, and the local 941 precedents match that pattern: ReturnTV uses `com.941apps.Return`, and Get Bananas uses `com.941apps.Banana-List` for its main iOS/Mac target. Captain's Log Mac and TV now share `com.blakecrosley.captainslog`; the Watch companion precedent is different and uses a `.watchkitapp` bundle ID.
+For native Mac, Watch, and TV, do not blindly create separate bundle IDs. Apple's current single-record/universal-purchase guidance says added macOS, tvOS, and visionOS platform versions share the iOS app's bundle ID, while Apple Watch distribution starts from an iOS app with watchOS counterpart information and screenshots. The local 941 precedents match that pattern: ReturnTV uses `com.941apps.Return`, and Get Bananas uses `com.941apps.Banana-List` for its main iOS/Mac target. Captain's Log Mac and TV now share `com.blakecrosley.captainslog`; the Watch companion precedent is different and uses a `.watchkitapp` bundle ID.
 
 Preview the account work without mutating the account:
 
