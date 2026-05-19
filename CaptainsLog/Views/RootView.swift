@@ -188,6 +188,21 @@ struct RootView: View {
         GitRepositoryOverviewSnapshot(repositories: githubRepositories)
     }
 
+    private var journalSummaryFingerprint: String {
+        summaries
+            .map { "\($0.dayKey):\($0.generatedAt.timeIntervalSince1970):\($0.sourceCommitIDsBlob)" }
+            .joined(separator: "|")
+    }
+
+    private var companionSnapshot: CompanionSnapshot {
+        CompanionSnapshotBuilder.makeSnapshot(
+            selectedDate: selectedDate,
+            workMetrics: workMetrics,
+            summaries: summaries,
+            repositories: repositories
+        )
+    }
+
     private var preferredJournalProvider: JournalSummaryProvider? {
         JournalSummaryProvider.preferred(
             credentialStore: .shared,
@@ -293,9 +308,16 @@ struct RootView: View {
                 rebuildWorkMetrics()
                 startForegroundLatestSync()
             }
+            .onChange(of: selectedDate) { _, _ in
+                publishCompanionSnapshot()
+            }
+            .onChange(of: journalSummaryFingerprint) { _, _ in
+                publishCompanionSnapshot()
+            }
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .active:
+                    publishCompanionSnapshot()
                     startForegroundLatestSync()
                 case .background:
                     scheduleHistoricalBackfillIfNeeded()
@@ -823,6 +845,7 @@ struct RootView: View {
             commits = try modelContext.fetch(descriptor)
             rebuildWorkMetrics()
             selectLatestCommitDateIfUseful()
+            publishCompanionSnapshot()
             #if DEBUG
             logSlowUIOperation(
                 "reloadCommitSnapshot fetched \(commits.count.formatted()) commits",
@@ -839,6 +862,7 @@ struct RootView: View {
         let start = Date()
         let filteredCommits = visibleCommits
         workMetrics = WorkMetrics(commits: filteredCommits)
+        publishCompanionSnapshot()
         #if DEBUG
         logSlowUIOperation(
             "rebuildWorkMetrics used \(filteredCommits.count.formatted()) visible commits",
@@ -846,6 +870,10 @@ struct RootView: View {
             threshold: 0.05
         )
         #endif
+    }
+
+    private func publishCompanionSnapshot() {
+        CompanionSnapshotPublisher.shared.publish(companionSnapshot)
     }
 
     #if DEBUG

@@ -22,7 +22,7 @@ Current platform availability status:
 - iPhone and iPad: ready as the universal iOS app once a signed IPA is exported and uploaded.
 - Apple Vision Pro: use the compatible iPhone/iPad app path after final smoke-test acceptance; this is not a native visionOS app.
 - Mac: a native macOS target exists and local Mac screenshot candidates can be generated, but do not submit it until Mac signing/export, TestFlight, screenshot acceptance, and human QA are complete.
-- Apple Watch and Apple TV: first-pass companion targets now build and launch in simulator smoke scripts, but do not submit them until data sync/setup, platform assets, screenshots, signed export, TestFlight, and human QA are complete.
+- Apple Watch and Apple TV: companion targets now build, launch, and have an aggregate snapshot data path based on WatchConnectivity plus iCloud key-value sync. Do not submit them until platform assets, screenshots, signed export, TestFlight, provisioning validation, and human QA are complete.
 
 For the Watch/TV path after the first submission, use `Docs/PlatformExpansionPlan.md`.
 
@@ -44,7 +44,7 @@ Refresh the local Mac screenshot candidates before Mac screenshot acceptance:
 Scripts/capture_macos_app_store_screenshots.sh /tmp/captainslog-macos-appstore-screenshots
 ```
 
-Refresh the local Watch/TV launch smokes before accepting those targets as more than shells:
+Refresh the local Watch/TV launch smokes before accepting the companion snapshot UI:
 
 ```sh
 Scripts/smoke_watchos_launch.sh /tmp/captainslog-watchos-smoke

@@ -31,6 +31,7 @@ targets:
     platform: iOS
     sources:
       - path: CaptainsLog
+      - path: CaptainsLogShared
     resources:
       - path: CaptainsLog/Resources
         excludes:
@@ -44,6 +45,7 @@ targets:
         PRODUCT_NAME: "Captain's Log"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: M4WTLM6RAQ
+        CODE_SIGN_ENTITLEMENTS: CaptainsLog/App/CaptainsLog.entitlements
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: CaptainsLog/App/CaptainsLog-iOS-Info.plist
@@ -55,6 +57,7 @@ targets:
     platform: macOS
     sources:
       - path: CaptainsLog
+      - path: CaptainsLogShared
     resources:
       - path: CaptainsLog/Resources
         excludes:
@@ -68,6 +71,7 @@ targets:
         PRODUCT_NAME: "Captain's Log"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: M4WTLM6RAQ
+        CODE_SIGN_ENTITLEMENTS: CaptainsLog/App/CaptainsLog.entitlements
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
@@ -79,6 +83,7 @@ targets:
     platform: watchOS
     sources:
       - path: CaptainsLogCompanion
+      - path: CaptainsLogShared
     resources:
       - path: CaptainsLogCompanion/Resources
         excludes:
@@ -89,6 +94,7 @@ targets:
         PRODUCT_NAME: "Captain's Log"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: M4WTLM6RAQ
+        CODE_SIGN_ENTITLEMENTS: CaptainsLogCompanion/CaptainsLogCompanion.entitlements
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
         INFOPLIST_KEY_WKApplication: YES
@@ -100,6 +106,7 @@ targets:
     platform: tvOS
     sources:
       - path: CaptainsLogCompanion
+      - path: CaptainsLogShared
     resources:
       - path: CaptainsLogCompanion/Resources
         excludes:
@@ -110,6 +117,7 @@ targets:
         PRODUCT_NAME: "Captain's Log"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: M4WTLM6RAQ
+        CODE_SIGN_ENTITLEMENTS: CaptainsLogCompanion/CaptainsLogCompanion.entitlements
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
         INFOPLIST_KEY_UILaunchScreen_Generation: YES

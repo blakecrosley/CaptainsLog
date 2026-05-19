@@ -21,6 +21,8 @@ Captain's Log does not ask for contacts, photos, location, health, fitness, micr
 
 Captain's Log stores imported repository history, work metrics, generated journals, and app preferences on your device.
 
+If you use the Apple Watch or Apple TV companion app, Captain's Log can sync a small aggregate status snapshot through Apple's iCloud key-value service so the companion can show current day/week counts and setup status. This companion snapshot does not include repository names, commit messages, changed file paths, generated journal text, GitHub tokens, or AI provider keys.
+
 GitHub sessions and optional AI provider keys are stored in the device Keychain. API keys are not stored in Captain's Log servers.
 
 When you tap "Copy & Open GitHub" during sign-in, Captain's Log copies the short-lived GitHub device code to the system pasteboard so you can paste it into GitHub. The app does not read from the pasteboard.

@@ -7,8 +7,8 @@ This plan turns the current platform-readiness answer into implementation gates.
 - iPhone and iPad: the universal iOS app is the first release path. Local readiness supports iPad through target family `1,2`, but signed IPA export and upload remain open.
 - Apple Vision Pro: use the compatible iPhone/iPad app availability path after final smoke-test acceptance. This is not a native visionOS target.
 - Mac: a native macOS target exists, but Mac App Store availability remains blocked on native Mac bundle/app-record visibility, Mac App Store signing/export, TestFlight, screenshot acceptance, and human QA.
-- Apple Watch: first-pass companion target exists and compiles/launches with signing disabled, but it is not ready. The missing gates are phone-synced data, icons, App Store screenshots, signed build/export, TestFlight, app record/platform availability, and watch-specific QA.
-- Apple TV: first-pass read-only target exists and compiles/launches with signing disabled, but it is not ready. The missing gates are real setup/data path, icons/top-shelf assets, App Store screenshots, signed build/export, TestFlight, app record/platform availability, and TV-specific QA.
+- Apple Watch: companion target exists, compiles/launches with signing disabled, and has a phone-synced aggregate snapshot path. It is not ready until icons, App Store screenshots, signed build/export, TestFlight, App Store platform availability, paired-device QA, and provisioning validation are complete.
+- Apple TV: read-only companion target exists, compiles/launches with signing disabled, and reads the same aggregate snapshot through iCloud key-value sync. It is not ready until icons/top-shelf assets, App Store screenshots, signed build/export, TestFlight, App Store platform availability, TV QA, and provisioning validation are complete.
 
 ## Readiness Standard
 
@@ -32,37 +32,37 @@ A platform is ready only when all of these are true for Captain's Log itself:
 
 Build a companion glance, not a second GitHub client. The watch app should mirror a compact snapshot from the iPhone app:
 
-- Today summary: commits, changed lines, top repo, and latest journal headline.
+- Today summary: commits or changed lines, journal availability, and selected repository counts without exposing private repository names or commit text.
 - Week strip: compact activity map for the current week.
-- Sync state: last phone sync time and a clear empty state when no phone snapshot exists.
+- Sync state: last snapshot time and a clear empty state when no phone snapshot exists.
 - Deep link or handoff affordance back to iPhone for GitHub auth, repo selection, AI provider keys, and long-form journal review.
 
 Implementation gates:
 
-- Add a watchOS app target, scheme, bundle ID, icons, privacy manifest, and entitlements. The target, scheme, bundle ID, and privacy manifest now exist; icons/entitlements still need release review.
-- Add a small shared snapshot model that can be produced by the iOS app without exposing tokens or provider keys.
-- Use WatchConnectivity or an equivalent local Apple framework for iPhone-to-watch snapshot transfer.
+- Add a watchOS app target, scheme, bundle ID, icons, privacy manifest, and entitlements. The target, scheme, bundle ID, privacy manifest, and iCloud key-value entitlements now exist; icons and signed provisioning still need release review.
+- Add a small shared snapshot model that can be produced by the main app without exposing tokens, provider keys, repository names, commit messages, file paths, or journal text. This aggregate snapshot now exists in `CaptainsLogShared`.
+- Use WatchConnectivity or an equivalent local Apple framework for iPhone-to-watch snapshot transfer. The current Watch path requests the latest snapshot from the phone and accepts pushed application-context snapshots.
 - Add watch screenshots and a TestFlight pass before claiming readiness. `Scripts/smoke_watchos_launch.sh` now covers the unsigned simulator launch/screenshot/OCR smoke only.
 
 ## TV V1
 
 Build a remote-friendly read-only dashboard. Apple TV should make the Work Map useful on a larger shared screen:
 
-- GitHub Device Flow sign-in or iPhone-assisted setup, with no keyboard-heavy path.
-- Work Map, current week summary, recent journals, and repository highlights.
+- iPhone/iPad/Mac-assisted setup, with no GitHub credentials entered on the shared screen.
+- Current day, current week, journal availability, and selected repository counts from the aggregate companion snapshot.
 - Focus-safe navigation using large targets, clear selection states, and Kit941 tvOS focus styling where appropriate.
 - No editing, AI key management, or dense repository administration in the first TV slice.
 
 Implementation gates:
 
-- Add a tvOS app target, scheme, bundle ID, icons/top-shelf assets, privacy manifest, and entitlements. The target, scheme, bundle ID, and privacy manifest now exist; icons/top-shelf assets and entitlements still need release review.
-- Prove GitHub auth or iPhone-assisted setup on tvOS.
+- Add a tvOS app target, scheme, bundle ID, icons/top-shelf assets, privacy manifest, and entitlements. The target, scheme, bundle ID, privacy manifest, and iCloud key-value entitlements now exist; icons/top-shelf assets and signed provisioning still need release review.
+- Prove the iCloud key-value snapshot path under signed provisioning and TestFlight.
 - Add tvOS screenshots and a TestFlight pass before claiming readiness. `Scripts/smoke_tvos_launch.sh` now covers the unsigned simulator launch/screenshot/OCR smoke only.
 
 ## Sequence
 
 1. Finish the universal iOS/iPad plus compatible Vision submission path by unblocking App Store signing, regenerating the signed IPA/export manifest, and completing App Store Connect/TestFlight.
 2. Decide whether native Mac belongs in the first release. If yes, complete Mac signing/export/TestFlight/QA; otherwise opt out of Apple Silicon Mac availability for this submission.
-3. Replace the Watch shell with Watch V1 as a phone-synced companion snapshot.
-4. Replace the TV shell with TV V1 as a remote-friendly read-only dashboard.
+3. Finish Watch V1 by adding assets/screenshots and validating the phone-synced companion snapshot under signed provisioning and TestFlight.
+4. Finish TV V1 by adding assets/screenshots and validating the iCloud read-only dashboard under signed provisioning and TestFlight.
 5. Only update App Store availability once the platform's own readiness standard above is met.

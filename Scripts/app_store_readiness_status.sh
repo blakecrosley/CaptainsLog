@@ -554,8 +554,18 @@ printf_platform_target_status() {
                 else
                     fail "Apple Watch development team is not ${TEAM_ID}"
                 fi
+                if printf '%s\n' "$watch_settings" | rg -q "CODE_SIGN_ENTITLEMENTS = .*CaptainsLogCompanion[.]entitlements"; then
+                    pass "Apple Watch uses the companion iCloud key-value entitlements file"
+                else
+                    fail "Apple Watch companion entitlements are missing from Release build settings"
+                fi
             else
                 fail "unable to read CaptainsLog-watchOS Release build settings for platform availability"
+            fi
+            if rg -q "WatchConnectivity|requestSnapshot|didReceiveApplicationContext" "$ROOT_DIR/CaptainsLogShared" "$ROOT_DIR/CaptainsLog/Services/CompanionSnapshotPublisher.swift"; then
+                pass "Apple Watch has a WatchConnectivity snapshot request/push path"
+            else
+                fail "Apple Watch snapshot sync source path missing"
             fi
             if [[ -x "$ROOT_DIR/Scripts/smoke_watchos_launch.sh" ]]; then
                 pass "Apple Watch launch smoke script exists"
@@ -571,7 +581,7 @@ printf_platform_target_status() {
                 else
                     fail "unable to read Apple Watch launch screenshot dimensions"
                 fi
-                if rg -q -i "Captain'?s Log|Sync from iPhone|Waiting|Log" "$WATCHOS_SMOKE_OCR"; then
+                if rg -q -i "Captain'?s Log|Sync from iPhone|Open the main app|Journal|Repos|Log" "$WATCHOS_SMOKE_OCR"; then
                     pass "Apple Watch launch OCR found companion UI"
                 else
                     fail "Apple Watch launch OCR is missing companion UI text"
@@ -579,7 +589,7 @@ printf_platform_target_status() {
             else
                 warn "Apple Watch launch smoke artifacts missing; run Scripts/smoke_watchos_launch.sh $WATCHOS_SMOKE_DIR before Watch launch acceptance"
             fi
-            warn "Apple Watch target is a first-pass companion shell; Watch release still requires phone-synced data, icons, screenshots, signed archive/export, TestFlight, and watch QA before availability"
+            warn "Apple Watch now has a phone-synced aggregate snapshot path; Watch release still requires platform icons, screenshots, signed archive/export, TestFlight, paired-device QA, and provisioning validation before availability"
         else
             warn "Captain's Log has no Apple Watch app target or scheme; Apple Watch is not ready"
         fi
@@ -597,8 +607,18 @@ printf_platform_target_status() {
                 else
                     fail "Apple TV development team is not ${TEAM_ID}"
                 fi
+                if printf '%s\n' "$tv_settings" | rg -q "CODE_SIGN_ENTITLEMENTS = .*CaptainsLogCompanion[.]entitlements"; then
+                    pass "Apple TV uses the companion iCloud key-value entitlements file"
+                else
+                    fail "Apple TV companion entitlements are missing from Release build settings"
+                fi
             else
                 fail "unable to read CaptainsLog-tvOS Release build settings for platform availability"
+            fi
+            if rg -q "NSUbiquitousKeyValueStore|ubiquitousStoreKey|CompanionSnapshotStore" "$ROOT_DIR/CaptainsLogShared" "$ROOT_DIR/CaptainsLogCompanion"; then
+                pass "Apple TV has an iCloud key-value read-only snapshot path"
+            else
+                fail "Apple TV read-only snapshot source path missing"
             fi
             if [[ -x "$ROOT_DIR/Scripts/smoke_tvos_launch.sh" ]]; then
                 pass "Apple TV launch smoke script exists"
@@ -623,7 +643,7 @@ printf_platform_target_status() {
             else
                 warn "Apple TV launch smoke artifacts missing; run Scripts/smoke_tvos_launch.sh $TVOS_SMOKE_DIR before TV launch acceptance"
             fi
-            warn "Apple TV target is a first-pass read-only shell; TV release still requires real setup/data path, icons/top-shelf assets, screenshots, signed archive/export, TestFlight, and TV QA before availability"
+            warn "Apple TV now has an iCloud read-only snapshot path; TV release still requires icons/top-shelf assets, screenshots, signed archive/export, TestFlight, living-room QA, and provisioning validation before availability"
         else
             warn "Captain's Log has no Apple TV app target or scheme; Apple TV is not ready"
         fi

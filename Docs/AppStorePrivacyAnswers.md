@@ -32,7 +32,7 @@ Recommended disclosed data types:
 | --- | --- | --- | --- | --- |
 | Contact Info | Name | Conservative: Yes | App Functionality | The GitHub `/user` response can include a profile display name. The app stores it locally for account display. If legal review treats the GitHub profile response as local processing rather than collected data, this may be narrowed. |
 | Identifiers | User ID | Yes | App Functionality | GitHub login/account identifier is used to show the active account and associate selected repositories with that account. The app also stores GitHub profile and avatar URLs locally for account display. |
-| User Content | Other User Content | Yes | App Functionality | Repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, and work classifications. This is the core content of the app. |
+| User Content | Other User Content | Yes | App Functionality | Repository names, commit messages, commit metadata, changed file paths, diff stats, generated journal text, work classifications, and aggregate companion status counts. This is the core content of the app. The Watch/TV companion snapshot intentionally excludes repository names, commit messages, changed file paths, generated journal text, GitHub tokens, and AI provider keys. |
 
 ### Data Not Linked To You
 
@@ -57,7 +57,7 @@ Use "No" for these categories in the current binary:
 - Diagnostics: Crash Data, Performance Data, Other Diagnostic Data.
 - Surroundings, Body, and Other Data Types.
 
-Important caveat: if future builds add analytics, crash reporting, marketing attribution, email capture, account creation, payments, or server sync, update the privacy label before upload or release.
+Important caveat: if future builds add analytics, crash reporting, marketing attribution, email capture, account creation, payments, or server sync beyond Apple's iCloud key-value companion snapshot, update the privacy label before upload or release.
 
 ## Third-Party Processing Notes
 

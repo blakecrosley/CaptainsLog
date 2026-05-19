@@ -1,20 +1,35 @@
 import SwiftUI
 
 struct CompanionRootView: View {
+    @StateObject private var snapshotStore = CompanionSnapshotStore()
+
     var body: some View {
-        #if os(watchOS)
-        WatchCompanionView()
-        #elseif os(tvOS)
-        TVCompanionView()
-        #else
-        EmptyView()
-        #endif
+        Group {
+            #if os(watchOS)
+            WatchCompanionView()
+            #elseif os(tvOS)
+            TVCompanionView()
+            #else
+            EmptyView()
+            #endif
+        }
+        .environmentObject(snapshotStore)
+        .onAppear {
+            snapshotStore.start()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSUbiquitousKeyValueStore.didChangeExternallyNotification)) { _ in
+            snapshotStore.refreshFromUbiquitousStore()
+        }
     }
 }
 
 #if os(watchOS)
 private struct WatchCompanionView: View {
+    @EnvironmentObject private var snapshotStore: CompanionSnapshotStore
+
     var body: some View {
+        let snapshot = snapshotStore.snapshot
+
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
@@ -27,15 +42,25 @@ private struct WatchCompanionView: View {
                     }
 
                     WatchStatusCard(
-                        title: "Today",
-                        value: "Waiting",
-                        detail: "Open the main app to refresh GitHub work."
+                        card: snapshot.primary
                     )
 
                     VStack(spacing: 8) {
-                        WatchMetricRow(title: "Journal", value: "Ready")
-                        WatchMetricRow(title: "Repos", value: "Main app")
-                        WatchMetricRow(title: "AI", value: "On device")
+                        WatchMetricRow(card: snapshot.week)
+                        WatchMetricRow(card: snapshot.journal)
+                        WatchMetricRow(card: snapshot.repositories)
+                    }
+
+                    Text(snapshot.refreshedText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if snapshot.isPlaceholder {
+                        Text("Open the main app to send a private aggregate snapshot.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .padding(.vertical, 8)
@@ -46,18 +71,16 @@ private struct WatchCompanionView: View {
 }
 
 private struct WatchStatusCard: View {
-    let title: String
-    let value: String
-    let detail: String
+    let card: CompanionSnapshot.Card
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
+            Text(card.title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(value)
+            Text(card.value)
                 .font(.title3.weight(.semibold))
-            Text(detail)
+            Text(card.detail)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -69,15 +92,14 @@ private struct WatchStatusCard: View {
 }
 
 private struct WatchMetricRow: View {
-    let title: String
-    let value: String
+    let card: CompanionSnapshot.Card
 
     var body: some View {
         HStack {
-            Text(title)
+            Text(card.title)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 6)
-            Text(value)
+            Text(card.value)
                 .fontWeight(.semibold)
         }
         .font(.caption)
@@ -87,13 +109,17 @@ private struct WatchMetricRow: View {
 
 #if os(tvOS)
 private struct TVCompanionView: View {
-    private let cards = [
-        TVCompanionCard(title: "Today", value: "Sync pending", detail: "Refresh from iPhone, iPad, or Mac"),
-        TVCompanionCard(title: "Week", value: "Journal ready", detail: "Review summaries on the main app"),
-        TVCompanionCard(title: "Repos", value: "Selected on main", detail: "GitHub access stays off the shared screen")
-    ]
+    @EnvironmentObject private var snapshotStore: CompanionSnapshotStore
 
     var body: some View {
+        let snapshot = snapshotStore.snapshot
+        let cards = [
+            snapshot.primary,
+            snapshot.week,
+            snapshot.journal,
+            snapshot.repositories
+        ]
+
         ZStack {
             LinearGradient(
                 colors: [
@@ -115,7 +141,13 @@ private struct TVCompanionView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                HStack(spacing: 28) {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.fixed(760), spacing: 28),
+                        GridItem(.fixed(760), spacing: 28)
+                    ],
+                    spacing: 28
+                ) {
                     ForEach(cards) { card in
                         TVStatusCard(card: card)
                     }
@@ -123,11 +155,15 @@ private struct TVCompanionView: View {
 
                 HStack(spacing: 18) {
                     Label("No GitHub credentials on Apple TV", systemImage: "lock.shield")
-                    Label("Use the main app for sync", systemImage: "arrow.triangle.2.circlepath")
-                    Label("Built for read-only review", systemImage: "chart.bar")
+                    Label("Use the main app for setup", systemImage: "iphone")
+                    Label("iCloud keeps the read-only snapshot current", systemImage: "icloud")
                 }
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
+
+                Text(snapshot.refreshedText)
+                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 96)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -135,15 +171,8 @@ private struct TVCompanionView: View {
     }
 }
 
-private struct TVCompanionCard: Identifiable {
-    let id = UUID()
-    let title: String
-    let value: String
-    let detail: String
-}
-
 private struct TVStatusCard: View {
-    let card: TVCompanionCard
+    let card: CompanionSnapshot.Card
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -157,7 +186,7 @@ private struct TVStatusCard: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(width: 470, height: 240, alignment: .topLeading)
+        .frame(width: 700, height: 170, alignment: .topLeading)
         .padding(30)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(

@@ -26,7 +26,7 @@ Yes. The first-run screen includes demo data so you can preview the dashboard, w
 
 ### Where is my data stored?
 
-Imported repository history, work metrics, generated journals, and app preferences are stored on your device. GitHub sessions and optional AI provider keys are stored in the device Keychain.
+Imported repository history, work metrics, generated journals, and app preferences are stored on your device. GitHub sessions and optional AI provider keys are stored in the device Keychain. Apple Watch and Apple TV companions can receive a small aggregate status snapshot through Apple's iCloud key-value service; that snapshot does not include repository names, commit messages, file paths, journal text, GitHub tokens, or AI provider keys.
 
 ### What leaves my device?
 
