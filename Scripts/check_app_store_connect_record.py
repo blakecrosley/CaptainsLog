@@ -229,6 +229,14 @@ def fetch_bundle_capabilities(token: str, bundle_id_resource_id: str) -> list[di
     ]
 
 
+def exact_bundle_matches(bundle_ids: list[dict[str, Any]], identifier: str) -> list[dict[str, Any]]:
+    return [
+        bundle
+        for bundle in bundle_ids
+        if bundle.get("attributes", {}).get("identifier") == identifier
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE_ID)
@@ -279,7 +287,7 @@ def main() -> int:
     )
 
     apps = app_payload.get("data", [])
-    bundle_ids = bundle_payload.get("data", [])
+    bundle_ids = exact_bundle_matches(bundle_payload.get("data", []), args.bundle_id)
     capabilities: list[dict[str, Any]] = []
     entitlements_path = resolve_entitlements_path(args.entitlements)
     required_capabilities = required_capabilities_from_entitlements(entitlements_path)
