@@ -32,6 +32,11 @@ TARGETS = {
         "label": "Apple Watch",
         "bundle_id": "com.blakecrosley.captainslog.watchkitapp",
         "required_profile_types": [],
+        "profile_requirement_verified": False,
+        "profile_requirement_note": (
+            "Apple's Profile API currently documents no dedicated watchOS App Store "
+            "profileType value; signed export/TestFlight remains the release authority."
+        ),
     },
     "tvos": {
         "label": "Apple TV",
@@ -178,6 +183,8 @@ def collect_status(token: str, targets: list[str]) -> dict[str, Any]:
                 "bundleId": target["bundle_id"],
                 "bundleExists": False,
                 "requiredProfileTypes": target["required_profile_types"],
+                "profileRequirementVerified": target.get("profile_requirement_verified", True),
+                "profileRequirementNote": target.get("profile_requirement_note"),
                 "profiles": [],
                 "missingRequiredProfileTypes": target["required_profile_types"],
             }
@@ -201,6 +208,8 @@ def collect_status(token: str, targets: list[str]) -> dict[str, Any]:
             "bundlePlatform": bundle.get("attributes", {}).get("platform"),
             "bundleSeedId": bundle.get("attributes", {}).get("seedId"),
             "requiredProfileTypes": target["required_profile_types"],
+            "profileRequirementVerified": target.get("profile_requirement_verified", True),
+            "profileRequirementNote": target.get("profile_requirement_note"),
             "profileCount": len(profiles),
             "usableProfileTypes": sorted(usable_profile_types),
             "missingRequiredProfileTypes": missing_required_profile_types,
@@ -238,6 +247,8 @@ def print_status(status: dict[str, Any]) -> None:
     for result in status["targets"].values():
         if not result["bundleExists"]:
             print(f"[fail] {result['label']} bundle ID missing: {result['bundleId']}")
+            if not result.get("profileRequirementVerified", True):
+                print(f"  [info] {result.get('profileRequirementNote')}")
             continue
 
         print(
@@ -245,7 +256,10 @@ def print_status(status: dict[str, Any]) -> None:
             f"({result.get('bundlePlatform') or 'unknown'}, seed {result.get('bundleSeedId') or 'unknown'})"
         )
         required = result["requiredProfileTypes"]
-        if required:
+        if not result.get("profileRequirementVerified", True):
+            print(f"[fail] {result['label']} profile requirement is not fully verified by this checker")
+            print(f"  [info] {result.get('profileRequirementNote')}")
+        elif required:
             if result["missingRequiredProfileTypes"]:
                 print(
                     f"[fail] {result['label']} missing required profile type(s): "
@@ -279,6 +293,8 @@ def has_missing_required_assets(status: dict[str, Any], targets: list[str]) -> b
     for key in targets:
         result = status["targets"][key]
         if not result["bundleExists"]:
+            return True
+        if not result.get("profileRequirementVerified", True):
             return True
         if result["missingRequiredProfileTypes"]:
             return True
