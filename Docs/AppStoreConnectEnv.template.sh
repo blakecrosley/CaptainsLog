@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Copy this file to AppStoreConnectEnv.local.sh after creating an App Store
-# Connect API key. The release scripts load AppStoreConnectEnv.local.sh from the
-# repo root or Docs/ automatically. Do not put real values in this tracked file
-# and do not commit a filled-in copy.
+# Connect API key. The release scripts and REST checker load
+# AppStoreConnectEnv.local.sh from the repo root or Docs/ automatically. Do not
+# put real values in this tracked file and do not commit a filled-in copy.
 #
 # Preferred private-key location:
 #   mkdir -p "$HOME/.appstoreconnect/private_keys"

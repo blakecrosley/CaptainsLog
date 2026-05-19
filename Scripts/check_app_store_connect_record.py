@@ -12,6 +12,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import shlex
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,19 @@ except ImportError:  # pragma: no cover - environment guard
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_BUNDLE_ID = "com.blakecrosley.captainslog"
 API_BASE = "https://api.appstoreconnect.apple.com"
+LOCAL_ENV_NAMES = (
+    "APP_STORE_CONNECT_API_KEY",
+    "APP_STORE_CONNECT_API_ISSUER",
+    "APP_STORE_CONNECT_P8_FILE",
+    "APP_STORE_CONNECT_PROVIDER_PUBLIC_ID",
+    "APP_STORE_CONNECT_APPLE_ID",
+    "APP_STORE_CONNECT_DELIVERY_ID",
+    "ASC_KEY_ID",
+    "ASC_ISSUER_ID",
+    "ASC_KEY_PATH",
+    "API_PRIVATE_KEYS_DIR",
+    "CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME",
+)
 
 
 class CheckError(Exception):
@@ -32,6 +46,43 @@ class CheckError(Exception):
 
 def fail(message: str) -> None:
     raise CheckError(message)
+
+
+def load_local_env_file(path: Path) -> None:
+    if not path.is_file():
+        return
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        try:
+            parts = shlex.split(stripped, comments=True, posix=True)
+        except ValueError as exc:
+            fail(f"Could not parse local App Store Connect env line in {path}: {exc}")
+        if not parts:
+            continue
+        if parts[0] == "export":
+            parts = parts[1:]
+        for part in parts:
+            if "=" not in part:
+                continue
+            name, value = part.split("=", 1)
+            if name in LOCAL_ENV_NAMES:
+                os.environ[name] = value
+
+
+def load_local_env_defaults() -> None:
+    explicit_env_file = os.environ.get("CAPTAINS_LOG_APP_STORE_CONNECT_ENV_FILE")
+    if explicit_env_file:
+        path = Path(explicit_env_file).expanduser()
+        if not path.is_file():
+            fail(f"CAPTAINS_LOG_APP_STORE_CONNECT_ENV_FILE does not exist: {path}")
+        load_local_env_file(path)
+        return
+
+    load_local_env_file(ROOT_DIR / "AppStoreConnectEnv.local.sh")
+    load_local_env_file(ROOT_DIR / "Docs" / "AppStoreConnectEnv.local.sh")
 
 
 def git_root_for_path(path: Path) -> str:
@@ -142,6 +193,8 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true", help="Print machine-readable status")
     args = parser.parse_args()
+
+    load_local_env_defaults()
 
     key_id = env_with_alias("APP_STORE_CONNECT_API_KEY", "ASC_KEY_ID")
     issuer_id = env_with_alias("APP_STORE_CONNECT_API_ISSUER", "ASC_ISSUER_ID")
