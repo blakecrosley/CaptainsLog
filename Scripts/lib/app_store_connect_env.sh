@@ -19,9 +19,53 @@ app_store_connect_apply_fastlane_aliases() {
     fi
 }
 
+app_store_connect_default_p8_path_for_key() {
+    local api_key="$1"
+    local expected_name="AuthKey_${api_key}.p8"
+    local dirs=(
+        "$HOME/private_keys"
+        "$HOME/.private_keys"
+        "$HOME/.appstoreconnect/private_keys"
+    )
+
+    if [[ -n "${API_PRIVATE_KEYS_DIR:-}" ]]; then
+        dirs+=("$API_PRIVATE_KEYS_DIR")
+    fi
+
+    local dir candidate
+    for dir in "${dirs[@]}"; do
+        candidate="$dir/$expected_name"
+        if [[ -f "$candidate" ]]; then
+            realpath "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+app_store_connect_apply_default_p8_file() {
+    local default_p8_file
+
+    if [[ -n "${APP_STORE_CONNECT_P8_FILE:-}" || -z "${APP_STORE_CONNECT_API_KEY:-}" ]]; then
+        return
+    fi
+
+    if default_p8_file="$(app_store_connect_default_p8_path_for_key "$APP_STORE_CONNECT_API_KEY")"; then
+        APP_STORE_CONNECT_P8_FILE="$default_p8_file"
+        export APP_STORE_CONNECT_P8_FILE
+    fi
+}
+
+app_store_connect_apply_env_defaults() {
+    app_store_connect_apply_fastlane_aliases
+    app_store_connect_apply_default_p8_file
+}
+
 app_store_connect_auth_env_hint() {
     cat <<'MESSAGE'
-Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE together to let xcodebuild authenticate with App Store Connect.
+Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER to let xcodebuild authenticate with App Store Connect.
+APP_STORE_CONNECT_P8_FILE is required unless AuthKey_<key>.p8 exists in a supported private key directory such as ~/.appstoreconnect/private_keys.
 Fastlane-compatible aliases are also accepted when the canonical variables are unset: ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH.
 Use Docs/AppStoreConnectEnv.template.sh as the placeholder-only template.
 MESSAGE

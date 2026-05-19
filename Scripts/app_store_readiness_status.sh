@@ -42,7 +42,7 @@ xcode_auth_env_ready=0
 
 # shellcheck source=Scripts/lib/app_store_connect_env.sh
 source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
-app_store_connect_apply_fastlane_aliases
+app_store_connect_apply_env_defaults
 
 pass() {
     printf '[ok] %s\n' "$1"
@@ -686,7 +686,7 @@ elif (( xcode_auth_env_ready == 1 )); then
     pass "App Store Connect API-key auth inputs for xcodebuild provisioning updates are present"
     warn "App Store distribution signing identity for team ${TEAM_ID} is not available in the local keychain; export will rely on xcodebuild cloud-managed signing and must still prove cloud certificate access"
 else
-    external "App Store export signing is not ready; provide either an Apple Distribution/iOS Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates with cloud-managed distribution certificate access. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
+    external "App Store export signing is not ready; provide either an Apple Distribution/iOS Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates with cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when the matching AuthKey_<key>.p8 file exists in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
 fi
 
 if printf '%s\n' "$identity_output" | rg -q "\"(Apple Distribution|Mac App Distribution|3rd Party Mac Developer Application):.*\\(${TEAM_ID}\\)\""; then
@@ -696,7 +696,7 @@ elif (( xcode_auth_env_ready == 1 )); then
     pass "App Store Connect API-key auth inputs are present for native Mac provisioning updates"
     warn "Mac App Store application signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild cloud-managed signing and must still prove cloud certificate access"
 else
-    external "Mac App Store application signing is not ready; provide an Apple Distribution/Mac App Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates with cloud-managed distribution certificate access. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
+    external "Mac App Store application signing is not ready; provide an Apple Distribution/Mac App Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates with cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when the matching AuthKey_<key>.p8 file exists in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
 fi
 
 if printf '%s\n' "$identity_output" | rg -q "\"(Mac Installer Distribution|3rd Party Mac Developer Installer):.*\\(${TEAM_ID}\\)\""; then
@@ -706,7 +706,7 @@ elif (( xcode_auth_env_ready == 1 )); then
     pass "App Store Connect API-key auth inputs are present for native Mac package export"
     warn "Mac App Store installer signing identity for team ${TEAM_ID} is not available in the local keychain; export_macos_app_store_pkg.sh will rely on xcodebuild cloud-managed signing and must still prove cloud certificate access"
 else
-    external "Mac App Store installer signing is not ready; provide a Mac Installer Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates with cloud-managed distribution certificate access. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
+    external "Mac App Store installer signing is not ready; provide a Mac Installer Distribution identity for team ${TEAM_ID} or set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates with cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when the matching AuthKey_<key>.p8 file exists in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
 fi
 
 printf '\nLocal artifact checks\n'
@@ -968,7 +968,7 @@ else
     p8_candidate_count="$(default_p8_candidate_count)"
     if (( p8_candidate_count > 0 )); then
         if (( p8_candidate_count > 1 )); then
-            external "$p8_candidate_count App Store Connect candidate .p8 private-key files are staged outside the repo in altool default private-key search paths; set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly so the selected key is unambiguous. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
+            external "$p8_candidate_count App Store Connect candidate .p8 private-key files are staged outside the repo in altool default private-key search paths; set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER so the selected key is unambiguous. APP_STORE_CONNECT_P8_FILE is only needed when the matching AuthKey_<key>.p8 is not in a supported private-key directory. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted."
         else
             external "1 App Store Connect candidate .p8 private-key file is staged outside the repo in altool default private-key search paths, but no selected APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER are set"
         fi
@@ -1021,7 +1021,7 @@ if (( local_failures > 0 )); then
 
 Next local action:
 1. Run Scripts/app_store_signing_status.sh.
-2. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE for xcodebuild provisioning updates plus cloud-managed distribution certificate access. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
+2. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
 3. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
@@ -1044,7 +1044,7 @@ Next external actions:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-5. Set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE explicitly, or export Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases. This machine has multiple staged .p8 candidates, so do not rely on implicit key search.
+5. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, or export Fastlane ASC_KEY_ID and ASC_ISSUER_ID aliases. Set APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH only when AuthKey_<key>.p8 is not already in ~/.appstoreconnect/private_keys.
 6. Run:
    Scripts/check_app_store_connect_record.py
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"

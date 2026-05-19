@@ -30,7 +30,7 @@ git_root_for_path() {
 
 configure_xcode_auth_args() {
     local has_any_auth_value=0
-    app_store_connect_apply_fastlane_aliases
+    app_store_connect_apply_env_defaults
 
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" || -n "${APP_STORE_CONNECT_API_ISSUER:-}" || -n "${APP_STORE_CONNECT_P8_FILE:-}" ]]; then
         has_any_auth_value=1
@@ -180,7 +180,7 @@ if [[ "${CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK:-0}" != "1" ]]; then
             cat >&2 <<MESSAGE
 App Store distribution signing identity for team ${TEAM_ID} was not found in the local keychain.
 Open Xcode Settings > Accounts, sign into the App Store Connect team, and install or create an Apple Distribution certificate for team ${TEAM_ID} before exporting.
-Alternatively, set APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, and APP_STORE_CONNECT_P8_FILE so xcodebuild can authenticate for provisioning updates. The Fastlane-compatible ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
+Alternatively, set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER so xcodebuild can authenticate for provisioning updates. APP_STORE_CONNECT_P8_FILE is optional when the matching AuthKey_<key>.p8 file exists in ~/.appstoreconnect/private_keys. The Fastlane-compatible ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
 Set CAPTAINS_LOG_SKIP_DISTRIBUTION_SIGNING_PRECHECK=1 to attempt the export anyway.
 MESSAGE
             exit 1

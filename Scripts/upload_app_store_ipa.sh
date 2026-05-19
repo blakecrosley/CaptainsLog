@@ -39,6 +39,8 @@ Usage:
 
 	Optional:
 	  APP_STORE_CONNECT_P8_FILE       Direct path to AuthKey_<key>.p8.
+	                                  Optional when the matching file exists in
+	                                  ~/.appstoreconnect/private_keys.
 	                                  Fastlane alias ASC_KEY_PATH is accepted
 	                                  when this is unset.
 	  APP_STORE_CONNECT_PROVIDER_PUBLIC_ID
@@ -234,9 +236,8 @@ check_p8_path() {
         printf 'warning: App Store Connect .p8 filename is not %s; continuing because CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1\n' "$expected_p8_name" >&2
     fi
 
-    if [[ "$source_label" == "APP_STORE_CONNECT_P8_FILE" ]]; then
-        APP_STORE_CONNECT_P8_FILE="$p8_path"
-    fi
+    APP_STORE_CONNECT_P8_FILE="$p8_path"
+    export APP_STORE_CONNECT_P8_FILE
 }
 
 check_api_credentials() {
@@ -444,7 +445,7 @@ credential_guard_self_test() {
 
 build_auth_args() {
     local include_provider="${1:-1}"
-    app_store_connect_apply_fastlane_aliases
+    app_store_connect_apply_env_defaults
 
     if [[ -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
         check_api_credentials

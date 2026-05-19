@@ -117,14 +117,15 @@ Set API credentials in the shell only:
 ```sh
 export APP_STORE_CONNECT_API_KEY="..."
 export APP_STORE_CONNECT_API_ISSUER="..."
-export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
+# Optional when the matching AuthKey_<key>.p8 file exists in ~/.appstoreconnect/private_keys.
+# export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
 `Docs/AppStoreConnectEnv.template.sh` contains a safe placeholder-only shell template for these exports plus provider/status variables. Do not enter real credentials in the tracked file; copy the placeholder exports into a private shell session or `AppStoreConnectEnv.local.sh`, which is gitignored.
 
 If you are reusing an App Store Connect key already used by another 941 app, do not point Captain's Log at a `.p8` file inside that app's repository or Fastlane folder. The credential guard intentionally rejects private keys inside any git working tree. Select the matching key in App Store Connect, then stage a private local copy at `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` with owner-only permissions.
 
-If `Scripts/app_store_signing_status.sh` reports that candidate `.p8` private-key files are already staged, choose the matching App Store Connect key ID in Apple, then point `APP_STORE_CONNECT_P8_FILE` at the staged path for that key. The current machine has multiple staged candidates, so do not rely on implicit key search for the first submission:
+If `Scripts/app_store_signing_status.sh` reports that candidate `.p8` private-key files are already staged, choose the matching App Store Connect key ID in Apple, then either leave the matching file at `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` or point `APP_STORE_CONNECT_P8_FILE` at that staged path. Multiple staged candidates are fine only after the key ID is selected; before that, the scripts cannot know which key belongs to Captain's Log:
 
 Apple shows team key IDs in App Store Connect under Users and Access > Integrations, in the Active keys table. The issuer UUID appears near the top of that same Integrations page.
 
@@ -133,15 +134,17 @@ If you are copying the pattern from Return or Get Bananas, Captain's Log now acc
 ```sh
 export ASC_KEY_ID="<KEY_ID>"
 export ASC_ISSUER_ID="<ISSUER_UUID>"
-export ASC_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
+# Optional when the matching file exists in ~/.appstoreconnect/private_keys.
+# export ASC_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
 ```
 
-Only use those aliases after confirming `ASC_KEY_PATH` points outside every git working tree. If it points at another app's `fastlane/AuthKey_*.p8`, copy the matching file into `~/.appstoreconnect/private_keys/` first and use that private path for Captain's Log.
+Only set `ASC_KEY_PATH` after confirming it points outside every git working tree. If it points at another app's `fastlane/AuthKey_*.p8`, copy the matching file into `~/.appstoreconnect/private_keys/` first and use that private path for Captain's Log.
 
 ```sh
 export APP_STORE_CONNECT_API_KEY="<KEY_ID>"
 export APP_STORE_CONNECT_API_ISSUER="<ISSUER_UUID>"
-export APP_STORE_CONNECT_P8_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
+# Optional when the matching file exists in ~/.appstoreconnect/private_keys.
+# export APP_STORE_CONNECT_P8_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
 ```
 
 The readiness, export, and upload scripts fail early if the selected file name does not match `AuthKey_<KEY_ID>.p8`. Only set `CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1` after manually verifying the selected file belongs to the key ID.

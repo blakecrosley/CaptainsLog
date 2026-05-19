@@ -214,17 +214,18 @@ Use a team API key for this first submission. Confirm the Account Holder has req
 ```sh
 export APP_STORE_CONNECT_API_KEY="..."
 export APP_STORE_CONNECT_API_ISSUER="..."
-export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
+# Optional when the matching AuthKey_<key>.p8 file exists in ~/.appstoreconnect/private_keys.
+# export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
-`APP_STORE_CONNECT_P8_FILE` is the clearest path. If it is not set, `altool` also searches for `AuthKey_<key>.p8` in `./private_keys`, `~/private_keys`, `~/.private_keys`, `~/.appstoreconnect/private_keys`, and `$API_PRIVATE_KEYS_DIR`. Do not put the key in this repo or another git working tree, including another app's repository or Fastlane folder; prefer `~/.appstoreconnect/private_keys/AuthKey_<key>.p8` or an absolute path outside project folders. Four candidate private-key files are currently staged in `~/.appstoreconnect/private_keys` with owner-only permissions, so select the matching key in App Store Connect and set `APP_STORE_CONNECT_P8_FILE` explicitly; the selected key ID and issuer UUID still need to be supplied before this path can authenticate. The readiness, export, and upload scripts require the selected file name to match `AuthKey_<KEY_ID>.p8` unless `CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1` is set after manual verification.
+If `APP_STORE_CONNECT_P8_FILE` is not set, the release scripts look for `AuthKey_<key>.p8` in supported private-key directories including `~/private_keys`, `~/.private_keys`, `~/.appstoreconnect/private_keys`, and `$API_PRIVATE_KEYS_DIR`; the upload helper also honors `altool`'s `./private_keys` default. Do not put the key in this repo or another git working tree, including another app's repository or Fastlane folder; prefer `~/.appstoreconnect/private_keys/AuthKey_<key>.p8` or an absolute path outside project folders. Four candidate private-key files are currently staged in `~/.appstoreconnect/private_keys` with owner-only permissions, so select the matching key ID and issuer UUID in App Store Connect before this path can authenticate. The readiness, export, and upload scripts require the selected file name to match `AuthKey_<KEY_ID>.p8` unless `CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1` is set after manual verification.
 
-Return and Get Bananas use Fastlane aliases for the same App Store Connect inputs: `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`. Captain's Log accepts those aliases directly when the canonical variables are unset, but only use that setup after confirming the key file path is outside every git working tree:
+Return and Get Bananas use Fastlane aliases for the same App Store Connect inputs: `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`. Captain's Log accepts those aliases directly when the canonical variables are unset. `ASC_KEY_PATH` is optional when the matching file is already in `~/.appstoreconnect/private_keys`; when you do set it, confirm the key file path is outside every git working tree:
 
 ```sh
 export ASC_KEY_ID="..."
 export ASC_ISSUER_ID="..."
-export ASC_KEY_PATH="/absolute/path/to/AuthKey_....p8"
+# export ASC_KEY_PATH="/absolute/path/to/AuthKey_....p8"
 ```
 
 `Scripts/app_store_readiness_status.sh` and `Scripts/upload_app_store_ipa.sh` both validate that the API key looks like a 10-character key ID, the issuer looks like a UUID, and the `.p8` file is readable, outside git working trees, and has a private-key header when `APP_STORE_CONNECT_P8_FILE`, `ASC_KEY_PATH`, or an `altool` default private-key path is available. They do not print private-key contents.
