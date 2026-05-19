@@ -168,7 +168,7 @@ def build_token(key_id: str, issuer_id: str, p8_path: Path) -> str:
     )
 
 
-def api_get(token: str, path: str, params: dict[str, str]) -> dict[str, Any]:
+def api_get(token: str, path: str, params: dict[str, str], allowed_missing_statuses: set[int] | None = None) -> dict[str, Any]:
     query = urllib.parse.urlencode(params)
     request = urllib.request.Request(
         f"{API_BASE}{path}?{query}",
@@ -183,6 +183,8 @@ def api_get(token: str, path: str, params: dict[str, str]) -> dict[str, Any]:
             payload = json.loads(body)
         except json.JSONDecodeError:
             payload = {"errors": [{"detail": body[:500]}]}
+        if allowed_missing_statuses and exc.code in allowed_missing_statuses:
+            return {"data": None, "errors": payload.get("errors", [])}
         detail = "; ".join(error.get("detail", "unknown error") for error in payload.get("errors", []))
         fail(f"App Store Connect API request failed with HTTP {exc.code}: {detail}")
 
@@ -237,6 +239,25 @@ def exact_bundle_matches(bundle_ids: list[dict[str, Any]], identifier: str) -> l
     ]
 
 
+def exact_app_matches(apps: list[dict[str, Any]], bundle_id: str) -> list[dict[str, Any]]:
+    return [
+        app
+        for app in apps
+        if app.get("attributes", {}).get("bundleId") == bundle_id
+    ]
+
+
+def fetch_app_for_bundle(token: str, bundle_resource_id: str) -> dict[str, Any] | None:
+    payload = api_get(
+        token,
+        f"/v1/bundleIds/{bundle_resource_id}/app",
+        {"fields[apps]": "bundleId,name,sku,primaryLocale"},
+        allowed_missing_statuses={404},
+    )
+    app = payload.get("data")
+    return app if isinstance(app, dict) else None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE_ID)
@@ -286,13 +307,25 @@ def main() -> int:
         {"filter[identifier]": args.bundle_id, "fields[bundleIds]": "identifier,name,platform,seedId"},
     )
 
-    apps = app_payload.get("data", [])
+    app_record_lookup_method = "skipped"
+    apps = exact_app_matches(app_payload.get("data", []), args.bundle_id)
     bundle_ids = exact_bundle_matches(bundle_payload.get("data", []), args.bundle_id)
     capabilities: list[dict[str, Any]] = []
     entitlements_path = resolve_entitlements_path(args.entitlements)
     required_capabilities = required_capabilities_from_entitlements(entitlements_path)
     if bundle_ids:
         capabilities = fetch_bundle_capabilities(token, bundle_ids[0].get("id", ""))
+        if not args.skip_app_record:
+            app_from_bundle = fetch_app_for_bundle(token, bundle_ids[0].get("id", ""))
+            if app_from_bundle:
+                apps = [app_from_bundle]
+                app_record_lookup_method = "bundle-id-relationship"
+            elif apps:
+                app_record_lookup_method = "app-list-filter"
+            else:
+                app_record_lookup_method = "bundle-id-relationship-empty"
+    elif not args.skip_app_record:
+        app_record_lookup_method = "app-list-filter"
     capability_types = {capability.get("capabilityType") for capability in capabilities}
     missing_required_capabilities = [
         required
@@ -303,6 +336,7 @@ def main() -> int:
         "bundleId": args.bundle_id,
         "entitlementsPath": str(entitlements_path),
         "appRecordCheckSkipped": args.skip_app_record,
+        "appRecordLookupMethod": app_record_lookup_method,
         "appRecordCount": len(apps),
         "bundleIdRecordCount": len(bundle_ids),
         "bundleCapabilityCount": len(capabilities),
@@ -345,6 +379,7 @@ def main() -> int:
         if args.skip_app_record:
             print("[info] App Store Connect app record check skipped")
         else:
+            print(f"[info] App record lookup method: {app_record_lookup_method}")
             if apps:
                 app = result["apps"][0]
                 print(f"[ok] App Store Connect app record exists: {app['name']} ({app['id']})")
