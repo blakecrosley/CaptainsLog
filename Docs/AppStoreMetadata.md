@@ -1,6 +1,6 @@
 # Captain's Log App Store Metadata
 
-Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision. For the detailed privacy questionnaire entry, use `Docs/AppStorePrivacyAnswers.md`.
+Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision. For the detailed privacy questionnaire entry, use `Docs/AppStorePrivacyAnswers.md`; for platform availability decisions, use `Docs/PlatformExpansionPlan.md`.
 
 ## Source Constraints
 
