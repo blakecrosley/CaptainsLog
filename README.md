@@ -10,12 +10,13 @@ Start with the current gate:
 Scripts/app_store_readiness_status.sh
 ```
 
-As of the current App Store packet, the local metadata, privacy manifest, screenshot package, design review, and helper scripts are ready for handoff, but the App Store build is still blocked until one signing path is available:
+As of the current App Store packet, the local metadata, privacy manifest, screenshot package, design review, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
 
-- App Store Connect API-key auth for `xcodebuild` provisioning updates, or
-- an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ`.
+- Create or make visible the App Store Connect app record for `com.blakecrosley.captainslog`; current REST evidence finds the Developer Portal bundle ID and required `ICLOUD` capability, but no app record by exact bundle, expected SKU `captainslog-ios`, or expected name `Captain's Log`.
+- Make one iOS export signing path available: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ`.
+- Regenerate the signed IPA and `ExportManifest.txt`.
 
-Native Mac App Store export additionally needs Mac App Store application and installer signing, or the same App Store Connect API-key auth path.
+Native Mac, Apple Watch, and Apple TV are separate platform gates. Current REST evidence reports their Captain's Log Developer Portal bundle IDs are missing or not visible; create those bundle IDs with required capabilities only if those platforms are intentionally included in this release. Native Mac App Store export additionally needs Mac App Store application and installer signing, or the same App Store Connect API-key auth path.
 
 Current platform availability status:
 
