@@ -1178,14 +1178,14 @@ app_record_checked=0
 if [[ -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
     app_record_checked=1
     if app_record_output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$IOS_BUNDLE_ID" 2>&1)"; then
-        pass "App Store Connect app record exists for $IOS_BUNDLE_ID"
+        pass "App Store Connect app record exists for $IOS_BUNDLE_ID with expected SKU/name"
     else
-        external "App Store Connect app record is missing or not visible to this API key; create it, then rerun Scripts/check_app_store_connect_record.py"
+        external "App Store Connect app record is missing, has mismatched release metadata, or is not visible to this API key; create or correct it, then rerun Scripts/check_app_store_connect_record.py"
         printf '%s\n' "$app_record_output" | sed 's/^/  /'
     fi
 fi
 if (( app_record_checked == 0 )); then
-    external "create or confirm the App Store Connect app record with Scripts/check_app_store_connect_record.py or Scripts/upload_app_store_ipa.sh app-record"
+    external "create or confirm the App Store Connect app record with expected SKU/name using Scripts/check_app_store_connect_record.py or Scripts/upload_app_store_ipa.sh app-record"
 fi
 external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
