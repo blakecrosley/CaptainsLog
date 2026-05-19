@@ -20,8 +20,8 @@ Native Mac, Apple Watch, and Apple TV are separate platform gates. Current REST 
 
 Current platform availability status:
 
-- iPhone and iPad: ready as the universal iOS app once a signed IPA is exported and uploaded.
-- Apple Vision Pro: use the compatible iPhone/iPad app path after final smoke-test acceptance; this is not a native visionOS app.
+- iPhone and iPad: locally prepared through the universal iOS app; not store-ready until a signed IPA is exported and uploaded.
+- Apple Vision Pro: locally prepared through the compatible iPhone/iPad app path; not store-ready until signed upload, final smoke-test acceptance, and App Store Connect availability selection are complete. This is not a native visionOS app.
 - Mac: a native macOS target exists and local Mac screenshot candidates can be generated, but do not submit it until Mac signing/export, TestFlight, screenshot acceptance, and human QA are complete.
 - Apple Watch and Apple TV: companion targets now build, launch, have platform icon/top-shelf assets, have local App Store screenshot captures, and share an aggregate snapshot data path based on WatchConnectivity plus iCloud key-value sync. Do not submit them until signed export, TestFlight, provisioning validation, human screenshot acceptance, and platform QA are complete.
 
