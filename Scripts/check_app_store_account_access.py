@@ -50,8 +50,22 @@ def fetch_users(token: str) -> list[dict[str, Any]]:
     return users if isinstance(users, list) else []
 
 
+def fetch_apps_page(token: str) -> list[dict[str, Any]]:
+    payload = asc.api_get(
+        token,
+        "/v1/apps",
+        {
+            "fields[apps]": "bundleId",
+            "limit": "200",
+        },
+    )
+    apps = payload.get("data", [])
+    return apps if isinstance(apps, list) else []
+
+
 def collect_status(token: str) -> dict[str, Any]:
     users = fetch_users(token)
+    apps = fetch_apps_page(token)
     role_counts: Counter[str] = Counter()
     all_apps_visible_counts: Counter[str] = Counter()
     provisioning_allowed_counts: Counter[str] = Counter()
@@ -65,15 +79,19 @@ def collect_status(token: str) -> dict[str, Any]:
 
     return {
         "usersVisibleCount": len(users),
+        "appsVisibleCount": len(apps),
+        "appsVisibleCountLimit": 200,
         "rolesVisible": dict(sorted(role_counts.items())),
         "cloudManagedAppDistributionRoleVisible": "CLOUD_MANAGED_APP_DISTRIBUTION" in role_counts,
         "allAppsVisibleCounts": dict(sorted(all_apps_visible_counts.items())),
         "provisioningAllowedCounts": dict(sorted(provisioning_allowed_counts.items())),
         "privacyBoundary": (
-            "User names, emails, resource IDs, and API-key material are intentionally not printed."
+            "User names, emails, app names, bundle IDs, resource IDs, and API-key material are "
+            "intentionally not printed."
         ),
         "limits": (
-            "This proves the selected API credential can read account user visibility. "
+            "This proves the selected API credential can read account user visibility and list "
+            "at least one page of existing apps. "
             "Visible role aggregates are not selected-key proof. This does not prove the selected "
             "key can create app records, create signing assets, or use cloud-managed distribution "
             "certificates."
@@ -83,8 +101,9 @@ def collect_status(token: str) -> dict[str, Any]:
 
 def print_status(status: dict[str, Any]) -> None:
     print("Captain's Log App Store Connect account access")
-    print("[info] User names, emails, IDs, and API-key material are intentionally omitted.")
+    print("[info] User names, emails, app names, bundle IDs, IDs, and API-key material are intentionally omitted.")
     print(f"[ok] visible user count: {status['usersVisibleCount']}")
+    print(f"[ok] visible app count page: {status['appsVisibleCount']} of limit {status['appsVisibleCountLimit']}")
     roles = status["rolesVisible"]
     if roles:
         print("[ok] visible roles: " + ", ".join(f"{role}:{count}" for role, count in roles.items()))
