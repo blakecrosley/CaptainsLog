@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEAM_ID="M4WTLM6RAQ"
 IOS_BUNDLE_ID="com.blakecrosley.captainslog"
 MACOS_BUNDLE_ID="com.blakecrosley.captainslog.mac"
+WATCHOS_BUNDLE_ID="com.blakecrosley.captainslog.watchkitapp"
+TVOS_BUNDLE_ID="com.blakecrosley.captainslog.tv"
 
 failures=0
 xcode_auth_env_ready=0
@@ -181,11 +183,67 @@ check_xcode_auth_env() {
     pass "xcodebuild App Store Connect API-key auth inputs are present for provisioning updates"
 }
 
+profile_kind() {
+    local plist_path="$1"
+
+    if /usr/bin/plutil -extract ProvisionedDevices raw -o - "$plist_path" >/dev/null 2>&1; then
+        printf 'development-or-ad-hoc'
+    elif /usr/bin/plutil -extract ProvisionsAllDevices raw -o - "$plist_path" >/dev/null 2>&1; then
+        printf 'enterprise'
+    else
+        printf 'app-store'
+    fi
+}
+
+profile_matches_bundle_id() {
+    local plist_path="$1"
+    local bundle_id="$2"
+    local app_identifier
+
+    app_identifier="$(/usr/bin/plutil -extract Entitlements.application-identifier raw -o - "$plist_path" 2>/dev/null || true)"
+    [[ "$app_identifier" == *.${bundle_id} || "$app_identifier" == "$bundle_id" ]]
+}
+
+summarize_profiles_for_bundle_id() {
+    local label="$1"
+    local bundle_id="$2"
+    local matches=0
+    local profile_dir profile tmp name team platforms kind expires
+
+    printf '%s provisioning profile matches\n' "$label"
+    for profile_dir in "${profile_dirs[@]}"; do
+        [[ -d "$profile_dir" ]] || continue
+        while IFS= read -r -d '' profile; do
+            tmp="$(mktemp)"
+            if /usr/bin/security cms -D -i "$profile" > "$tmp" 2>/dev/null; then
+                if profile_matches_bundle_id "$tmp" "$bundle_id"; then
+                    matches=$((matches + 1))
+                    name="$(/usr/bin/plutil -extract Name raw -o - "$tmp" 2>/dev/null || true)"
+                    team="$(/usr/bin/plutil -extract TeamIdentifier.0 raw -o - "$tmp" 2>/dev/null || true)"
+                    platforms="$(/usr/bin/plutil -extract Platform raw -o - "$tmp" 2>/dev/null | tr -d '\n' || true)"
+                    expires="$(/usr/bin/plutil -extract ExpirationDate raw -o - "$tmp" 2>/dev/null || true)"
+                    kind="$(profile_kind "$tmp")"
+                    info "${label}: ${name:-unnamed profile} | team=${team:-unknown} | kind=${kind} | platforms=${platforms:-unknown} | expires=${expires:-unknown}"
+                fi
+            fi
+            rm -f "$tmp"
+        done < <(find "$profile_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print0)
+    done
+
+    if (( matches == 0 )); then
+        warn "no local provisioning profile matches ${label} bundle ID ${bundle_id}"
+    else
+        pass "${label} local provisioning profile match count: ${matches}"
+    fi
+}
+
 printf "Captain's Log App Store signing status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
 printf 'Team ID: %s\n' "$TEAM_ID"
 printf 'iOS bundle ID: %s\n' "$IOS_BUNDLE_ID"
 printf 'macOS bundle ID: %s\n\n' "$MACOS_BUNDLE_ID"
+printf 'watchOS bundle ID: %s\n' "$WATCHOS_BUNDLE_ID"
+printf 'tvOS bundle ID: %s\n\n' "$TVOS_BUNDLE_ID"
 
 need_command git
 need_command security
@@ -304,6 +362,10 @@ if (( profile_total == 0 )); then
     warn "no local provisioning profiles found; Xcode may download or create profiles after account signing is configured"
 else
     pass "local provisioning profiles available: $profile_total total"
+    summarize_profiles_for_bundle_id "iOS" "$IOS_BUNDLE_ID"
+    summarize_profiles_for_bundle_id "macOS" "$MACOS_BUNDLE_ID"
+    summarize_profiles_for_bundle_id "watchOS" "$WATCHOS_BUNDLE_ID"
+    summarize_profiles_for_bundle_id "tvOS" "$TVOS_BUNDLE_ID"
 fi
 
 printf '\nNext step\n'
