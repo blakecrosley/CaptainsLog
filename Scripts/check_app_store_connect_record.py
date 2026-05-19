@@ -25,6 +25,8 @@ except ImportError:  # pragma: no cover - environment guard
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_BUNDLE_ID = "com.blakecrosley.captainslog"
+DEFAULT_APP_NAME = "Captain's Log"
+DEFAULT_SKU = "captainslog-ios"
 API_BASE = "https://api.appstoreconnect.apple.com"
 APP_ENTITLEMENTS = ROOT_DIR / "CaptainsLog" / "App" / "CaptainsLog.entitlements"
 REQUIRED_CAPABILITY_BY_ENTITLEMENT = {
@@ -258,9 +260,38 @@ def fetch_app_for_bundle(token: str, bundle_resource_id: str) -> dict[str, Any] 
     return app if isinstance(app, dict) else None
 
 
+def fetch_apps_by_filter(token: str, filter_name: str, value: str) -> list[dict[str, Any]]:
+    if not value:
+        return []
+
+    payload = api_get(
+        token,
+        "/v1/apps",
+        {
+            f"filter[{filter_name}]": value,
+            "fields[apps]": "bundleId,name,sku,primaryLocale",
+        },
+    )
+    apps = payload.get("data", [])
+    return apps if isinstance(apps, list) else []
+
+
+def app_summary(app: dict[str, Any]) -> dict[str, Any]:
+    attributes = app.get("attributes", {})
+    return {
+        "id": app.get("id"),
+        "bundleId": attributes.get("bundleId"),
+        "name": attributes.get("name"),
+        "sku": attributes.get("sku"),
+        "primaryLocale": attributes.get("primaryLocale"),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE_ID)
+    parser.add_argument("--expected-name", default=DEFAULT_APP_NAME)
+    parser.add_argument("--expected-sku", default=DEFAULT_SKU)
     parser.add_argument(
         "--entitlements",
         default=str(APP_ENTITLEMENTS.relative_to(ROOT_DIR)),
@@ -295,12 +326,16 @@ def main() -> int:
     token = build_token(key_id, issuer_id, p8_path)
 
     app_payload = {"data": []}
+    sku_apps: list[dict[str, Any]] = []
+    name_apps: list[dict[str, Any]] = []
     if not args.skip_app_record:
         app_payload = api_get(
             token,
             "/v1/apps",
             {"filter[bundleId]": args.bundle_id, "fields[apps]": "bundleId,name,sku,primaryLocale"},
         )
+        sku_apps = fetch_apps_by_filter(token, "sku", args.expected_sku)
+        name_apps = fetch_apps_by_filter(token, "name", args.expected_name)
     bundle_payload = api_get(
         token,
         "/v1/bundleIds",
@@ -340,16 +375,16 @@ def main() -> int:
         "appRecordCount": len(apps),
         "bundleIdRecordCount": len(bundle_ids),
         "bundleCapabilityCount": len(capabilities),
+        "expectedAppName": args.expected_name,
+        "expectedSku": args.expected_sku,
         "apps": [
-            {
-                "id": app.get("id"),
-                "bundleId": app.get("attributes", {}).get("bundleId"),
-                "name": app.get("attributes", {}).get("name"),
-                "sku": app.get("attributes", {}).get("sku"),
-                "primaryLocale": app.get("attributes", {}).get("primaryLocale"),
-            }
+            app_summary(app)
             for app in apps
         ],
+        "expectedSkuAppRecordCount": len(sku_apps),
+        "expectedSkuApps": [app_summary(app) for app in sku_apps],
+        "expectedNameAppRecordCount": len(name_apps),
+        "expectedNameApps": [app_summary(app) for app in name_apps],
         "bundleIds": [
             {
                 "id": bundle.get("id"),
@@ -380,6 +415,8 @@ def main() -> int:
             print("[info] App Store Connect app record check skipped")
         else:
             print(f"[info] App record lookup method: {app_record_lookup_method}")
+            print(f"[info] Expected app SKU visible matches: {len(sku_apps)} for {args.expected_sku}")
+            print(f"[info] Expected app name visible matches: {len(name_apps)} for {args.expected_name}")
             if apps:
                 app = result["apps"][0]
                 print(f"[ok] App Store Connect app record exists: {app['name']} ({app['id']})")
