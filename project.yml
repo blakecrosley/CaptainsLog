@@ -4,6 +4,8 @@ options:
   deploymentTarget:
     iOS: "26.0"
     macOS: "26.0"
+    tvOS: "26.0"
+    watchOS: "26.0"
   xcodeVersion: "26.4"
   createIntermediateGroups: true
   defaultConfig: Debug
@@ -70,6 +72,48 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         ENABLE_HARDENED_RUNTIME: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+  CaptainsLog-watchOS:
+    type: application
+    platform: watchOS
+    sources:
+      - path: CaptainsLogCompanion
+    resources:
+      - path: CaptainsLogCompanion/Resources
+        excludes:
+          - "**/.gitkeep"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.watchkitapp
+        PRODUCT_NAME: "Captain's Log"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: M4WTLM6RAQ
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.blakecrosley.captainslog
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+  CaptainsLog-tvOS:
+    type: application
+    platform: tvOS
+    sources:
+      - path: CaptainsLogCompanion
+    resources:
+      - path: CaptainsLogCompanion/Resources
+        excludes:
+          - "**/.gitkeep"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blakecrosley.captainslog.tv
+        PRODUCT_NAME: "Captain's Log"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: M4WTLM6RAQ
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Captain's Log"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIUserInterfaceStyle: Automatic
         SWIFT_EMIT_LOC_STRINGS: YES
 
   CaptainsLogTests:

@@ -7,8 +7,8 @@ This plan turns the current platform-readiness answer into implementation gates.
 - iPhone and iPad: the universal iOS app is the first release path. Local readiness supports iPad through target family `1,2`, but signed IPA export and upload remain open.
 - Apple Vision Pro: use the compatible iPhone/iPad app availability path after final smoke-test acceptance. This is not a native visionOS target.
 - Mac: a native macOS target exists, but Mac App Store availability remains blocked on native Mac bundle/app-record visibility, Mac App Store signing/export, TestFlight, screenshot acceptance, and human QA.
-- Apple Watch: not ready. Captain's Log has no watchOS target, scheme, bundle ID, app record, screenshots, signed build, TestFlight pass, or watch-specific QA.
-- Apple TV: not ready. Captain's Log has no tvOS target, scheme, bundle ID, app record, screenshots, signed build, TestFlight pass, or TV-specific QA.
+- Apple Watch: first-pass companion target exists and compiles with signing disabled, but it is not ready. The missing gates are phone-synced data, icons, screenshots, signed build/export, TestFlight, app record/platform availability, and watch-specific QA.
+- Apple TV: first-pass read-only target exists and compiles with signing disabled, but it is not ready. The missing gates are real setup/data path, icons/top-shelf assets, screenshots, signed build/export, TestFlight, app record/platform availability, and TV-specific QA.
 
 ## Readiness Standard
 
@@ -39,7 +39,7 @@ Build a companion glance, not a second GitHub client. The watch app should mirro
 
 Implementation gates:
 
-- Add a watchOS app target, scheme, bundle ID, icons, privacy manifest, and entitlements.
+- Add a watchOS app target, scheme, bundle ID, icons, privacy manifest, and entitlements. The target, scheme, bundle ID, and privacy manifest now exist; icons/entitlements still need release review.
 - Add a small shared snapshot model that can be produced by the iOS app without exposing tokens or provider keys.
 - Use WatchConnectivity or an equivalent local Apple framework for iPhone-to-watch snapshot transfer.
 - Add watch screenshots, at least one watch UI test or launch smoke, and a TestFlight pass before claiming readiness.
@@ -55,7 +55,7 @@ Build a remote-friendly read-only dashboard. Apple TV should make the Work Map u
 
 Implementation gates:
 
-- Add a tvOS app target, scheme, bundle ID, icons/top-shelf assets, privacy manifest, and entitlements.
+- Add a tvOS app target, scheme, bundle ID, icons/top-shelf assets, privacy manifest, and entitlements. The target, scheme, bundle ID, and privacy manifest now exist; icons/top-shelf assets and entitlements still need release review.
 - Prove GitHub auth or iPhone-assisted setup on tvOS.
 - Add tvOS screenshots, a focus/navigation smoke, and a TestFlight pass before claiming readiness.
 
@@ -63,6 +63,6 @@ Implementation gates:
 
 1. Finish the universal iOS/iPad plus compatible Vision submission path by unblocking App Store signing, regenerating the signed IPA/export manifest, and completing App Store Connect/TestFlight.
 2. Decide whether native Mac belongs in the first release. If yes, complete Mac signing/export/TestFlight/QA; otherwise opt out of Apple Silicon Mac availability for this submission.
-3. Build Watch V1 as a phone-synced companion snapshot.
-4. Build TV V1 as a remote-friendly read-only dashboard.
+3. Replace the Watch shell with Watch V1 as a phone-synced companion snapshot.
+4. Replace the TV shell with TV V1 as a remote-friendly read-only dashboard.
 5. Only update App Store availability once the platform's own readiness standard above is met.

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0046E9D19D34DD29960DA6B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 83F34C010148647721FAC535 /* PrivacyInfo.xcprivacy */; };
 		00CB12925B8CF915769E1704 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BC518FBB45454634CB659E5F /* Assets.xcassets */; };
 		013E60C4538EF953C737634D /* JournalSummarizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95B59BC3FB48BF99838EB20 /* JournalSummarizerTests.swift */; };
 		018670DFB0C54EEDFC9C6144 /* GitHubDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */; };
@@ -32,9 +33,11 @@
 		4D29EBFFE813BC9A4ED211AA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246542A7586005AA6F2AD266 /* AppModel.swift */; };
 		521E5AC5E9A04894C09E0981 /* CalendarMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD049F4F589A6068AAD2411 /* CalendarMath.swift */; };
 		540B841F84BFA5EC3FC0540E /* CalendarMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C159E0081482BF0FD1B25BA /* CalendarMathTests.swift */; };
+		579D05500D26483DD37C4E70 /* CaptainsLogCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6400776E0BCE872C4816EAA5 /* CaptainsLogCompanionApp.swift */; };
 		6414316B596F1F688DFD356A /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */; };
 		6456634246E39507712C50FE /* GitHubAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841C1CBE01067722906EA321 /* GitHubAPIClient.swift */; };
 		6935405B86E26A23EA82D36E /* CalendarMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD049F4F589A6068AAD2411 /* CalendarMath.swift */; };
+		6DD0511D9ECC1E11ED4A6709 /* CaptainsLogCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6400776E0BCE872C4816EAA5 /* CaptainsLogCompanionApp.swift */; };
 		7397103398D6D7ECF2374599 /* CalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D1AC282DD7AED30301545A /* CalendarViews.swift */; };
 		75D26635F7B7A93E2182BAE9 /* AuthAndRepoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037BFDD416706018D683BE91 /* AuthAndRepoViews.swift */; };
 		7B3F2D6073D9E2CF9AA3C952 /* GitHubAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841C1CBE01067722906EA321 /* GitHubAPIClient.swift */; };
@@ -51,10 +54,12 @@
 		B3A87E602F6914C7ED7D959A /* AIProviderCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0D2439EC06220D19EB8EED /* AIProviderCredentialStore.swift */; };
 		B583A33EAAF948ECD3348734 /* DayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CB13B0CFF8B97BD431BBB /* DayDetailView.swift */; };
 		B71C197BEA180B78252B38E9 /* PrivacyDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 280B45B1D5450EB23FB0BF54 /* PrivacyDataView.swift */; };
+		B865834224152348D5F37F0D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 83F34C010148647721FAC535 /* PrivacyInfo.xcprivacy */; };
 		BA43D5B15808F80FCBC77FB8 /* PrivacyDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 280B45B1D5450EB23FB0BF54 /* PrivacyDataView.swift */; };
 		BF0CF3C9BEE70288E6AC7128 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246542A7586005AA6F2AD266 /* AppModel.swift */; };
 		C260B06BF638ED80B40DB4FB /* CaptainsLog-iOS-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D41F00CBA75B8CF36E5B735C /* CaptainsLog-iOS-Info.plist */; };
 		CBC000A75549E99D024E232A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C86B115D692574D1BACDD34 /* RootView.swift */; };
+		CCB7D090512398A614E50F05 /* CompanionRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6E75E4BA38ECD5C093F475 /* CompanionRootView.swift */; };
 		D9A6EE02B56DC8BD8400D697 /* GitHubAppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E35B83EDF8AE3BB5CA1F34F /* GitHubAppConfiguration.swift */; };
 		DF124DA8EB5B6563027C8678 /* BackgroundHistoryIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9288CD6CC39D57C97C5E844A /* BackgroundHistoryIndexer.swift */; };
 		DF80C747AEAF3C8040EAE7CF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6222A3C6F08FDFB2E443E6CC /* PrivacyInfo.xcprivacy */; };
@@ -64,6 +69,7 @@
 		E7145DFBC8BA6C388A9C01EA /* CaptainsLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */; };
 		EA94944A2D0558412754745B /* CalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D1AC282DD7AED30301545A /* CalendarViews.swift */; };
 		EBEE0047A1CBA75AA41DF736 /* CaptainsLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3850B5033DD1D26E5759F2 /* CaptainsLogApp.swift */; };
+		EE593ED3D95F09ED31297A64 /* CompanionRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6E75E4BA38ECD5C093F475 /* CompanionRootView.swift */; };
 		F917743F699BCEEA6A9718FE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C86B115D692574D1BACDD34 /* RootView.swift */; };
 		FBD7F9399C7FAE5EF6EFF68F /* WorkClassification.swift in Sources */ = {isa = PBXBuildFile; fileRef = A121798FD0257B44C9A25F9B /* WorkClassification.swift */; };
 /* End PBXBuildFile section */
@@ -102,10 +108,12 @@
 		3AD049F4F589A6068AAD2411 /* CalendarMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMath.swift; sourceTree = "<group>"; };
 		51197FC7760CBC461CF9A85E /* WorkMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkMetrics.swift; sourceTree = "<group>"; };
 		6222A3C6F08FDFB2E443E6CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		6400776E0BCE872C4816EAA5 /* CaptainsLogCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptainsLogCompanionApp.swift; sourceTree = "<group>"; };
 		6C1A76A4B0B7DEF24FEFCC33 /* WorkIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkIdentity.swift; sourceTree = "<group>"; };
 		6CA3378DD415C673B2ADF898 /* GitHubDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDTOs.swift; sourceTree = "<group>"; };
 		765A7318103C7B5303C9D85A /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
 		7A7F48BD4404C5CD2BE7EE75 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
+		83F34C010148647721FAC535 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		841C1CBE01067722906EA321 /* GitHubAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAPIClient.swift; sourceTree = "<group>"; };
 		86FB4B627A604FE9421CDD37 /* JournalSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSummarizer.swift; sourceTree = "<group>"; };
 		874B754CA1E41549E1C2BA59 /* 941Kit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = 941Kit; path = ../941Kit; sourceTree = SOURCE_ROOT; };
@@ -118,10 +126,13 @@
 		B0DF754B0D0D66F6B92255F9 /* ClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardService.swift; sourceTree = "<group>"; };
 		B6FEF62642DDCA1C10E7CB83 /* AccountViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountViews.swift; sourceTree = "<group>"; };
 		BC518FBB45454634CB659E5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C7F6AAA4D78EE738708C1889 /* CaptainsLog-watchOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CaptainsLog-watchOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C95B59BC3FB48BF99838EB20 /* JournalSummarizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSummarizerTests.swift; sourceTree = "<group>"; };
 		CE812F928AD5BFA57EA679EC /* OpenAIWorkClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIWorkClassifier.swift; sourceTree = "<group>"; };
 		D41F00CBA75B8CF36E5B735C /* CaptainsLog-iOS-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "CaptainsLog-iOS-Info.plist"; sourceTree = "<group>"; };
 		D7CC5BEC17862AA07AB58ED4 /* WorkOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkOverviewView.swift; sourceTree = "<group>"; };
+		D8833978588872786C262FF5 /* CaptainsLog-tvOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "CaptainsLog-tvOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA6E75E4BA38ECD5C093F475 /* CompanionRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionRootView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -161,6 +172,14 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		262E80F12808B13AFE1B4B35 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				83F34C010148647721FAC535 /* PrivacyInfo.xcprivacy */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		280C5498D54CC5D6D041F140 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -191,6 +210,8 @@
 			children = (
 				0AD9DB70978FA782C6C30A88 /* CaptainsLog-iOS.app */,
 				2D8B0B9A6C17EFFD57D1FAC4 /* CaptainsLog-macOS.app */,
+				D8833978588872786C262FF5 /* CaptainsLog-tvOS.app */,
+				C7F6AAA4D78EE738708C1889 /* CaptainsLog-watchOS.app */,
 				A112BB810F7845F0577280F8 /* CaptainsLogTests.xctest */,
 				93568AAAA802D84FFC3A3C32 /* CaptainsLogUITests.xctest */,
 			);
@@ -201,11 +222,22 @@
 			isa = PBXGroup;
 			children = (
 				B6D71FF748D0A355F5934EF2 /* CaptainsLog */,
+				8754850CC67050D245EF466C /* CaptainsLogCompanion */,
 				8764320E41F639BDF24FB0BB /* CaptainsLogTests */,
 				532A4E13B36FE282B0C6618C /* CaptainsLogUITests */,
 				413CE799CC7AC965A88C2E50 /* Packages */,
 				6AC4BD29268BCB3BC7A987DC /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		8754850CC67050D245EF466C /* CaptainsLogCompanion */ = {
+			isa = PBXGroup;
+			children = (
+				262E80F12808B13AFE1B4B35 /* Resources */,
+				6400776E0BCE872C4816EAA5 /* CaptainsLogCompanionApp.swift */,
+				DA6E75E4BA38ECD5C093F475 /* CompanionRootView.swift */,
+			);
+			path = CaptainsLogCompanion;
 			sourceTree = "<group>";
 		};
 		8764320E41F639BDF24FB0BB /* CaptainsLogTests */ = {
@@ -269,6 +301,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		2C7FF3CE1B10B54613089E7E /* CaptainsLog-tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3B0CBAFE99DDFECFF7AB6A70 /* Build configuration list for PBXNativeTarget "CaptainsLog-tvOS" */;
+			buildPhases = (
+				CFB3EDC7EB0E36B25906A738 /* Sources */,
+				5811CE4092CDACF4F207036F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CaptainsLog-tvOS";
+			packageProductDependencies = (
+			);
+			productName = "CaptainsLog-tvOS";
+			productReference = D8833978588872786C262FF5 /* CaptainsLog-tvOS.app */;
+			productType = "com.apple.product-type.application";
+		};
 		385294990346AD79D0B03BEE /* CaptainsLogUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 31BB491F56B674EC8AC221EF /* Build configuration list for PBXNativeTarget "CaptainsLogUITests" */;
@@ -325,6 +375,24 @@
 			productReference = A112BB810F7845F0577280F8 /* CaptainsLogTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		F1F8FF25253BA446A1D42935 /* CaptainsLog-watchOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A2A7B7766896762F72CB3B1 /* Build configuration list for PBXNativeTarget "CaptainsLog-watchOS" */;
+			buildPhases = (
+				651CBB4370982C6BDC87AA19 /* Sources */,
+				89E32B284D862C379A4F1A48 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CaptainsLog-watchOS";
+			packageProductDependencies = (
+			);
+			productName = "CaptainsLog-watchOS";
+			productReference = C7F6AAA4D78EE738708C1889 /* CaptainsLog-watchOS.app */;
+			productType = "com.apple.product-type.application";
+		};
 		F90387FC825665E8C4662E9B /* CaptainsLog-iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C5215A8F96DC7CE9447251B7 /* Build configuration list for PBXNativeTarget "CaptainsLog-iOS" */;
@@ -354,6 +422,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					2C7FF3CE1B10B54613089E7E = {
+						DevelopmentTeam = M4WTLM6RAQ;
+						ProvisioningStyle = Automatic;
+					};
 					385294990346AD79D0B03BEE = {
 						DevelopmentTeam = M4WTLM6RAQ;
 						ProvisioningStyle = Automatic;
@@ -364,6 +436,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					B6B68CB240DDDF56A3521DC1 = {
+						DevelopmentTeam = M4WTLM6RAQ;
+						ProvisioningStyle = Automatic;
+					};
+					F1F8FF25253BA446A1D42935 = {
 						DevelopmentTeam = M4WTLM6RAQ;
 						ProvisioningStyle = Automatic;
 					};
@@ -392,6 +468,8 @@
 			targets = (
 				F90387FC825665E8C4662E9B /* CaptainsLog-iOS */,
 				868191A7FB95C1F892966A94 /* CaptainsLog-macOS */,
+				2C7FF3CE1B10B54613089E7E /* CaptainsLog-tvOS */,
+				F1F8FF25253BA446A1D42935 /* CaptainsLog-watchOS */,
 				B6B68CB240DDDF56A3521DC1 /* CaptainsLogTests */,
 				385294990346AD79D0B03BEE /* CaptainsLogUITests */,
 			);
@@ -399,6 +477,22 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5811CE4092CDACF4F207036F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B865834224152348D5F37F0D /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		89E32B284D862C379A4F1A48 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0046E9D19D34DD29960DA6B6 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9518C69555BF35C41B60AD4D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -421,6 +515,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		651CBB4370982C6BDC87AA19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DD0511D9ECC1E11ED4A6709 /* CaptainsLogCompanionApp.swift in Sources */,
+				EE593ED3D95F09ED31297A64 /* CompanionRootView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		78EF03ECB13568FF595FBD3F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -467,6 +570,15 @@
 				07F672AC33F8D9C7F1A77ACF /* WorkIdentity.swift in Sources */,
 				33E86E4101BA35597C9E4F69 /* WorkMetrics.swift in Sources */,
 				3E1FA340FD77D587DCB592A5 /* WorkOverviewView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFB3EDC7EB0E36B25906A738 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				579D05500D26483DD37C4E70 /* CaptainsLogCompanionApp.swift in Sources */,
+				CCB7D090512398A614E50F05 /* CompanionRootView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -642,6 +754,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.2;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
@@ -744,8 +858,33 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.2;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
+		};
+		83FF47F51DF291F634FD18F3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.tv;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = appletvos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
 		};
 		B9AEE716F836AC7CFFCE5670 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -769,6 +908,29 @@
 			};
 			name = Release;
 		};
+		BF4CB7B2B3FFED94DB024E0D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.tv;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = appletvos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
 		C90508163D98802489CEA5D5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -785,6 +947,25 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = "CaptainsLog-iOS";
+			};
+			name = Debug;
+		};
+		D06F291F70EAD982F65EB799 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.blakecrosley.captainslog;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.watchkitapp;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Debug;
 		};
@@ -810,6 +991,25 @@
 			};
 			name = Release;
 		};
+		E102C10F53CCBE18D6689B28 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M4WTLM6RAQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Captain's Log";
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.blakecrosley.captainslog;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blakecrosley.captainslog.watchkitapp;
+				PRODUCT_NAME = "Captain's Log";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -818,6 +1018,24 @@
 			buildConfigurations = (
 				C90508163D98802489CEA5D5 /* Debug */,
 				1814AFC211D71F4294D6E9CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3A2A7B7766896762F72CB3B1 /* Build configuration list for PBXNativeTarget "CaptainsLog-watchOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D06F291F70EAD982F65EB799 /* Debug */,
+				E102C10F53CCBE18D6689B28 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3B0CBAFE99DDFECFF7AB6A70 /* Build configuration list for PBXNativeTarget "CaptainsLog-tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				83FF47F51DF291F634FD18F3 /* Debug */,
+				BF4CB7B2B3FFED94DB024E0D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

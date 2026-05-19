@@ -388,6 +388,8 @@ printf_platform_target_status() {
     local project_list
     local ios_settings
     local macos_settings
+    local watch_settings
+    local tv_settings
 
     printf '\nPlatform availability\n'
 
@@ -533,19 +535,61 @@ printf_platform_target_status() {
             pass "no native macOS target found"
         fi
 
-        if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+.*(watchOS|Watch|tvOS|TV).*$'; then
-            fail "watchOS/tvOS-looking target or scheme found; update platform release guidance before App Store submission"
+        if [[ "$(printf '%s\n' "$project_list" | rg -c '^[[:space:]]+CaptainsLog-watchOS$' || true)" -ge 2 ]]; then
+            pass "Apple Watch target and scheme exist: CaptainsLog-watchOS"
+            if watch_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-watchOS -configuration Release -showBuildSettings 2>/dev/null)"; then
+                if printf '%s\n' "$watch_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = com[.]blakecrosley[.]captainslog[.]watchkitapp"; then
+                    pass "Apple Watch bundle id is com.blakecrosley.captainslog.watchkitapp"
+                else
+                    fail "Apple Watch bundle id is missing or mismatched"
+                fi
+                if printf '%s\n' "$watch_settings" | rg -q "DEVELOPMENT_TEAM = ${TEAM_ID}"; then
+                    pass "Apple Watch development team is ${TEAM_ID}"
+                else
+                    fail "Apple Watch development team is not ${TEAM_ID}"
+                fi
+            else
+                fail "unable to read CaptainsLog-watchOS Release build settings for platform availability"
+            fi
+            warn "Apple Watch target is a first-pass companion shell; Watch release still requires phone-synced data, icons, screenshots, signed archive/export, TestFlight, and watch QA before availability"
         else
-            warn "Captain's Log has no Apple Watch or Apple TV app target or scheme; those platforms are not ready"
+            warn "Captain's Log has no Apple Watch app target or scheme; Apple Watch is not ready"
+        fi
+
+        if [[ "$(printf '%s\n' "$project_list" | rg -c '^[[:space:]]+CaptainsLog-tvOS$' || true)" -ge 2 ]]; then
+            pass "Apple TV target and scheme exist: CaptainsLog-tvOS"
+            if tv_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-tvOS -configuration Release -showBuildSettings 2>/dev/null)"; then
+                if printf '%s\n' "$tv_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = com[.]blakecrosley[.]captainslog[.]tv"; then
+                    pass "Apple TV bundle id is com.blakecrosley.captainslog.tv"
+                else
+                    fail "Apple TV bundle id is missing or mismatched"
+                fi
+                if printf '%s\n' "$tv_settings" | rg -q "DEVELOPMENT_TEAM = ${TEAM_ID}"; then
+                    pass "Apple TV development team is ${TEAM_ID}"
+                else
+                    fail "Apple TV development team is not ${TEAM_ID}"
+                fi
+            else
+                fail "unable to read CaptainsLog-tvOS Release build settings for platform availability"
+            fi
+            warn "Apple TV target is a first-pass read-only shell; TV release still requires real setup/data path, icons/top-shelf assets, screenshots, signed archive/export, TestFlight, and TV QA before availability"
+        else
+            warn "Captain's Log has no Apple TV app target or scheme; Apple TV is not ready"
         fi
     else
         fail "unable to list Xcode targets for platform availability"
     fi
 
-    if rg -q 'platform:[[:space:]]+(watchOS|tvOS)' "$ROOT_DIR/project.yml"; then
-        fail "project.yml contains watchOS/tvOS platform entries; update platform release guidance before App Store submission"
+    if rg -q '^  CaptainsLog-watchOS:' "$ROOT_DIR/project.yml" && rg -q 'platform:[[:space:]]+watchOS' "$ROOT_DIR/project.yml"; then
+        pass "project.yml defines the Captain's Log watchOS app target"
     else
-        warn "project.yml has no watchOS/tvOS app targets for Captain's Log"
+        warn "project.yml has no watchOS app target for Captain's Log"
+    fi
+
+    if rg -q '^  CaptainsLog-tvOS:' "$ROOT_DIR/project.yml" && rg -q 'platform:[[:space:]]+tvOS' "$ROOT_DIR/project.yml"; then
+        pass "project.yml defines the Captain's Log tvOS app target"
+    else
+        warn "project.yml has no tvOS app target for Captain's Log"
     fi
 
     check_reference_project_platform_precedent "Return" "$RETURN_REFERENCE_PROJECT" "ReturnWatch Watch App" "ReturnTV"
