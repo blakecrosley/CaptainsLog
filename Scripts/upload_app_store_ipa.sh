@@ -299,10 +299,29 @@ credential_guard_self_test() {
         unset APP_STORE_CONNECT_API_KEY
         unset APP_STORE_CONNECT_API_ISSUER
         unset APP_STORE_CONNECT_P8_FILE
+        unset CAPTAINS_LOG_APP_STORE_CONNECT_ENV_FILE
         ASC_KEY_ID="$test_key"
         ASC_ISSUER_ID="$test_issuer"
         ASC_KEY_PATH="$good_p8"
         unset API_PRIVATE_KEYS_DIR
+        build_auth_args 0
+    }
+
+    good_local_env_file_path() {
+        local local_env="$temp_dir/AppStoreConnectEnv.local.sh"
+        {
+            printf 'export APP_STORE_CONNECT_API_KEY=%q\n' "$test_key"
+            printf 'export APP_STORE_CONNECT_API_ISSUER=%q\n' "$test_issuer"
+            printf 'export APP_STORE_CONNECT_P8_FILE=%q\n' "$good_p8"
+        } >"$local_env"
+        unset APP_STORE_CONNECT_API_KEY
+        unset APP_STORE_CONNECT_API_ISSUER
+        unset APP_STORE_CONNECT_P8_FILE
+        unset ASC_KEY_ID
+        unset ASC_ISSUER_ID
+        unset ASC_KEY_PATH
+        unset API_PRIVATE_KEYS_DIR
+        CAPTAINS_LOG_APP_STORE_CONNECT_ENV_FILE="$local_env"
         build_auth_args 0
     }
 
@@ -427,6 +446,7 @@ credential_guard_self_test() {
     expect_pass "direct .p8 path outside repo" good_direct_path
     expect_pass "altool default .p8 path outside repo" good_default_path
     expect_pass "Fastlane ASC_* aliases" good_fastlane_alias_path
+    expect_pass "gitignored local env file" good_local_env_file_path
     expect_fail "malformed API key ID" bad_key_shape
     expect_fail "malformed issuer UUID" bad_issuer_shape
     expect_fail "missing .p8 path" missing_p8

@@ -121,7 +121,7 @@ export APP_STORE_CONNECT_API_ISSUER="..."
 # export APP_STORE_CONNECT_P8_FILE="/absolute/path/to/AuthKey_....p8"
 ```
 
-`Docs/AppStoreConnectEnv.template.sh` contains a safe placeholder-only shell template for these exports plus provider/status variables. Do not enter real credentials in the tracked file; copy the placeholder exports into a private shell session or `AppStoreConnectEnv.local.sh`, which is gitignored.
+`Docs/AppStoreConnectEnv.template.sh` contains a safe placeholder-only shell template for these exports plus provider/status variables. Do not enter real credentials in the tracked file; copy the placeholder exports into a private shell session or `AppStoreConnectEnv.local.sh`, which is gitignored and automatically loaded by the release scripts from either the repo root or `Docs/`. You can also point `CAPTAINS_LOG_APP_STORE_CONNECT_ENV_FILE` at another private shell file.
 
 If you are reusing an App Store Connect key already used by another 941 app, do not point Captain's Log at a `.p8` file inside that app's repository or Fastlane folder. The credential guard intentionally rejects private keys inside any git working tree. Select the matching key in App Store Connect, then stage a private local copy at `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` with owner-only permissions.
 
