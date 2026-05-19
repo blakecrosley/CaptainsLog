@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""Plan or create Developer Portal bundle IDs and capabilities for platform targets."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+import check_app_store_connect_record as asc  # noqa: E402
+
+
+TARGETS = {
+    "macos": {
+        "label": "native Mac",
+        "bundle_id": "com.blakecrosley.captainslog.mac",
+        "name": "XC com blakecrosley captainslog mac",
+        "platform": "UNIVERSAL",
+        "entitlements": ROOT_DIR / "CaptainsLog" / "App" / "CaptainsLog.entitlements",
+    },
+    "watchos": {
+        "label": "Apple Watch",
+        "bundle_id": "com.blakecrosley.captainslog.watchkitapp",
+        "name": "XC com blakecrosley captainslog watchkitapp",
+        "platform": "UNIVERSAL",
+        "entitlements": ROOT_DIR / "CaptainsLogCompanion" / "CaptainsLogCompanion.entitlements",
+    },
+    "tvos": {
+        "label": "Apple TV",
+        "bundle_id": "com.blakecrosley.captainslog.tv",
+        "name": "XC com blakecrosley captainslog tv",
+        "platform": "UNIVERSAL",
+        "entitlements": ROOT_DIR / "CaptainsLogCompanion" / "CaptainsLogCompanion.entitlements",
+    },
+}
+
+
+class EnsureError(Exception):
+    pass
+
+
+def fail(message: str) -> None:
+    raise EnsureError(message)
+
+
+def api_post(token: str, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    request = urllib.request.Request(
+        f"{asc.API_BASE}{path}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")
+        try:
+            payload = json.loads(body)
+        except json.JSONDecodeError:
+            payload = {"errors": [{"detail": body[:500]}]}
+        detail = "; ".join(error.get("detail", "unknown error") for error in payload.get("errors", []))
+        fail(f"App Store Connect API POST {path} failed with HTTP {exc.code}: {detail}")
+
+
+def build_token() -> str:
+    asc.load_local_env_defaults()
+    key_id = asc.env_with_alias("APP_STORE_CONNECT_API_KEY", "ASC_KEY_ID")
+    issuer_id = asc.env_with_alias("APP_STORE_CONNECT_API_ISSUER", "ASC_ISSUER_ID")
+    if len(key_id) != 10 or not key_id.isalnum():
+        fail("APP_STORE_CONNECT_API_KEY/ASC_KEY_ID should be a 10-character key ID")
+    if not issuer_id:
+        fail("APP_STORE_CONNECT_API_ISSUER/ASC_ISSUER_ID is required")
+    p8_path = asc.resolve_p8_path(key_id)
+    return asc.build_token(key_id, issuer_id, p8_path)
+
+
+def find_bundle(token: str, bundle_id: str) -> dict[str, Any] | None:
+    payload = asc.api_get(
+        token,
+        "/v1/bundleIds",
+        {"filter[identifier]": bundle_id, "fields[bundleIds]": "identifier,name,platform,seedId"},
+    )
+    matches = asc.exact_bundle_matches(payload.get("data", []), bundle_id)
+    return matches[0] if matches else None
+
+
+def create_bundle(token: str, target: dict[str, Any]) -> dict[str, Any]:
+    payload = {
+        "data": {
+            "type": "bundleIds",
+            "attributes": {
+                "identifier": target["bundle_id"],
+                "name": target["name"],
+                "platform": target["platform"],
+            },
+        }
+    }
+    return api_post(token, "/v1/bundleIds", payload)["data"]
+
+
+def settings_for_capability(capability_type: str) -> list[dict[str, Any]]:
+    if capability_type == "ICLOUD":
+        return [{"key": "ICLOUD_VERSION", "options": [{"key": "XCODE_6", "enabled": True}]}]
+    return []
+
+
+def enable_capability(token: str, bundle_resource_id: str, capability_type: str) -> dict[str, Any]:
+    attributes: dict[str, Any] = {"capabilityType": capability_type}
+    settings = settings_for_capability(capability_type)
+    if settings:
+        attributes["settings"] = settings
+    payload = {
+        "data": {
+            "type": "bundleIdCapabilities",
+            "attributes": attributes,
+            "relationships": {
+                "bundleId": {
+                    "data": {
+                        "type": "bundleIds",
+                        "id": bundle_resource_id,
+                    }
+                }
+            },
+        }
+    }
+    return api_post(token, "/v1/bundleIdCapabilities", payload)["data"]
+
+
+def existing_capability_types(token: str, bundle_resource_id: str) -> set[str]:
+    capabilities = asc.fetch_bundle_capabilities(token, bundle_resource_id)
+    return {capability.get("capabilityType") for capability in capabilities if capability.get("capabilityType")}
+
+
+def target_names(selected: list[str]) -> list[str]:
+    if not selected or "all" in selected:
+        return list(TARGETS)
+    unknown = sorted(set(selected) - set(TARGETS))
+    if unknown:
+        fail(f"Unknown target(s): {', '.join(unknown)}")
+    return selected
+
+
+def process_target(token: str, name: str, apply: bool) -> dict[str, Any]:
+    target = TARGETS[name]
+    required = asc.required_capabilities_from_entitlements(Path(target["entitlements"]))
+    result: dict[str, Any] = {
+        "target": name,
+        "label": target["label"],
+        "bundleId": target["bundle_id"],
+        "platform": target["platform"],
+        "actions": [],
+    }
+
+    bundle = find_bundle(token, target["bundle_id"])
+    if bundle:
+        bundle_id = bundle["id"]
+        result["bundleResourceId"] = bundle_id
+        result["bundleExists"] = True
+    else:
+        result["bundleExists"] = False
+        result["actions"].append(f"create bundle ID {target['bundle_id']} ({target['platform']})")
+        if not apply:
+            missing_capabilities = [item["capabilityType"] for item in required]
+            for capability_type in missing_capabilities:
+                result["actions"].append(f"enable capability {capability_type} after bundle creation")
+            result["missingCapabilities"] = missing_capabilities
+            return result
+        bundle = create_bundle(token, target)
+        bundle_id = bundle["id"]
+        result["bundleResourceId"] = bundle_id
+        result["bundleExists"] = True
+        result["createdBundle"] = True
+
+    capability_types = existing_capability_types(token, bundle_id)
+    missing_capabilities = [
+        item["capabilityType"] for item in required if item["capabilityType"] not in capability_types
+    ]
+    for capability_type in missing_capabilities:
+        result["actions"].append(f"enable capability {capability_type}")
+        if apply:
+            enable_capability(token, bundle_id, capability_type)
+    result["missingCapabilities"] = missing_capabilities
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--target",
+        action="append",
+        choices=("all", *TARGETS.keys()),
+        help="Target to plan/apply. Repeat for multiple targets. Defaults to all.",
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Create missing bundle IDs and enable required capabilities. Without this flag, only prints a plan.",
+    )
+    parser.add_argument("--json", action="store_true", help="Print machine-readable output")
+    args = parser.parse_args()
+
+    token = build_token()
+    names = target_names(args.target or ["all"])
+    results = [process_target(token, name, args.apply) for name in names]
+
+    if args.json:
+        print(json.dumps({"apply": args.apply, "results": results}, indent=2, sort_keys=True))
+        return 0
+
+    print("Captain's Log platform bundle ID provisioning plan")
+    print(f"Mode: {'apply' if args.apply else 'dry-run'}")
+    for result in results:
+        print(f"\n{result['label']}: {result['bundleId']}")
+        if result.get("bundleExists"):
+            print(f"[ok] Developer Portal bundle ID exists: {result.get('bundleResourceId')}")
+        else:
+            print("[plan] Developer Portal bundle ID is missing")
+        actions = result.get("actions", [])
+        if actions:
+            for action in actions:
+                print(f"[{'done' if args.apply else 'plan'}] {action}")
+        else:
+            print("[ok] required bundle ID and capabilities are present")
+    if not args.apply:
+        print("\nDry run only. Re-run with --apply to mutate Apple Developer/App Store Connect state.")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except (EnsureError, asc.CheckError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(1)

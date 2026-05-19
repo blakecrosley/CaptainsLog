@@ -48,6 +48,14 @@ Scripts/check_app_store_connect_record.py
 
 Run the evidence command after API credentials are configured in step 4. It checks the App Store Connect REST API directly and does not need `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID`. Current iOS evidence shows the Developer Portal bundle ID exists and the required `ICLOUD` bundle capability is enabled, but the App Store Connect app record is missing or not visible to this API key. Readiness also checks the native Mac, Watch, and TV Developer Portal bundle IDs and required capabilities; current evidence reports those three bundle IDs are missing or not visible to this API key. Apple's `apps` API documentation describes the API as a management surface for existing apps, not the supported path for creating new app records, so this remains a web-UI gate followed by read-only REST verification. If App Store Connect gives an Apple ID for this app after creation, keep it locally as `APP_STORE_CONNECT_APPLE_ID` for status checks. Do not commit it unless you intentionally decide it is safe to document.
 
+For native Mac, Watch, and TV, preview the missing Developer Portal bundle ID work without mutating the account:
+
+```sh
+Scripts/ensure_platform_bundle_ids.py
+```
+
+That script is dry-run by default. After confirming the account/team context, `Scripts/ensure_platform_bundle_ids.py --apply` creates the missing platform bundle IDs and enables the entitlement-derived `ICLOUD` capability. It still does not create the iOS App Store Connect app record; that remains a web-UI step.
+
 ## 2. Enter Product Metadata
 
 Use `Docs/AppStoreMetadata.md`.
