@@ -1187,12 +1187,15 @@ if (( local_failures > 0 )); then
 
 Next local action:
 1. Run Scripts/app_store_signing_status.sh.
-2. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
-3. Regenerate the current IPA and export manifest:
+2. If Mac, Watch, or TV remote bundle IDs are missing, preview the account mutation with:
+   Scripts/ensure_platform_bundle_ids.py
+   After confirming the team/account context, run Scripts/ensure_platform_bundle_ids.py --apply to create the platform bundle IDs and enable required capabilities.
+3. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
+4. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
-4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
+5. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-5. Rerun Scripts/app_store_readiness_status.sh.
+6. Rerun Scripts/app_store_readiness_status.sh.
 NEXT_LOCAL
     fi
     exit 1
@@ -1206,16 +1209,17 @@ if (( external_blockers > 0 )); then
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-3. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
+3. If Mac, Watch, or TV are intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --apply after confirming it targets team M4WTLM6RAQ.
+4. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
-4. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
+5. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-5. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, or export Fastlane ASC_KEY_ID and ASC_ISSUER_ID aliases. Set APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH only when AuthKey_<key>.p8 is not already in ~/.appstoreconnect/private_keys.
-6. Run:
+6. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, or export Fastlane ASC_KEY_ID and ASC_ISSUER_ID aliases. Set APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH only when AuthKey_<key>.p8 is not already in ~/.appstoreconnect/private_keys.
+7. Run:
    Scripts/check_app_store_connect_record.py
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-7. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
-8. Complete legal/privacy review and final real-account tap-through before submitting.
+8. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+9. Complete legal/privacy review and final real-account tap-through before submitting.
 NEXT_STEPS
 fi
