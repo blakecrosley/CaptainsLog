@@ -82,6 +82,7 @@ def collect_status(token: str) -> dict[str, Any]:
         "appsVisibleCount": len(apps),
         "appsVisibleCountLimit": 200,
         "rolesVisible": dict(sorted(role_counts.items())),
+        "createAppsRoleVisible": "CREATE_APPS" in role_counts,
         "cloudManagedAppDistributionRoleVisible": "CLOUD_MANAGED_APP_DISTRIBUTION" in role_counts,
         "allAppsVisibleCounts": dict(sorted(all_apps_visible_counts.items())),
         "provisioningAllowedCounts": dict(sorted(provisioning_allowed_counts.items())),
@@ -93,7 +94,7 @@ def collect_status(token: str) -> dict[str, Any]:
             "This proves the selected API credential can read account user visibility and list "
             "at least one page of existing apps. "
             "Visible role aggregates are not selected-key proof. This does not prove the selected "
-            "key can create app records, create signing assets, or use cloud-managed distribution "
+            "key can create the Captain's Log app record, create signing assets, or use cloud-managed distribution "
             "certificates."
         ),
     }
@@ -109,6 +110,13 @@ def print_status(status: dict[str, Any]) -> None:
         print("[ok] visible roles: " + ", ".join(f"{role}:{count}" for role, count in roles.items()))
     else:
         print("[warn] no visible roles reported")
+    if status["createAppsRoleVisible"]:
+        print("[ok] explicit CREATE_APPS role is visible in account aggregates")
+    else:
+        print(
+            "[info] explicit CREATE_APPS role is not visible in account aggregates; "
+            "Captain's Log app-record creation remains a web-UI/account gate"
+        )
     if status["cloudManagedAppDistributionRoleVisible"]:
         print("[ok] explicit CLOUD_MANAGED_APP_DISTRIBUTION role is visible in account aggregates")
     else:
