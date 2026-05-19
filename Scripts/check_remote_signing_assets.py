@@ -22,16 +22,19 @@ TARGETS = {
         "label": "iOS",
         "bundle_id": "com.blakecrosley.captainslog",
         "required_profile_types": ["IOS_APP_STORE"],
+        "required_certificate_groups": ["ios_distribution"],
     },
     "macos": {
         "label": "native Mac",
         "bundle_id": "com.blakecrosley.captainslog.mac",
         "required_profile_types": ["MAC_APP_STORE"],
+        "required_certificate_groups": ["mac_app_distribution", "mac_installer_distribution"],
     },
     "watchos": {
         "label": "Apple Watch",
         "bundle_id": "com.blakecrosley.captainslog.watchkitapp",
         "required_profile_types": [],
+        "required_certificate_groups": ["ios_distribution"],
         "profile_requirement_verified": False,
         "profile_requirement_note": (
             "Apple's Profile API currently documents no dedicated watchOS App Store "
@@ -42,6 +45,7 @@ TARGETS = {
         "label": "Apple TV",
         "bundle_id": "com.blakecrosley.captainslog.tv",
         "required_profile_types": ["TVOS_APP_STORE"],
+        "required_certificate_groups": ["ios_distribution"],
     },
 }
 
@@ -183,6 +187,12 @@ def collect_status(token: str, targets: list[str]) -> dict[str, Any]:
                 "bundleId": target["bundle_id"],
                 "bundleExists": False,
                 "requiredProfileTypes": target["required_profile_types"],
+                "requiredCertificateGroups": target["required_certificate_groups"],
+                "missingRequiredCertificateGroups": [
+                    certificate_group
+                    for certificate_group in target["required_certificate_groups"]
+                    if certificate_results[certificate_group]["usableCertificateCount"] == 0
+                ],
                 "profileRequirementVerified": target.get("profile_requirement_verified", True),
                 "profileRequirementNote": target.get("profile_requirement_note"),
                 "profiles": [],
@@ -201,6 +211,11 @@ def collect_status(token: str, targets: list[str]) -> dict[str, Any]:
             for profile_type in target["required_profile_types"]
             if profile_type not in usable_profile_types
         ]
+        missing_required_certificate_groups = [
+            certificate_group
+            for certificate_group in target["required_certificate_groups"]
+            if certificate_results[certificate_group]["usableCertificateCount"] == 0
+        ]
         target_results[key] = {
             "label": target["label"],
             "bundleId": target["bundle_id"],
@@ -208,6 +223,8 @@ def collect_status(token: str, targets: list[str]) -> dict[str, Any]:
             "bundlePlatform": bundle.get("attributes", {}).get("platform"),
             "bundleSeedId": bundle.get("attributes", {}).get("seedId"),
             "requiredProfileTypes": target["required_profile_types"],
+            "requiredCertificateGroups": target["required_certificate_groups"],
+            "missingRequiredCertificateGroups": missing_required_certificate_groups,
             "profileRequirementVerified": target.get("profile_requirement_verified", True),
             "profileRequirementNote": target.get("profile_requirement_note"),
             "profileCount": len(profiles),
@@ -247,6 +264,10 @@ def print_status(status: dict[str, Any]) -> None:
     for result in status["targets"].values():
         if not result["bundleExists"]:
             print(f"[fail] {result['label']} bundle ID missing: {result['bundleId']}")
+            missing_certificates = result["missingRequiredCertificateGroups"]
+            if missing_certificates:
+                labels = [status["certificates"][key]["label"] for key in missing_certificates]
+                print(f"  [fail] missing required certificate group(s): {', '.join(labels)}")
             if not result.get("profileRequirementVerified", True):
                 print(f"  [info] {result.get('profileRequirementNote')}")
             continue
@@ -255,6 +276,14 @@ def print_status(status: dict[str, Any]) -> None:
             f"[ok] {result['label']} bundle ID exists: {result['bundleId']} "
             f"({result.get('bundlePlatform') or 'unknown'}, seed {result.get('bundleSeedId') or 'unknown'})"
         )
+        missing_certificates = result["missingRequiredCertificateGroups"]
+        if missing_certificates:
+            labels = [status["certificates"][key]["label"] for key in missing_certificates]
+            print(f"[fail] {result['label']} missing required certificate group(s): {', '.join(labels)}")
+        else:
+            labels = [status["certificates"][key]["label"] for key in result["requiredCertificateGroups"]]
+            print(f"[ok] {result['label']} required certificate group(s) visible: {', '.join(labels)}")
+
         required = result["requiredProfileTypes"]
         if not result.get("profileRequirementVerified", True):
             print(f"[fail] {result['label']} profile requirement is not fully verified by this checker")
@@ -285,13 +314,10 @@ def print_status(status: dict[str, Any]) -> None:
 
 
 def has_missing_required_assets(status: dict[str, Any], targets: list[str]) -> bool:
-    ios_certificate_groups = ["ios_distribution"]
-    for key in ios_certificate_groups:
-        if status["certificates"][key]["usableCertificateCount"] == 0:
-            return True
-
     for key in targets:
         result = status["targets"][key]
+        if result["missingRequiredCertificateGroups"]:
+            return True
         if not result["bundleExists"]:
             return True
         if not result.get("profileRequirementVerified", True):
