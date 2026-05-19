@@ -1177,8 +1177,8 @@ fi
 app_record_checked=0
 if [[ -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" && -n "${APP_STORE_CONNECT_API_KEY:-}" && -n "${APP_STORE_CONNECT_API_ISSUER:-}" ]]; then
     app_record_checked=1
-    if app_record_output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$IOS_BUNDLE_ID" 2>&1)"; then
-        pass "App Store Connect app record exists for $IOS_BUNDLE_ID with expected SKU/name"
+    if app_record_output="$("$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$IOS_BUNDLE_ID" --require all 2>&1)"; then
+        pass "App Store Connect app record exists for $IOS_BUNDLE_ID with expected SKU/name and required capabilities"
     else
         external "App Store Connect app record is missing, has mismatched release metadata, or is not visible to this API key; create or correct it, then rerun Scripts/check_app_store_connect_record.py"
         printf '%s\n' "$app_record_output" | sed 's/^/  /'
