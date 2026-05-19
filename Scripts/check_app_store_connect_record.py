@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import plistlib
 import subprocess
 import sys
 import time
@@ -25,6 +26,10 @@ except ImportError:  # pragma: no cover - environment guard
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_BUNDLE_ID = "com.blakecrosley.captainslog"
 API_BASE = "https://api.appstoreconnect.apple.com"
+APP_ENTITLEMENTS = ROOT_DIR / "CaptainsLog" / "App" / "CaptainsLog.entitlements"
+REQUIRED_CAPABILITY_BY_ENTITLEMENT = {
+    "com.apple.developer.ubiquity-kvstore-identifier": "ICLOUD",
+}
 LOCAL_ENV_NAMES = (
     "APP_STORE_CONNECT_API_KEY",
     "APP_STORE_CONNECT_API_ISSUER",
@@ -182,12 +187,47 @@ def api_get(token: str, path: str, params: dict[str, str]) -> dict[str, Any]:
         fail(f"App Store Connect API request failed with HTTP {exc.code}: {detail}")
 
 
+def required_capabilities_from_entitlements(path: Path = APP_ENTITLEMENTS) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+
+    with path.open("rb") as handle:
+        entitlements = plistlib.load(handle)
+
+    required: list[dict[str, str]] = []
+    for entitlement_key, capability_type in REQUIRED_CAPABILITY_BY_ENTITLEMENT.items():
+        if entitlement_key in entitlements:
+            required.append(
+                {
+                    "entitlement": entitlement_key,
+                    "capabilityType": capability_type,
+                }
+            )
+    return required
+
+
+def fetch_bundle_capabilities(token: str, bundle_id_resource_id: str) -> list[dict[str, Any]]:
+    payload = api_get(
+        token,
+        f"/v1/bundleIds/{bundle_id_resource_id}/bundleIdCapabilities",
+        {"fields[bundleIdCapabilities]": "capabilityType,settings"},
+    )
+    return [
+        {
+            "id": capability.get("id"),
+            "capabilityType": capability.get("attributes", {}).get("capabilityType"),
+            "settings": capability.get("attributes", {}).get("settings", []),
+        }
+        for capability in payload.get("data", [])
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE_ID)
     parser.add_argument(
         "--require",
-        choices=("both", "app-record", "bundle-id"),
+        choices=("all", "both", "app-record", "bundle-id", "capabilities"),
         default="both",
         help="Choose which remote record type must exist for a successful exit.",
     )
@@ -219,10 +259,21 @@ def main() -> int:
 
     apps = app_payload.get("data", [])
     bundle_ids = bundle_payload.get("data", [])
+    capabilities: list[dict[str, Any]] = []
+    required_capabilities = required_capabilities_from_entitlements()
+    if bundle_ids:
+        capabilities = fetch_bundle_capabilities(token, bundle_ids[0].get("id", ""))
+    capability_types = {capability.get("capabilityType") for capability in capabilities}
+    missing_required_capabilities = [
+        required
+        for required in required_capabilities
+        if required.get("capabilityType") not in capability_types
+    ]
     result = {
         "bundleId": args.bundle_id,
         "appRecordCount": len(apps),
         "bundleIdRecordCount": len(bundle_ids),
+        "bundleCapabilityCount": len(capabilities),
         "apps": [
             {
                 "id": app.get("id"),
@@ -243,6 +294,9 @@ def main() -> int:
             }
             for bundle in bundle_ids
         ],
+        "bundleCapabilities": capabilities,
+        "requiredCapabilities": required_capabilities,
+        "missingRequiredCapabilities": missing_required_capabilities,
     }
 
     if args.json:
@@ -262,11 +316,23 @@ def main() -> int:
             print(f"[ok] App record SKU: {app['sku']}")
         else:
             print("[fail] App Store Connect app record is missing or not visible to this API key")
+        if bundle_ids and required_capabilities:
+            for required in required_capabilities:
+                capability_type = required["capabilityType"]
+                entitlement_key = required["entitlement"]
+                if capability_type in capability_types:
+                    print(f"[ok] Required bundle capability enabled: {capability_type} for {entitlement_key}")
+                else:
+                    print(f"[fail] Required bundle capability missing: {capability_type} for {entitlement_key}")
 
+    if args.require == "all":
+        return 0 if apps and bundle_ids and not missing_required_capabilities else 1
     if args.require == "both":
         return 0 if apps and bundle_ids else 1
     if args.require == "app-record":
         return 0 if apps else 1
+    if args.require == "capabilities":
+        return 0 if bundle_ids and not missing_required_capabilities else 1
     return 0 if bundle_ids else 1
 
 

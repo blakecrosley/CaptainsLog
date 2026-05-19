@@ -518,9 +518,9 @@ run_app_record() {
     [[ -x "$ROOT_DIR/Scripts/check_app_store_connect_record.py" ]] || fail "Scripts/check_app_store_connect_record.py is missing or not executable"
     app_store_connect_apply_env_defaults
     if [[ "$ALTOOL_OUTPUT_FORMAT" == "json" ]]; then
-        "$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$BUNDLE_ID" --json
+        "$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$BUNDLE_ID" --require all --json
     else
-        "$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$BUNDLE_ID"
+        "$ROOT_DIR/Scripts/check_app_store_connect_record.py" --bundle-id "$BUNDLE_ID" --require all
     fi
 }
 
