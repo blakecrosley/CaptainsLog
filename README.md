@@ -16,7 +16,7 @@ As of the current App Store packet, the local metadata, privacy manifest, screen
 - Make one iOS export signing path available: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ`.
 - Regenerate the signed IPA and `ExportManifest.txt`.
 
-Native Mac, Apple Watch, and Apple TV are separate platform gates. Current REST evidence reports their Captain's Log Developer Portal bundle IDs are missing or not visible; create those bundle IDs with required capabilities only if those platforms are intentionally included in this release. Native Mac App Store export additionally needs Mac App Store application and installer signing, or the same App Store Connect API-key auth path.
+Native Mac, Apple Watch, and Apple TV are separate platform gates. Current REST evidence reports the Captain's Log Watch companion bundle ID is missing or not visible. The native Mac and Apple TV targets currently use separate bundle IDs, but Apple's current single-record/universal-purchase guidance and the Return/Get Bananas precedent point toward sharing the iOS app bundle ID for added Mac/TV platform versions. Choose that distribution model before creating `.mac` or `.tv` account state. Native Mac App Store export additionally needs Mac App Store application and installer signing, or the same App Store Connect API-key auth path.
 
 Current platform availability status:
 

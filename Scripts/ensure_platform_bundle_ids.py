@@ -30,6 +30,7 @@ TARGETS = {
         "name": "XC com blakecrosley captainslog mac",
         "platform": "UNIVERSAL",
         "entitlements": ROOT_DIR / "CaptainsLog" / "App" / "CaptainsLog.entitlements",
+        "requires_separate_record_confirmation": True,
     },
     "watchos": {
         "label": "Apple Watch",
@@ -44,6 +45,7 @@ TARGETS = {
         "name": "XC com blakecrosley captainslog tv",
         "platform": "UNIVERSAL",
         "entitlements": ROOT_DIR / "CaptainsLogCompanion" / "CaptainsLogCompanion.entitlements",
+        "requires_separate_record_confirmation": True,
     },
 }
 
@@ -204,6 +206,10 @@ def target_names(selected: list[str]) -> list[str]:
     return selected
 
 
+def targets_requiring_separate_record_confirmation(names: list[str]) -> list[str]:
+    return [name for name in names if TARGETS[name].get("requires_separate_record_confirmation")]
+
+
 def confirm_team_for_apply(token: str, confirm_team: str) -> dict[str, Any]:
     if confirm_team != TEAM_ID:
         fail(f"--confirm-team must be {TEAM_ID} before --apply can mutate Apple account state")
@@ -226,6 +232,7 @@ def process_target(token: str, name: str, apply: bool) -> dict[str, Any]:
         "label": target["label"],
         "bundleId": target["bundle_id"],
         "platform": target["platform"],
+        "requiresSeparatePlatformRecordConfirmation": bool(target.get("requires_separate_record_confirmation")),
         "actions": [],
     }
 
@@ -280,16 +287,34 @@ def main() -> int:
         "--confirm-team",
         help=f"Required with --apply. Must match {TEAM_ID}, verified against {IOS_BUNDLE_ID}.",
     )
+    parser.add_argument(
+        "--confirm-separate-platform-records",
+        action="store_true",
+        help=(
+            "Required with --apply for macOS or tvOS targets while those targets use separate "
+            "bundle IDs instead of the iOS bundle ID used by a single App Store record/universal purchase."
+        ),
+    )
     parser.add_argument("--json", action="store_true", help="Print machine-readable output")
     args = parser.parse_args()
 
     token = build_token()
     team_context = None
+    names = target_names(args.target or ["all"])
     if args.apply:
         if not args.confirm_team:
             fail(f"--apply requires --confirm-team {TEAM_ID}")
+        separate_record_targets = targets_requiring_separate_record_confirmation(names)
+        if separate_record_targets and not args.confirm_separate_platform_records:
+            labels = ", ".join(TARGETS[name]["label"] for name in separate_record_targets)
+            fail(
+                "macOS/tvOS App Store platform versions normally share the iOS app's bundle ID "
+                "when using a single App Store record/universal purchase. "
+                f"Refusing to create separate bundle IDs for {labels} without "
+                "--confirm-separate-platform-records. Use --target watchos to create only the "
+                "Watch companion bundle ID."
+            )
         team_context = confirm_team_for_apply(token, args.confirm_team)
-    names = target_names(args.target or ["all"])
     results = [process_target(token, name, args.apply) for name in names]
     verification_failed = args.apply and any(
         not result.get("postApplyVerification", {}).get("verified", False) for result in results
@@ -315,6 +340,11 @@ def main() -> int:
         print(f"Confirmed team: {team_context.get('attributes', {}).get('seedId')} via {IOS_BUNDLE_ID}")
     for result in results:
         print(f"\n{result['label']}: {result['bundleId']}")
+        if TARGETS[result["target"]].get("requires_separate_record_confirmation"):
+            print(
+                "[review] this target currently uses a separate bundle ID; confirm this is "
+                "intended before creating account state for it"
+            )
         if result.get("bundleExists"):
             print(f"[ok] Developer Portal bundle ID exists: {result.get('bundleResourceId')}")
         else:
@@ -337,8 +367,10 @@ def main() -> int:
                 print(f"[fail] post-apply verification failed: {reason}")
     if not args.apply:
         print(
-            f"\nDry run only. Re-run with --apply --confirm-team {TEAM_ID} "
-            "to mutate Apple Developer/App Store Connect state."
+            f"\nDry run only. For Watch, re-run with --target watchos --apply --confirm-team {TEAM_ID} "
+            "after explicit approval to mutate Apple Developer/App Store Connect state. "
+            "For Mac/TV separate bundle IDs, also pass --confirm-separate-platform-records "
+            "only after choosing that distribution model."
         )
     return 1 if verification_failed else 0
 
