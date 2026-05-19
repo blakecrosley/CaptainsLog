@@ -24,6 +24,8 @@ Current platform availability status:
 - Mac: a native macOS target exists and local Mac screenshot candidates can be generated, but do not submit it until Mac signing/export, TestFlight, screenshot acceptance, and human QA are complete.
 - Apple Watch and Apple TV: no watchOS or tvOS app target exists for this release.
 
+For the Watch/TV path after the first submission, use `Docs/PlatformExpansionPlan.md`.
+
 Refresh the local Vision compatible-app smoke before final Vision acceptance:
 
 ```sh
