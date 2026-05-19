@@ -1189,7 +1189,7 @@ Next local action:
 1. Run Scripts/app_store_signing_status.sh.
 2. If Mac, Watch, or TV remote bundle IDs are missing, preview the account mutation with:
    Scripts/ensure_platform_bundle_ids.py
-   After confirming the team/account context, run Scripts/ensure_platform_bundle_ids.py --apply to create the platform bundle IDs and enable required capabilities.
+   After confirming the team/account context, run Scripts/ensure_platform_bundle_ids.py --apply --confirm-team M4WTLM6RAQ to create the platform bundle IDs and enable required capabilities.
 3. Make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
 4. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
@@ -1209,7 +1209,7 @@ if (( external_blockers > 0 )); then
 Next external actions:
 1. Open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
-3. If Mac, Watch, or TV are intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --apply after confirming it targets team M4WTLM6RAQ.
+3. If Mac, Watch, or TV are intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --apply --confirm-team M4WTLM6RAQ after confirming the dry-run output.
 4. Check signing state with Scripts/app_store_signing_status.sh, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 5. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:

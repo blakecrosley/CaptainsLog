@@ -18,6 +18,9 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import check_app_store_connect_record as asc  # noqa: E402
 
 
+TEAM_ID = "M4WTLM6RAQ"
+IOS_BUNDLE_ID = "com.blakecrosley.captainslog"
+
 TARGETS = {
     "macos": {
         "label": "native Mac",
@@ -153,6 +156,20 @@ def target_names(selected: list[str]) -> list[str]:
     return selected
 
 
+def confirm_team_for_apply(token: str, confirm_team: str) -> dict[str, Any]:
+    if confirm_team != TEAM_ID:
+        fail(f"--confirm-team must be {TEAM_ID} before --apply can mutate Apple account state")
+
+    bundle = find_bundle(token, IOS_BUNDLE_ID)
+    if not bundle:
+        fail(f"Cannot confirm team context because {IOS_BUNDLE_ID} is missing or not visible")
+
+    seed_id = bundle.get("attributes", {}).get("seedId")
+    if seed_id != TEAM_ID:
+        fail(f"Expected {IOS_BUNDLE_ID} seedId {TEAM_ID}, but App Store Connect returned {seed_id or 'unknown'}")
+    return bundle
+
+
 def process_target(token: str, name: str, apply: bool) -> dict[str, Any]:
     target = TARGETS[name]
     required = asc.required_capabilities_from_entitlements(Path(target["entitlements"]))
@@ -209,19 +226,40 @@ def main() -> int:
         action="store_true",
         help="Create missing bundle IDs and enable required capabilities. Without this flag, only prints a plan.",
     )
+    parser.add_argument(
+        "--confirm-team",
+        help=f"Required with --apply. Must match {TEAM_ID}, verified against {IOS_BUNDLE_ID}.",
+    )
     parser.add_argument("--json", action="store_true", help="Print machine-readable output")
     args = parser.parse_args()
 
     token = build_token()
+    team_context = None
+    if args.apply:
+        if not args.confirm_team:
+            fail(f"--apply requires --confirm-team {TEAM_ID}")
+        team_context = confirm_team_for_apply(token, args.confirm_team)
     names = target_names(args.target or ["all"])
     results = [process_target(token, name, args.apply) for name in names]
 
     if args.json:
-        print(json.dumps({"apply": args.apply, "results": results}, indent=2, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "apply": args.apply,
+                    "confirmedTeam": team_context.get("attributes", {}).get("seedId") if team_context else None,
+                    "results": results,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
 
     print("Captain's Log platform bundle ID provisioning plan")
     print(f"Mode: {'apply' if args.apply else 'dry-run'}")
+    if team_context:
+        print(f"Confirmed team: {team_context.get('attributes', {}).get('seedId')} via {IOS_BUNDLE_ID}")
     for result in results:
         print(f"\n{result['label']}: {result['bundleId']}")
         if result.get("bundleExists"):
@@ -235,7 +273,10 @@ def main() -> int:
         else:
             print("[ok] required bundle ID and capabilities are present")
     if not args.apply:
-        print("\nDry run only. Re-run with --apply to mutate Apple Developer/App Store Connect state.")
+        print(
+            f"\nDry run only. Re-run with --apply --confirm-team {TEAM_ID} "
+            "to mutate Apple Developer/App Store Connect state."
+        )
     return 0
 
 
