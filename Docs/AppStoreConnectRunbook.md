@@ -23,6 +23,14 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captain
 
 The signing status script checks the local Xcode/App Store upload toolchain, whether an Apple Distribution/iOS Distribution identity is available for team `M4WTLM6RAQ`, and whether the native Mac App Store application and installer signing identities are available. A `Developer ID Application` identity is for direct macOS distribution and does not satisfy the iOS App Store IPA export gate or the native Mac App Store package gate.
 
+For read-only remote evidence before another export attempt, run:
+
+```sh
+Scripts/check_remote_signing_assets.py --require
+```
+
+This checks visible App Store Connect certificate/profile resources and the expected App Store profile types for Captain's Log bundle IDs. It does not create certificates, profiles, bundle IDs, or app records. Visible remote assets still do not prove local private-key access or cloud-managed distribution certificate permission; `xcodebuild -exportArchive` remains the authority for final export readiness.
+
 The export script checks for Xcode 26 or later, an iOS 26 or newer SDK, and an Apple Distribution/iOS Distribution signing identity for team `M4WTLM6RAQ` before archiving. If `APP_STORE_CONNECT_API_KEY`, `APP_STORE_CONNECT_API_ISSUER`, and `APP_STORE_CONNECT_P8_FILE` are all set, it passes those credentials to `xcodebuild` so automatic signing can authenticate with App Store Connect for provisioning updates. Those inputs make cloud signing attemptable; `xcodebuild -exportArchive` must still prove the account has cloud-managed distribution certificate access. It then stages archive/export output and replaces the current IPA folder only after export validation succeeds.
 
 If export reports that the App Store provisioning profile lacks iCloud or `com.apple.developer.ubiquity-kvstore-identifier`, run `Scripts/upload_app_store_ipa.sh app-record` first. The REST check verifies both the Developer Portal bundle ID and the required `ICLOUD` bundle capability. If the capability is enabled, regenerate or download the App Store profile; if the capability is missing, enable iCloud key-value storage for `com.blakecrosley.captainslog` in Apple Developer/App Store Connect before regenerating the profile. Rerun `Scripts/app_store_signing_status.sh` before another export attempt.
