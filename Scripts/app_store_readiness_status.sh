@@ -62,6 +62,7 @@ xcode_auth_env_ready=0
 # shellcheck source=Scripts/lib/app_store_connect_env.sh
 source "$ROOT_DIR/Scripts/lib/app_store_connect_env.sh"
 app_store_connect_apply_env_defaults
+export PYTHONDONTWRITEBYTECODE=1
 
 pass() {
     printf '[ok] %s\n' "$1"

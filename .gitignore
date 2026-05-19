@@ -17,6 +17,10 @@ xcuserdata/
 # Local agent scratch files
 .codex/
 
+# Python helper caches
+__pycache__/
+*.pyc
+
 # Local credentials and environment
 .env
 .env.*
