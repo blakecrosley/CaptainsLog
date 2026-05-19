@@ -66,6 +66,7 @@ def collect_status(token: str) -> dict[str, Any]:
     return {
         "usersVisibleCount": len(users),
         "rolesVisible": dict(sorted(role_counts.items())),
+        "cloudManagedAppDistributionRoleVisible": "CLOUD_MANAGED_APP_DISTRIBUTION" in role_counts,
         "allAppsVisibleCounts": dict(sorted(all_apps_visible_counts.items())),
         "provisioningAllowedCounts": dict(sorted(provisioning_allowed_counts.items())),
         "privacyBoundary": (
@@ -73,8 +74,9 @@ def collect_status(token: str) -> dict[str, Any]:
         ),
         "limits": (
             "This proves the selected API credential can read account user visibility. "
-            "It does not prove the selected key can create app records, create signing assets, "
-            "or use cloud-managed distribution certificates."
+            "Visible role aggregates are not selected-key proof. This does not prove the selected "
+            "key can create app records, create signing assets, or use cloud-managed distribution "
+            "certificates."
         ),
     }
 
@@ -88,6 +90,13 @@ def print_status(status: dict[str, Any]) -> None:
         print("[ok] visible roles: " + ", ".join(f"{role}:{count}" for role, count in roles.items()))
     else:
         print("[warn] no visible roles reported")
+    if status["cloudManagedAppDistributionRoleVisible"]:
+        print("[ok] explicit CLOUD_MANAGED_APP_DISTRIBUTION role is visible in account aggregates")
+    else:
+        print(
+            "[info] explicit CLOUD_MANAGED_APP_DISTRIBUTION role is not visible in account aggregates; "
+            "exportArchive remains the cloud-signing authority"
+        )
     print(
         "[info] all-apps-visible aggregate: "
         + ", ".join(f"{key}:{value}" for key, value in status["allAppsVisibleCounts"].items())
