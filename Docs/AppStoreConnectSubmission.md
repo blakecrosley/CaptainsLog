@@ -51,7 +51,7 @@ Latest local readiness check: May 19, 2026. The screenshot packet was refreshed 
 
 ## Official Docs Cross-Check
 
-Checked against Apple documentation on May 18, 2026.
+Checked against Apple documentation on May 19, 2026.
 
 - Apple says to create the App Store Connect app record before uploading a build. Required roles are Account Holder, App Manager, or Admin, and the record opens in `Prepare for Submission` after creation. Apple also documents the App Store Connect `apps` API as a management surface for existing apps, not the path for creating new app records. This matches the remaining app-record gate below: create or confirm Captain's Log in the App Store Connect web UI, then use the REST checker as read-only evidence.
 - Apple says apps uploaded to App Store Connect starting April 28, 2026 need to be built with Xcode 26 or later using the iOS and iPadOS 26 SDK or later. This matches the local toolchain evidence: `xcodebuild -version` reports Xcode 26.5 and `xcodebuild -showsdks` lists iOS 26.5.
