@@ -128,6 +128,16 @@ If `Scripts/app_store_signing_status.sh` reports that candidate `.p8` private-ke
 
 Apple shows team key IDs in App Store Connect under Users and Access > Integrations, in the Active keys table. The issuer UUID appears near the top of that same Integrations page.
 
+If you are copying the pattern from Return or Get Bananas, map their Fastlane aliases directly:
+
+```sh
+export APP_STORE_CONNECT_API_KEY="$ASC_KEY_ID"
+export APP_STORE_CONNECT_API_ISSUER="$ASC_ISSUER_ID"
+export APP_STORE_CONNECT_P8_FILE="$ASC_KEY_PATH"
+```
+
+Only use that mapping after confirming `ASC_KEY_PATH` points outside every git working tree. If it points at another app's `fastlane/AuthKey_*.p8`, copy the matching file into `~/.appstoreconnect/private_keys/` first and use that private path for Captain's Log.
+
 ```sh
 export APP_STORE_CONNECT_API_KEY="<KEY_ID>"
 export APP_STORE_CONNECT_API_ISSUER="<ISSUER_UUID>"

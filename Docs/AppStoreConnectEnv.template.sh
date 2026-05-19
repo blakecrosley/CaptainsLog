@@ -15,6 +15,12 @@
 # reject private keys inside any git working tree. The release scripts also
 # fail early on a filename mismatch unless
 # CAPTAINS_LOG_ALLOW_MISMATCHED_P8_FILENAME=1 is set after manual verification.
+#
+# If reusing Fastlane-style variables from Return or Get Bananas:
+#   export APP_STORE_CONNECT_API_KEY="$ASC_KEY_ID"
+#   export APP_STORE_CONNECT_API_ISSUER="$ASC_ISSUER_ID"
+#   export APP_STORE_CONNECT_P8_FILE="$ASC_KEY_PATH"
+# First make sure ASC_KEY_PATH points outside every git working tree.
 
 export APP_STORE_CONNECT_API_KEY="YOUR_KEY_ID"
 export APP_STORE_CONNECT_API_ISSUER="YOUR_ISSUER_UUID"
