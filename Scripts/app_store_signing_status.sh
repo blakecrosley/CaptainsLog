@@ -13,6 +13,9 @@ COMPANION_ENTITLEMENTS="$ROOT_DIR/CaptainsLogCompanion/CaptainsLogCompanion.enti
 failures=0
 xcode_auth_env_ready=0
 cloud_signing_attempt_only=0
+ios_distribution_identity_gap=0
+mac_application_identity_gap=0
+mac_installer_identity_gap=0
 profile_entitlement_gap=0
 app_store_profile_gap=0
 
@@ -363,6 +366,7 @@ else
     if (( xcode_auth_env_ready == 1 )); then
         warn "Apple Distribution/iOS Distribution signing identity for team ${TEAM_ID} is missing"
         warn "iOS export can attempt cloud-managed signing with the App Store Connect API-key inputs, but exportArchive must still prove cloud certificate access"
+        ios_distribution_identity_gap=1
         cloud_signing_attempt_only=1
     else
         fail "Apple Distribution/iOS Distribution signing identity for team ${TEAM_ID} is missing"
@@ -378,6 +382,7 @@ else
     if (( xcode_auth_env_ready == 1 )); then
         warn "Mac App Store application signing identity for team ${TEAM_ID} is missing"
         warn "Mac export can attempt cloud-managed signing with the App Store Connect API-key inputs, but exportArchive must still prove cloud certificate access"
+        mac_application_identity_gap=1
         cloud_signing_attempt_only=1
     else
         fail "Mac App Store application signing identity for team ${TEAM_ID} is missing"
@@ -393,6 +398,7 @@ else
     if (( xcode_auth_env_ready == 1 )); then
         warn "Mac App Store installer signing identity for team ${TEAM_ID} is missing"
         warn "Mac export can attempt cloud-managed signing with the App Store Connect API-key inputs, but exportArchive must still prove cloud certificate access"
+        mac_installer_identity_gap=1
         cloud_signing_attempt_only=1
     else
         fail "Mac App Store installer signing identity for team ${TEAM_ID} is missing"
@@ -472,7 +478,7 @@ NEXT
     exit 1
 fi
 
-if (( cloud_signing_attempt_only == 1 )); then
+if (( cloud_signing_attempt_only == 1 || app_store_profile_gap == 1 || profile_entitlement_gap == 1 )); then
     if (( app_store_profile_gap == 1 )); then
         cat <<NEXT
 No local App Store provisioning profile matches the iOS bundle ID.
@@ -487,11 +493,37 @@ Enable the reported capability for the bundle ID, then regenerate/download the A
 
 NEXT
     fi
-    cat <<NEXT
-API-key provisioning inputs are present, but one or more local App Store distribution identities are missing.
-This can attempt an export only if the App Store Connect account has cloud-managed distribution certificate access.
-If exportArchive reports a cloud signing permission error, grant that access or install the matching local distribution identity with its private key.
 
+    if (( ios_distribution_identity_gap == 1 )); then
+        cat <<NEXT
+API-key provisioning inputs are present, but the local Apple Distribution/iOS Distribution identity is missing.
+iOS export can attempt cloud-managed signing only if the App Store Connect account has cloud-managed distribution certificate access.
+If exportArchive reports a cloud signing permission error, grant that access or install the matching local iOS distribution identity with its private key.
+
+NEXT
+    fi
+
+    if (( mac_application_identity_gap == 1 && mac_installer_identity_gap == 1 )); then
+        cat <<NEXT
+Native Mac App Store export still needs Mac App Store application and installer signing proof.
+Either install the missing local Mac App Store signing identity/private key pair or rely on API-key cloud-managed signing, then let exportArchive prove the path.
+
+NEXT
+    elif (( mac_application_identity_gap == 1 )); then
+        cat <<NEXT
+Native Mac App Store export still needs Mac App Store application signing proof.
+Either install the missing local Mac App Store application signing identity/private key pair or rely on API-key cloud-managed signing, then let exportArchive prove the path.
+
+NEXT
+    elif (( mac_installer_identity_gap == 1 )); then
+        cat <<NEXT
+Native Mac App Store export still needs Mac App Store installer signing proof.
+Either install the missing local Mac App Store installer signing identity/private key pair or rely on API-key cloud-managed signing, then let exportArchive prove the path.
+
+NEXT
+    fi
+
+    cat <<NEXT
 Regenerate the current IPA to verify the real signing path:
 
   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export

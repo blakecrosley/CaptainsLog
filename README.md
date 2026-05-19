@@ -52,7 +52,7 @@ Scripts/smoke_watchos_launch.sh /tmp/captainslog-watchos-smoke
 Scripts/smoke_tvos_launch.sh /tmp/captainslog-tvos-smoke
 ```
 
-After distribution signing or API-key cloud certificate access is available:
+After active App Store provisioning profiles exist and either local distribution signing or API-key cloud signing is available:
 
 ```sh
 Scripts/app_store_signing_status.sh
