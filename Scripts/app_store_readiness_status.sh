@@ -1293,7 +1293,8 @@ if (( local_failures > 0 )); then
         cat <<'NEXT_LOCAL' >&2
 
 Next local action:
-1. Open Docs/PlatformExpansionPlan.md for the current iPad, Mac, Watch, TV, and Vision verdict before changing platform availability.
+1. Open Docs/PlatformExpansionPlan.md and run the current platform gate before changing platform availability:
+   Scripts/print_platform_readiness_matrix.py --require-local
 2. Validate the paste-ready App Store Connect fields without account mutation:
    Scripts/print_app_store_entry_packet.py --check
    Scripts/print_app_store_entry_packet.py
@@ -1308,7 +1309,7 @@ Next local action:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 8. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-9. Rerun Scripts/app_store_readiness_status.sh.
+9. Rerun Scripts/print_platform_readiness_matrix.py --require-store before marketing any platform as available, then rerun Scripts/app_store_readiness_status.sh.
 NEXT_LOCAL
     fi
     exit 1
@@ -1320,7 +1321,7 @@ if (( external_blockers > 0 )); then
     cat <<'NEXT_STEPS'
 
 Next external actions:
-1. Open Docs/PlatformExpansionPlan.md for the platform verdict, then open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
+1. Open Docs/PlatformExpansionPlan.md for the platform verdict, run Scripts/print_platform_readiness_matrix.py --require-local, then open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet.
 2. Run Scripts/print_app_store_entry_packet.py and use its output to create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
 3. If Watch is intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ after confirming the dry-run output and explicit Apple account mutation approval. Mac/TV now use the shared iOS app record bundle ID.
 4. Check signing state with Scripts/app_store_signing_status.sh and Scripts/check_remote_signing_assets.py --require, regenerate/download active App Store profiles, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
@@ -1329,6 +1330,7 @@ Next external actions:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
 6. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, or export Fastlane ASC_KEY_ID and ASC_ISSUER_ID aliases. Set APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH only when AuthKey_<key>.p8 is not already in ~/.appstoreconnect/private_keys.
 7. Run:
+   Scripts/print_platform_readiness_matrix.py --require-store
    Scripts/check_app_store_connect_record.py
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
