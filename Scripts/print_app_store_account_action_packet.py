@@ -179,6 +179,14 @@ def build_packet() -> dict[str, Any]:
                 "Scripts/ensure_app_store_profiles.py --target macos",
                 "Scripts/ensure_app_store_profiles.py --target tvos",
             ],
+            "post_account_mutation_verification": [
+                "Scripts/check_app_store_connect_record.py",
+                "Scripts/check_app_store_connect_record.py --bundle-id com.blakecrosley.captainslog.watchkitapp --entitlements CaptainsLogCompanion/CaptainsLogCompanion.entitlements --skip-app-record --require capabilities",
+                "Scripts/check_remote_signing_assets.py --require",
+                "Scripts/ensure_platform_bundle_ids.py",
+                "Scripts/ensure_app_store_profiles.py --require-ready",
+                "Scripts/ensure_app_store_profiles.py --download-existing",
+            ],
             "mutating_after_approval": [
                 "Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ",
                 "Scripts/ensure_app_store_profiles.py --target ios --apply --confirm-team M4WTLM6RAQ",
@@ -278,12 +286,31 @@ def print_markdown(packet: dict[str, Any]) -> None:
     print("```")
     print()
 
+    print("## Approval Boundaries")
+    print()
+    print("- Apple account mutation approval covers only the bundle/profile `--apply` commands below.")
+    print("- Git push/sync approval is separate from Apple account mutation approval.")
+    print("- Export signing can use provisioning updates or cloud-managed signing; run exports only after the account/profile checks are green.")
+    print("- Held native Mac, Watch, TV, and all-platform marketing copy stays held until the matching store-readiness gate closes.")
+    print()
+
     print("## Mutating Commands")
     print()
     print("Run these only after explicit Apple account mutation approval and after the matching dry-run output is accepted.")
+    print("Use this order: Watch bundle ID first if Watch is included, then iOS, Mac, and TV profiles.")
     print()
     print("```sh")
     for command in packet["commands"]["mutating_after_approval"]:
+        print(command)
+    print("```")
+    print()
+
+    print("## Post-Mutation Verification")
+    print()
+    print("Run these after approved Apple account changes and before any export.")
+    print()
+    print("```sh")
+    for command in packet["commands"]["post_account_mutation_verification"]:
         print(command)
     print("```")
     print()
