@@ -61,10 +61,22 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captain
 Scripts/app_store_readiness_status.sh
 ```
 
+Before marketing the first iPhone/iPad plus compatible Vision path as available, after App Store Connect upload, TestFlight processing, and final acceptance are complete:
+
+```sh
+Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store
+```
+
 If intentionally adding the native Mac target to this release:
 
 ```sh
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
+```
+
+Before marketing every requested platform, including native Mac, Apple Watch, and Apple TV:
+
+```sh
+Scripts/print_platform_readiness_matrix.py --require-store
 ```
 
 ## Release Handoff

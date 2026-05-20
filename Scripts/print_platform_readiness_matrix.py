@@ -17,6 +17,7 @@ WATCH_BUNDLE_ID = "com.blakecrosley.captainslog.watchkitapp"
 DEFAULT_IPA = Path("/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa")
 DEFAULT_EXPORT_MANIFEST = Path("/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt")
 DEFAULT_MAC_EXPORT = Path("/tmp/captainslog-current-macos-appstore-export/Export")
+PLATFORM_KEYS = ("ipad", "vision", "mac", "watch", "tv")
 
 
 def run_json(command: list[str]) -> tuple[dict[str, Any], str]:
@@ -71,9 +72,16 @@ def target_blockers(remote: dict[str, Any], target: str) -> list[str]:
     return blockers
 
 
-def platform_entry(platform: str, local_ok: bool, missing_local: str, blockers: list[str]) -> dict[str, Any]:
+def platform_entry(
+    key: str,
+    platform: str,
+    local_ok: bool,
+    missing_local: str,
+    blockers: list[str],
+) -> dict[str, Any]:
     deduped_blockers = list(dict.fromkeys(blockers))
     return {
+        "key": key,
         "platform": platform,
         "local_status": "local proof present" if local_ok else missing_local,
         "store_status": "blocked" if deduped_blockers else "ready",
@@ -130,6 +138,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
 
     platforms = [
         platform_entry(
+            "ipad",
             "iPad",
             ipad_local,
             "missing local iPad smoke proof",
@@ -142,6 +151,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             ],
         ),
         platform_entry(
+            "vision",
             "Apple Vision Pro compatible",
             vision_local,
             "missing compatible Vision smoke proof",
@@ -154,6 +164,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             ],
         ),
         platform_entry(
+            "mac",
             "Mac",
             macos_local,
             "missing local Mac launch proof",
@@ -165,6 +176,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             ],
         ),
         platform_entry(
+            "watch",
             "Apple Watch",
             watchos_local,
             "missing local Watch launch proof",
@@ -175,6 +187,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             ],
         ),
         platform_entry(
+            "tv",
             "Apple TV",
             tvos_local,
             "missing local TV launch proof",
@@ -211,14 +224,29 @@ def print_markdown(matrix: dict[str, Any]) -> None:
         )
 
 
-def check_matrix(matrix: dict[str, Any], require_local: bool, require_store: bool) -> list[str]:
+def selected_platform_keys(selected: list[str] | None) -> set[str]:
+    if not selected or "all" in selected:
+        return set(PLATFORM_KEYS)
+    return set(selected)
+
+
+def check_matrix(
+    matrix: dict[str, Any],
+    require_local: bool,
+    require_store: bool,
+    platforms: set[str],
+) -> list[str]:
     failures: list[str] = []
     if require_local:
         for platform in matrix["platforms"]:
+            if platform["key"] not in platforms:
+                continue
             if platform["local_status"] != "local proof present":
                 failures.append(f"{platform['platform']}: {platform['local_status']}")
     if require_store:
         for platform in matrix["platforms"]:
+            if platform["key"] not in platforms:
+                continue
             if platform["store_status"] != "ready":
                 blockers = "; ".join(platform["blockers"])
                 failures.append(f"{platform['platform']}: store readiness blocked by {blockers}")
@@ -228,6 +256,15 @@ def check_matrix(matrix: dict[str, Any], require_local: bool, require_store: boo
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    parser.add_argument(
+        "--platform",
+        action="append",
+        choices=("all", *PLATFORM_KEYS),
+        help=(
+            "Restrict --require-local/--require-store checks to selected platform key. "
+            "Repeat for multiple platforms. Defaults to all. Output still shows every platform."
+        ),
+    )
     parser.add_argument(
         "--require-local",
         action="store_true",
@@ -256,7 +293,12 @@ def main() -> int:
         print(json.dumps(matrix, indent=2, sort_keys=True))
     else:
         print_markdown(matrix)
-    failures = check_matrix(matrix, args.require_local, args.require_store)
+    failures = check_matrix(
+        matrix,
+        args.require_local,
+        args.require_store,
+        selected_platform_keys(args.platform),
+    )
     if failures:
         for failure in failures:
             print(f"[fail] {failure}", file=sys.stderr)

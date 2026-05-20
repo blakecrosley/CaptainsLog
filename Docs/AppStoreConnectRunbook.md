@@ -10,9 +10,12 @@ From the repo root:
 CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
 Scripts/print_platform_readiness_matrix.py
 Scripts/print_platform_readiness_matrix.py --require-local
+Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-local
 ```
 
 Use the no-media summary as the gate when the goal is signing/account/export readiness. If it reports Kit941 source drift, push or explicitly accept the linked package state before final export because Captain's Log links `../941Kit` directly and the export manifest records that package commit and dirty state. If readiness only reports the known missing/stale IPA state after source custody is settled, regenerate/download the active App Store profile and make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported signing paths are a local Apple Distribution/iOS Distribution identity/profile pair for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, manual fields, upload/TestFlight processing, store-media acceptance, legal/privacy review, and final real-account tap-through.
+
+For the first iPhone/iPad plus compatible Apple Vision Pro release path, use `Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store` after signed export, upload/TestFlight processing, App Store Connect availability setup, store-media acceptance, and final tap-through. Omit `--platform` only when intentionally requiring native Mac, Apple Watch, and Apple TV store readiness too.
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
