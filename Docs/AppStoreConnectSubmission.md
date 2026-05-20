@@ -101,7 +101,7 @@ Sources:
 
 | Requirement | Artifact | Current Evidence | Status |
 | --- | --- | --- | --- |
-| Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet | Preflight, screenshots, metadata, privacy notes, and upload helper exist; current IPA export is blocked until an active App Store provisioning profile exists and either the local distribution identity/profile path or cloud-managed distribution certificate access works for the selected App Store Connect API key | Blocked until current IPA is regenerated |
+| Prepare for App Store Connect | `Docs/AppStoreReadiness.md`, this packet, `Scripts/print_app_store_account_action_packet.py` | Preflight, screenshots, metadata, privacy notes, upload helper, and a no-mutation account-action packet exist; current IPA export is blocked until an active App Store provisioning profile exists and either the local distribution identity/profile path or cloud-managed distribution certificate access works for the selected App Store Connect API key | Blocked until current IPA is regenerated |
 | Clean up UI | Fixture screenshot routes, latest PNG audit, repeatable screenshot text audit | Dashboard, Work Map, journal, repositories, AI settings, and Privacy & Data screenshots generated for iPhone and iPad; the dashboard uses a compact period menu instead of a second full-width segmented control; iPad dashboard uses the adaptive tablet layout with a selected-day journal preview; repository access now splits summary/search from the repo list on iPad; Work Map, AI provider, and Privacy & Data iPad screens now use wider/two-column layouts; no dashboard sync bar, repository toggle clipping, oversized Work Map empty space, fixture warning, debug text, simulator text, sync-progress text, personal-account text, or token-like text was detected in the checked PNG/OCR pass | Locally reviewed |
 | Make design feel coherent | `.impeccable.md`, fixture screenshots, `Docs/AppStoreDesignReview.md` | Current direction is quiet, precise, journal-like, Apple-native, with Work Map carrying identity; design review scores the current screenshot set 33/40 and recommends no major new features before first TestFlight/App Store Connect pass | Locally reviewed |
 | Metadata ready to paste | `Docs/AppStoreMetadata.md` | Name, subtitle, description, keywords, review notes, URLs, screenshot order, privacy draft, and manual App Store Connect choices for pricing, availability, Apple Vision Pro availability, Apple Silicon Mac availability, regional availability prompts, EU DSA trader status, Labels and Markings URLs, regulated medical device status, tax category, release option, age rating, content rights, Made for Kids, App Review contact, demo account, and accessibility-label handling | Locally ready, legal/privacy review open |
@@ -137,6 +137,14 @@ CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
 `Scripts/upload_app_store_ipa.sh credential-guard-self-test` uses fake throwaway values and temporary files to verify that the upload helper accepts valid-looking App Store Connect API credential inputs and rejects malformed key IDs, malformed issuers, missing `.p8` files, repo-local `.p8` paths, and non-private-key `.p8` contents without calling App Store Connect. The repo `.gitignore` also excludes local env files, `private_keys/`, `.p8`, `.mobileprovision`, `.provisionprofile`, `.cer`, and `.p12` files so common signing artifacts do not get staged accidentally.
 
 After App Store Connect API credentials are set, run `Scripts/upload_app_store_ipa.sh app-record` or `Scripts/check_app_store_connect_record.py` to verify the app record, expected SKU/name, and required bundle capabilities by bundle ID without requiring an altool provider public ID. Set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` only if you need the older `Scripts/upload_app_store_ipa.sh app-record-altool` path; Xcode 26.5 `altool --list-providers` does not support API-key authentication.
+
+For the shortest no-screenshot account/signing session handoff, run:
+
+```sh
+Scripts/print_app_store_account_action_packet.py
+```
+
+It composes the current app-record, bundle-ID, profile, remote-signing, and platform-matrix checks without creating account state.
 
 For a real-account data sanity check on the connected iPhone:
 

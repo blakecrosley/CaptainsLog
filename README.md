@@ -10,6 +10,12 @@ Start with the blocker-focused gate when the current work is account, signing, e
 CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
 ```
 
+For a concise no-screenshot account/signing session packet:
+
+```sh
+Scripts/print_app_store_account_action_packet.py
+```
+
 Use the full local gate only when product-page media artifacts are part of the pass:
 
 ```sh
