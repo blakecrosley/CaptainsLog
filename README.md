@@ -74,6 +74,13 @@ If intentionally adding the native Mac target to this release:
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
 ```
 
+If intentionally adding the Watch or TV companion targets to this release, do this only after the matching bundle/signing/profile blockers are closed:
+
+```sh
+CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_watchos_app_store_ipa.sh /tmp/captainslog-current-watchos-appstore-export
+CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_tvos_app_store_ipa.sh /tmp/captainslog-current-tvos-appstore-export
+```
+
 Before marketing every requested platform, including native Mac, Apple Watch, and Apple TV:
 
 ```sh

@@ -17,6 +17,8 @@ WATCH_BUNDLE_ID = "com.blakecrosley.captainslog.watchkitapp"
 DEFAULT_IPA = Path("/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa")
 DEFAULT_EXPORT_MANIFEST = Path("/tmp/captainslog-current-appstore-export/Export/ExportManifest.txt")
 DEFAULT_MAC_EXPORT = Path("/tmp/captainslog-current-macos-appstore-export/Export")
+DEFAULT_WATCHOS_EXPORT = Path("/tmp/captainslog-current-watchos-appstore-export/Export")
+DEFAULT_TVOS_EXPORT = Path("/tmp/captainslog-current-tvos-appstore-export/Export")
 PLATFORM_KEYS = ("ipad", "vision", "mac", "watch", "tv")
 
 
@@ -101,6 +103,10 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
     macos_distribution_ready = not target_blockers(remote, "macos")
     watch_distribution_ready = not target_blockers(remote, "watchos")
     mac_package_exists = any(args.macos_export.glob("*.pkg")) and path_exists(args.macos_export / "MacExportManifest.txt")
+    watch_ipa_exists = any(args.watchos_export.glob("*.ipa")) and path_exists(
+        args.watchos_export / "WatchExportManifest.txt"
+    )
+    tv_ipa_exists = any(args.tvos_export.glob("*.ipa")) and path_exists(args.tvos_export / "TvOSExportManifest.txt")
 
     ipad_smoke_dir = args.ipad_smoke
     vision_smoke_dir = args.vision_smoke
@@ -183,6 +189,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             [
                 *([] if app_record_exists else ["App Store Connect app record missing"]),
                 *([] if watch_distribution_ready else target_blockers(remote, "watchos")),
+                *([] if watch_ipa_exists else [f"missing Watch App Store IPA or manifest under {args.watchos_export}"]),
                 "paired-device QA, store media, and TestFlight not proven",
             ],
         ),
@@ -194,6 +201,7 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             [
                 *([] if app_record_exists else ["App Store Connect app record missing"]),
                 *([] if tvos_distribution_ready else target_blockers(remote, "tvos")),
+                *([] if tv_ipa_exists else [f"missing TV App Store IPA or manifest under {args.tvos_export}"]),
                 "signed export, TestFlight, living-room QA, and store media not proven",
             ],
         ),
@@ -278,6 +286,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ipa", type=Path, default=DEFAULT_IPA)
     parser.add_argument("--export-manifest", type=Path, default=DEFAULT_EXPORT_MANIFEST)
     parser.add_argument("--macos-export", type=Path, default=DEFAULT_MAC_EXPORT)
+    parser.add_argument("--watchos-export", type=Path, default=DEFAULT_WATCHOS_EXPORT)
+    parser.add_argument("--tvos-export", type=Path, default=DEFAULT_TVOS_EXPORT)
     parser.add_argument("--ipad-smoke", type=Path, default=Path("/tmp/captainslog-ipad-smoke"))
     parser.add_argument("--vision-smoke", type=Path, default=Path("/tmp/captainslog-vision-smoke"))
     parser.add_argument("--macos-smoke", type=Path, default=Path("/tmp/captainslog-macos-smoke"))

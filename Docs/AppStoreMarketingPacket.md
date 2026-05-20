@@ -17,7 +17,8 @@ The release is not store-ready yet. The current blockers are account, signing, u
 - iOS signing: remote distribution certificates are visible, but the required `IOS_APP_STORE` profile is missing; the visible iOS App Store profile is invalid.
 - Native Mac signing: Mac App Store installer certificate and active `MAC_APP_STORE` profile are missing.
 - Apple Watch account state: Watch companion bundle ID `com.blakecrosley.captainslog.watchkitapp` is missing or not visible.
-- Apple TV signing: shared bundle ID exists, but active `TVOS_APP_STORE` profile is missing.
+- Apple Watch export artifacts: guarded export helper exists, but no signed Watch App Store IPA or `WatchExportManifest.txt` exists under `/tmp/captainslog-current-watchos-appstore-export/Export/`.
+- Apple TV signing/export artifacts: shared bundle ID and guarded export helper exist, but active `TVOS_APP_STORE` profile plus signed TV App Store IPA and `TvOSExportManifest.txt` are missing.
 - Linked package custody: `../941Kit` is clean but ahead of `origin/main` by 1 commit at `fe4bfd3 Add Kit941 localization catalog entries`, so a final export must either push that package save point or explicitly accept the unpushed linked package state.
 - Final gates: TestFlight processing, legal/privacy review, App Review contact/demo-account entry, and final real-account tap-through remain open.
 
@@ -189,7 +190,7 @@ Captain's Log turns GitHub history into a private work journal: selected repos, 
 
 First-release public copy should market Captain's Log as an iPhone and iPad app. The iOS target supports iPad through target family `1,2`, and the compatible Apple Vision Pro path is appropriate as App Store Connect availability after signed iOS upload and final acceptance.
 
-Do not market native Mac, Apple Watch, or Apple TV as available until each platform has signed export, TestFlight processing, provisioning validation, and device-appropriate QA. Current local targets are useful progress, but they are not public availability.
+Do not market native Mac, Apple Watch, or Apple TV as available until each platform has signed export, TestFlight processing, provisioning validation, and device-appropriate QA. Current local targets and export helpers are useful progress, but they are not public availability.
 
 Recommended platform language:
 

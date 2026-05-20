@@ -57,6 +57,16 @@ WATCHOS_SCREENSHOT_AUDIT="$WATCHOS_SCREENSHOT_DIR/watchos-screenshot-text-audit.
 TVOS_SCREENSHOT_DIR="${CAPTAINS_LOG_TVOS_SCREENSHOT_DIR:-/tmp/captainslog-tvos-appstore-screenshots}"
 TVOS_SCREENSHOT_MANIFEST="$TVOS_SCREENSHOT_DIR/tvos-screenshot-manifest.txt"
 TVOS_SCREENSHOT_AUDIT="$TVOS_SCREENSHOT_DIR/tvos-screenshot-text-audit.log"
+WATCHOS_EXPORT_DIR="${CAPTAINS_LOG_WATCHOS_EXPORT_DIR:-/tmp/captainslog-current-watchos-appstore-export}"
+WATCHOS_EXPORT_PATH="$WATCHOS_EXPORT_DIR/Export"
+WATCHOS_IPA="$(find "$WATCHOS_EXPORT_PATH" -maxdepth 1 -name '*.ipa' -print -quit 2>/dev/null || true)"
+WATCHOS_IPA_LABEL="${WATCHOS_IPA:-$WATCHOS_EXPORT_PATH/*.ipa}"
+WATCHOS_EXPORT_MANIFEST="$WATCHOS_EXPORT_PATH/WatchExportManifest.txt"
+TVOS_EXPORT_DIR="${CAPTAINS_LOG_TVOS_EXPORT_DIR:-/tmp/captainslog-current-tvos-appstore-export}"
+TVOS_EXPORT_PATH="$TVOS_EXPORT_DIR/Export"
+TVOS_IPA="$(find "$TVOS_EXPORT_PATH" -maxdepth 1 -name '*.ipa' -print -quit 2>/dev/null || true)"
+TVOS_IPA_LABEL="${TVOS_IPA:-$TVOS_EXPORT_PATH/*.ipa}"
+TVOS_EXPORT_MANIFEST="$TVOS_EXPORT_PATH/TvOSExportManifest.txt"
 COMPANION_ASSET_DIR="$ROOT_DIR/CaptainsLogCompanion/Resources/Assets.xcassets"
 WATCHOS_MARKETING_ICON="$COMPANION_ASSET_DIR/AppIcon.appiconset/watch-icon-1024.png"
 TVOS_BRAND_ASSET_DIR="$COMPANION_ASSET_DIR/App Icon & Top Shelf Image.brandassets"
@@ -648,6 +658,16 @@ printf_platform_target_status() {
             else
                 fail "Apple Watch launch smoke script missing or not executable"
             fi
+            if [[ -x "$ROOT_DIR/Scripts/export_watchos_app_store_ipa.sh" ]]; then
+                pass "Apple Watch App Store export helper exists"
+            else
+                fail "Apple Watch App Store export helper missing or not executable"
+            fi
+            if [[ -n "$WATCHOS_IPA" && -f "$WATCHOS_EXPORT_MANIFEST" ]]; then
+                pass "Apple Watch App Store export artifact present: $WATCHOS_IPA"
+            else
+                warn "Apple Watch App Store IPA/export manifest missing; run Scripts/export_watchos_app_store_ipa.sh $WATCHOS_EXPORT_DIR after Watch bundle ID, signing, and profiles are ready"
+            fi
             if [[ -f "$WATCHOS_SMOKE_SCREENSHOT" && -f "$WATCHOS_SMOKE_OCR" ]]; then
                 local watch_width watch_height
                 watch_width="$(sips -g pixelWidth "$WATCHOS_SMOKE_SCREENSHOT" 2>/dev/null | awk '/pixelWidth:/ { print $2; exit }')"
@@ -738,6 +758,16 @@ printf_platform_target_status() {
                 pass "Apple TV launch smoke script exists"
             else
                 fail "Apple TV launch smoke script missing or not executable"
+            fi
+            if [[ -x "$ROOT_DIR/Scripts/export_tvos_app_store_ipa.sh" ]]; then
+                pass "Apple TV App Store export helper exists"
+            else
+                fail "Apple TV App Store export helper missing or not executable"
+            fi
+            if [[ -n "$TVOS_IPA" && -f "$TVOS_EXPORT_MANIFEST" ]]; then
+                pass "Apple TV App Store export artifact present: $TVOS_IPA"
+            else
+                warn "Apple TV App Store IPA/export manifest missing; run Scripts/export_tvos_app_store_ipa.sh $TVOS_EXPORT_DIR after TV App Store signing and profiles are ready"
             fi
             if [[ -f "$TVOS_SMOKE_SCREENSHOT" && -f "$TVOS_SMOKE_OCR" ]]; then
                 local tv_width tv_height
@@ -1314,7 +1344,10 @@ Next local action:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 9. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-10. Rerun Scripts/app_store_readiness_status.sh after export. After upload, TestFlight processing, App Store Connect availability setup, and final acceptance, run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store for the first-release path, or omit --platform to require every requested platform before marketing all of them as available.
+10. If intentionally adding Watch or TV to this release, regenerate their signed App Store IPAs after their bundle/signing/profile blockers are closed:
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_watchos_app_store_ipa.sh /tmp/captainslog-current-watchos-appstore-export
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_tvos_app_store_ipa.sh /tmp/captainslog-current-tvos-appstore-export
+11. Rerun Scripts/app_store_readiness_status.sh after export. After upload, TestFlight processing, App Store Connect availability setup, and final acceptance, run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store for the first-release path, or omit --platform to require every requested platform before marketing all of them as available.
 NEXT_LOCAL
     fi
     exit 1
@@ -1333,13 +1366,16 @@ Next external actions:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 5. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-6. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, or export Fastlane ASC_KEY_ID and ASC_ISSUER_ID aliases. Set APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH only when AuthKey_<key>.p8 is not already in ~/.appstoreconnect/private_keys.
-7. Run:
+6. If intentionally adding Watch or TV to this release, regenerate their signed App Store IPAs after their bundle/signing/profile blockers are closed:
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_watchos_app_store_ipa.sh /tmp/captainslog-current-watchos-appstore-export
+   CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_tvos_app_store_ipa.sh /tmp/captainslog-current-tvos-appstore-export
+7. Set APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER, or export Fastlane ASC_KEY_ID and ASC_ISSUER_ID aliases. Set APP_STORE_CONNECT_P8_FILE/ASC_KEY_PATH only when AuthKey_<key>.p8 is not already in ~/.appstoreconnect/private_keys.
+8. Run:
    Scripts/check_app_store_connect_record.py
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-8. Complete product-page store-media acceptance using the existing reviewed media packet or App Store Connect previews.
-9. Complete legal/privacy review and final real-account tap-through before submitting.
-10. Run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store before marketing the first-release path as available. Omit --platform only when requiring every requested platform, including Mac, Watch, and TV.
+9. Complete product-page store-media acceptance using the existing reviewed media packet or App Store Connect previews.
+10. Complete legal/privacy review and final real-account tap-through before submitting.
+11. Run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store before marketing the first-release path as available. Omit --platform only when requiring every requested platform, including Mac, Watch, and TV.
 NEXT_STEPS
 fi
