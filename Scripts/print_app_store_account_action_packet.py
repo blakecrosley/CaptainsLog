@@ -12,6 +12,7 @@ from typing import Any
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+KIT941_DIR = ROOT_DIR.parent / "941Kit"
 
 
 class PacketError(Exception):
@@ -40,6 +41,37 @@ def run_text(command: list[str]) -> dict[str, Any]:
         "_returncode": result.returncode,
         "stdout": result.stdout.strip(),
         "stderr": result.stderr.strip(),
+    }
+
+
+def git_summary(repo: Path, label: str) -> dict[str, Any]:
+    status_result = subprocess.run(
+        ["git", "status", "--short", "--branch"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    head_result = subprocess.run(
+        ["git", "log", "-1", "--oneline"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    status_lines = status_result.stdout.strip().splitlines()
+    branch_line = status_lines[0] if status_lines else ""
+    dirty_lines = status_lines[1:]
+    upstream_synced = "[ahead" not in branch_line and "[behind" not in branch_line and "[gone]" not in branch_line
+    return {
+        "label": label,
+        "path": str(repo),
+        "branch_status": branch_line,
+        "head": head_result.stdout.strip(),
+        "clean": status_result.returncode == 0 and not dirty_lines,
+        "upstream_synced": upstream_synced,
+        "dirty_entries": dirty_lines,
+        "status_returncode": status_result.returncode,
     }
 
 
@@ -119,12 +151,18 @@ def build_packet() -> dict[str, Any]:
             "expected_name_matches": app_record.get("expectedNameAppRecordCount", 0),
         },
         "entry_packet_valid": entry_check["_returncode"] == 0,
+        "source_custody": [
+            git_summary(ROOT_DIR, "CaptainsLog"),
+            git_summary(KIT941_DIR, "Kit941"),
+        ],
         "bundle_actions": bundle_actions(bundle_plan),
         "profile_actions": profile_actions(profile_plan),
         "certificate_actions": missing_certificate_actions(remote),
         "platforms": platform_rows(matrix),
         "commands": {
             "read_only": [
+                "git status --short --branch",
+                "git -C ../941Kit status --short --branch",
                 "Scripts/print_app_store_entry_packet.py --check",
                 "Scripts/check_app_store_connect_record.py",
                 "Scripts/check_remote_signing_assets.py --require",
@@ -137,6 +175,10 @@ def build_packet() -> dict[str, Any]:
                 "Scripts/ensure_app_store_profiles.py --target ios --apply --confirm-team M4WTLM6RAQ",
                 "Scripts/ensure_app_store_profiles.py --target macos --apply --confirm-team M4WTLM6RAQ",
                 "Scripts/ensure_app_store_profiles.py --target tvos --apply --confirm-team M4WTLM6RAQ",
+            ],
+            "source_sync_after_approval": [
+                "git push",
+                "git -C ../941Kit push",
             ],
             "exports_after_signing": [
                 "CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export",
@@ -152,6 +194,19 @@ def print_markdown(packet: dict[str, Any]) -> None:
     print("# Captain's Log App Store Account Action Packet")
     print()
     print("Read-only packet. It does not create bundle IDs, profiles, app records, exports, or screenshots.")
+    print()
+
+    print("## Source Custody")
+    print()
+    for source in packet["source_custody"]:
+        status = "clean" if source["clean"] else "dirty"
+        sync = "synced" if source["upstream_synced"] else "not synced"
+        print(f"- {source['label']}: {status}, {sync}; `{source['branch_status']}`; HEAD `{source['head']}`.")
+        if source["dirty_entries"]:
+            dirty = "; ".join(source["dirty_entries"])
+            print(f"  Dirty entries: {dirty}")
+    if any(not source["upstream_synced"] for source in packet["source_custody"]):
+        print("- Before final signed export, push these save points or explicitly accept the unpushed source state.")
     print()
 
     app_record = packet["app_record"]
@@ -210,6 +265,16 @@ def print_markdown(packet: dict[str, Any]) -> None:
     print("```")
     print()
 
+    print("## Source Sync Commands")
+    print()
+    print("Run only after explicit push/sync approval.")
+    print()
+    print("```sh")
+    for command in packet["commands"]["source_sync_after_approval"]:
+        print(command)
+    print("```")
+    print()
+
     print("## Export Commands")
     print()
     print("Run only after the app record, bundle IDs, certificates, and active profiles are ready.")
@@ -240,6 +305,8 @@ def validate_packet(packet: dict[str, Any]) -> list[str]:
         errors.append("Platform readiness matrix is empty")
     if not packet.get("commands", {}).get("read_only"):
         errors.append("Read-only verification commands are missing")
+    if not packet.get("source_custody"):
+        errors.append("Source custody section is missing")
     return errors
 
 
