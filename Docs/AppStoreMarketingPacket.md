@@ -6,7 +6,7 @@ Prepared for the first English (U.S.) App Store Connect entry. This packet is fo
 
 As of May 19, 2026, the metadata itself is locally ready: `Scripts/app_store_readiness_status.sh` ran `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit`, and preflight passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.
 
-No new screenshot work was done for this packet refresh. The current no-sign Release build refresh passed for iOS, native Mac, Apple Watch, and Apple TV against linked Kit941 `fe4bfd3`; those builds prove compile/package viability only and do not change the first-release marketing claim.
+No new screenshot work was done for this packet refresh. The current no-sign Release build refresh passed for iOS, native Mac, Apple Watch, and Apple TV against linked Kit941 `fe4bfd3`; Watch and TV also have no-screenshot simulator launch smokes that recorded `simctl launch` process IDs. Those checks prove compile/package/launch viability only and do not change the first-release marketing claim.
 
 The release is not store-ready yet. The current blockers are account, signing, upload, and human review gates, not more marketing copy:
 

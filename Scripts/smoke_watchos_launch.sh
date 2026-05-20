@@ -10,6 +10,7 @@ DERIVED_DATA_DIR="${CAPTAINS_LOG_WATCHOS_DERIVED_DATA:-/tmp/captainslog-watchos-
 WATCH_DEVICE_NAME="${WATCH_DEVICE_NAME:-Apple Watch Series 11 (46mm)}"
 WATCH_DEVICE_ID="${WATCH_DEVICE_ID:-}"
 SCREENSHOT_DELAY_SECONDS="${SCREENSHOT_DELAY_SECONDS:-4}"
+SKIP_SCREENSHOT="${CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS:-${CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOT:-0}}"
 
 failures=0
 
@@ -119,6 +120,10 @@ SCREENSHOT_PATH="$OUTPUT_DIR/watchos-launch.png"
 OCR_OUTPUT="$OUTPUT_DIR/watchos-launch-ocr.txt"
 BUILD_LOG="$OUTPUT_DIR/watchos-release-build.log"
 LAUNCH_LOG="$OUTPUT_DIR/watchos-launch.log"
+SUMMARY_PATH="$OUTPUT_DIR/watchos-launch-summary.txt"
+if [[ "$SKIP_SCREENSHOT" == "1" ]]; then
+    rm -f "$SCREENSHOT_PATH" "$OCR_OUTPUT"
+fi
 
 if ! command -v xcrun >/dev/null 2>&1; then
     fail "xcrun missing"
@@ -184,10 +189,42 @@ pass "app installed on Watch simulator"
 
 xcrun simctl launch --terminate-running-process "$WATCH_DEVICE_ID" "$BUNDLE_ID" | tee "$LAUNCH_LOG"
 pass "app launch command returned"
+if rg -q "^${BUNDLE_ID//./[.]}: [0-9]+" "$LAUNCH_LOG"; then
+    pass "app launched on Watch simulator"
+else
+    fail "Watch simulator launch log did not include a process id"
+fi
+
+cat > "$SUMMARY_PATH" <<EOF
+bundle_id=$BUNDLE_ID
+device_id=$WATCH_DEVICE_ID
+app_path=$app_path
+build_log=$BUILD_LOG
+launch_log=$LAUNCH_LOG
+screenshot=skipped
+EOF
+
+if [[ "$SKIP_SCREENSHOT" == "1" ]]; then
+    pass "watchOS screenshot and OCR skipped by CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1"
+
+    printf '\nwatchOS launch smoke output:\n'
+    printf '  build log: %s\n' "$BUILD_LOG"
+    printf '  launch log: %s\n' "$LAUNCH_LOG"
+    printf '  summary: %s\n' "$SUMMARY_PATH"
+
+    if (( failures > 0 )); then
+        printf '\nwatchOS launch smoke failed with %d issue(s).\n' "$failures" >&2
+        exit 1
+    fi
+
+    printf '\nwatchOS launch smoke passed without screenshot capture.\n'
+    exit 0
+fi
 
 sleep "$SCREENSHOT_DELAY_SECONDS"
 xcrun simctl io "$WATCH_DEVICE_ID" screenshot "$SCREENSHOT_PATH" >/dev/null
 pass "watchOS screenshot captured: $SCREENSHOT_PATH"
+perl -0pi -e 's/screenshot=skipped/screenshot=captured/' "$SUMMARY_PATH"
 
 width="$(sips -g pixelWidth "$SCREENSHOT_PATH" 2>/dev/null | awk '/pixelWidth:/ { print $2; exit }')"
 height="$(sips -g pixelHeight "$SCREENSHOT_PATH" 2>/dev/null | awk '/pixelHeight:/ { print $2; exit }')"

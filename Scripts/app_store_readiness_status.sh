@@ -38,9 +38,13 @@ MACOS_EXPORT_MANIFEST="$MACOS_EXPORT_PATH/MacExportManifest.txt"
 WATCHOS_SMOKE_DIR="${CAPTAINS_LOG_WATCHOS_SMOKE_DIR:-/tmp/captainslog-watchos-smoke}"
 WATCHOS_SMOKE_SCREENSHOT="$WATCHOS_SMOKE_DIR/watchos-launch.png"
 WATCHOS_SMOKE_OCR="$WATCHOS_SMOKE_DIR/watchos-launch-ocr.txt"
+WATCHOS_SMOKE_LAUNCH="$WATCHOS_SMOKE_DIR/watchos-launch.log"
+WATCHOS_SMOKE_SUMMARY="$WATCHOS_SMOKE_DIR/watchos-launch-summary.txt"
 TVOS_SMOKE_DIR="${CAPTAINS_LOG_TVOS_SMOKE_DIR:-/tmp/captainslog-tvos-smoke}"
 TVOS_SMOKE_SCREENSHOT="$TVOS_SMOKE_DIR/tvos-launch.png"
 TVOS_SMOKE_OCR="$TVOS_SMOKE_DIR/tvos-launch-ocr.txt"
+TVOS_SMOKE_LAUNCH="$TVOS_SMOKE_DIR/tvos-launch.log"
+TVOS_SMOKE_SUMMARY="$TVOS_SMOKE_DIR/tvos-launch-summary.txt"
 WATCHOS_SCREENSHOT_DIR="${CAPTAINS_LOG_WATCHOS_SCREENSHOT_DIR:-/tmp/captainslog-watchos-appstore-screenshots}"
 WATCHOS_SCREENSHOT_MANIFEST="$WATCHOS_SCREENSHOT_DIR/watchos-screenshot-manifest.txt"
 WATCHOS_SCREENSHOT_AUDIT="$WATCHOS_SCREENSHOT_DIR/watchos-screenshot-text-audit.log"
@@ -633,8 +637,12 @@ printf_platform_target_status() {
                 else
                     fail "Apple Watch launch OCR is missing companion UI text"
                 fi
+            elif [[ -f "$WATCHOS_SMOKE_LAUNCH" && -f "$WATCHOS_SMOKE_SUMMARY" ]] \
+                && rg -q '^screenshot=skipped$' "$WATCHOS_SMOKE_SUMMARY" \
+                && rg -q "^${WATCHOS_BUNDLE_ID//./[.]}: [0-9]+" "$WATCHOS_SMOKE_LAUNCH"; then
+                pass "Apple Watch no-screenshot launch smoke recorded"
             else
-                warn "Apple Watch launch smoke artifacts missing; run Scripts/smoke_watchos_launch.sh $WATCHOS_SMOKE_DIR before Watch launch acceptance"
+                warn "Apple Watch launch smoke artifacts missing; run CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1 Scripts/smoke_watchos_launch.sh $WATCHOS_SMOKE_DIR before non-media Watch launch acceptance"
             fi
             if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
                 pass "Apple Watch store media checks skipped"
@@ -721,8 +729,12 @@ printf_platform_target_status() {
                 else
                     fail "Apple TV launch OCR is missing read-only companion UI text"
                 fi
+            elif [[ -f "$TVOS_SMOKE_LAUNCH" && -f "$TVOS_SMOKE_SUMMARY" ]] \
+                && rg -q '^screenshot=skipped$' "$TVOS_SMOKE_SUMMARY" \
+                && rg -q "^${TVOS_BUNDLE_ID//./[.]}: [0-9]+" "$TVOS_SMOKE_LAUNCH"; then
+                pass "Apple TV no-screenshot launch smoke recorded"
             else
-                warn "Apple TV launch smoke artifacts missing; run Scripts/smoke_tvos_launch.sh $TVOS_SMOKE_DIR before TV launch acceptance"
+                warn "Apple TV launch smoke artifacts missing; run CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1 Scripts/smoke_tvos_launch.sh $TVOS_SMOKE_DIR before non-media TV launch acceptance"
             fi
             if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
                 pass "Apple TV store media checks skipped"
