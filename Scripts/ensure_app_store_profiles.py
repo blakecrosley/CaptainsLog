@@ -230,6 +230,7 @@ def process_target(
     token: str,
     name: str,
     apply: bool,
+    download_existing: bool,
     download_dir: Path,
 ) -> dict[str, Any]:
     target = TARGETS[name]
@@ -268,6 +269,17 @@ def process_target(
     result["matchingProfiles"] = matching_profiles
     result["usableProfileCount"] = len(usable_profiles)
     if usable_profiles:
+        if download_existing:
+            downloaded: list[str] = []
+            for usable_profile in usable_profiles:
+                profile = read_profile(token, str(usable_profile["id"]))
+                output_path = write_profile_content(profile, target, download_dir)
+                if output_path:
+                    downloaded.append(str(output_path))
+            if downloaded:
+                result["downloadedProfiles"] = downloaded
+            else:
+                result["actions"].append("download active profile from App Store Connect; profileContent was not returned")
         return result
 
     result["actions"].append(f"create {target['profile_type']} profile for {target['bundle_id']}")
@@ -320,6 +332,11 @@ def main() -> int:
         help="Create missing App Store profiles and download returned profile content. Without this flag, only prints a plan.",
     )
     parser.add_argument(
+        "--download-existing",
+        action="store_true",
+        help="Download active existing matching profiles to the local Xcode provisioning profile directory without creating profiles.",
+    )
+    parser.add_argument(
         "--confirm-team",
         help=f"Required with --apply. Must match {TEAM_ID}, verified against com.blakecrosley.captainslog.",
     )
@@ -340,7 +357,10 @@ def main() -> int:
             fail(f"--apply requires --confirm-team {TEAM_ID}")
         team_context = confirm_team_for_apply(token, args.confirm_team)
 
-    results = [process_target(token, name, args.apply, args.download_dir.expanduser()) for name in selected]
+    results = [
+        process_target(token, name, args.apply, args.download_existing, args.download_dir.expanduser())
+        for name in selected
+    ]
 
     if args.json:
         print(
@@ -348,6 +368,7 @@ def main() -> int:
                 {
                     "apply": args.apply,
                     "confirmedTeam": team_context.get("attributes", {}).get("seedId") if team_context else None,
+                    "downloadExisting": args.download_existing,
                     "downloadDir": str(args.download_dir.expanduser()),
                     "results": results,
                 },
@@ -358,6 +379,8 @@ def main() -> int:
     else:
         print("Captain's Log App Store provisioning profile plan")
         print(f"Mode: {'apply' if args.apply else 'dry-run'}")
+        if args.download_existing:
+            print("Existing active profile download: enabled")
         if team_context:
             print(f"Confirmed team: {team_context.get('attributes', {}).get('seedId')}")
         print(f"Download directory: {args.download_dir.expanduser()}")
@@ -393,6 +416,8 @@ def main() -> int:
                 )
             if result.get("downloadedProfile"):
                 print(f"[done] wrote profile: {result['downloadedProfile']}")
+            for downloaded in result.get("downloadedProfiles", []):
+                print(f"[done] wrote existing profile: {downloaded}")
             if not result.get("actions") and usable_profile_count == 0 and result.get("bundleExists"):
                 print("[ok] no profile action required by this target")
         if not args.apply:
