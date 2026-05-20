@@ -12,7 +12,7 @@ This plan turns the current platform-readiness answer into implementation gates.
 
 Current May 19, 2026 account/signing audit:
 
-- `Scripts/app_store_readiness_status.sh` still fails local readiness because the current iOS IPA and export manifest are missing, and it now also reports dirty linked `../941Kit` package source at `Sources/Kit941/Resources/Localizable.xcstrings`.
+- `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` still fails local readiness because the current iOS IPA and export manifest are missing. CaptainsLog is clean but ahead of `origin/main` by 7 commits, and linked `../941Kit` is clean but ahead of `origin/main` by 1 commit at `fe4bfd3 Add Kit941 localization catalog entries`; push or explicitly accept both unpushed save points before final release export.
 - `Scripts/check_remote_signing_assets.py --require` reports 2 usable / 2 visible iOS App Store distribution certificates, 2 usable / 2 visible Mac App Store application certificates through Apple Distribution, 0 usable visible Mac installer certificates, an invalid visible `IOS_APP_STORE` profile for `com.blakecrosley.captainslog`, no required active iOS/Mac/tvOS App Store profiles, and the Watch companion bundle ID missing.
 - `Scripts/check_app_store_connect_record.py` evidence in the submission packet shows the Developer Portal bundle ID exists and `ICLOUD` is enabled for `com.blakecrosley.captainslog`, but no App Store Connect app record is visible by exact bundle relationship, expected SKU `captainslog-ios`, or expected name `Captain's Log`.
 - The Watch bundle-ID helper is dry-run safe by default. It plans only `com.blakecrosley.captainslog.watchkitapp` plus `ICLOUD`; do not run `--apply` without explicit Apple account mutation approval.

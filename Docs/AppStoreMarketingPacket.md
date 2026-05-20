@@ -14,7 +14,7 @@ The release is not store-ready yet. The current blockers are account, signing, u
 - Native Mac signing: Mac App Store installer certificate and active `MAC_APP_STORE` profile are missing.
 - Apple Watch account state: Watch companion bundle ID `com.blakecrosley.captainslog.watchkitapp` is missing or not visible.
 - Apple TV signing: shared bundle ID exists, but active `TVOS_APP_STORE` profile is missing.
-- Linked package custody: `../941Kit/Sources/Kit941/Resources/Localizable.xcstrings` is dirty, so a final export must either preserve that intended state in a committed/upstreamed package or wait until the linked package is clean.
+- Linked package custody: `../941Kit` is clean but ahead of `origin/main` by 1 commit at `fe4bfd3 Add Kit941 localization catalog entries`, so a final export must either push that package save point or explicitly accept the unpushed linked package state.
 - Final gates: TestFlight processing, legal/privacy review, App Review contact/demo-account entry, and final real-account tap-through remain open.
 
 ## Positioning

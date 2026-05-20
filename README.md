@@ -21,7 +21,7 @@ As of the current App Store packet, the local metadata, marketing copy, privacy 
 - Create or make visible the App Store Connect app record for `com.blakecrosley.captainslog`; current REST evidence finds the Developer Portal bundle ID and required `ICLOUD` capability, but no app record by exact bundle, expected SKU `captainslog-ios`, or expected name `Captain's Log`.
 - Regenerate or download an active App Store provisioning profile for `com.blakecrosley.captainslog`, then prove one iOS export signing path: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or the local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`.
 - Regenerate the signed IPA and `ExportManifest.txt`.
-- Reconcile the linked `../941Kit` package source before final export; the latest readiness run reports `Sources/Kit941/Resources/Localizable.xcstrings` is dirty after the previous IPA export.
+- Push or explicitly accept the linked `../941Kit` package save point before final export; the latest readiness run reports Kit941 is clean but ahead of `origin/main` by 1 commit (`fe4bfd3 Add Kit941 localization catalog entries`).
 
 Native Mac, Apple Watch, and Apple TV are separate platform gates. Mac and Apple TV now follow the single App Store record/universal-purchase bundle-ID model and share `com.blakecrosley.captainslog`; do not create separate `.mac` or `.tv` account state. Current REST evidence still reports the Captain's Log Watch companion bundle ID is missing or not visible. Native Mac App Store export additionally needs an active Mac App Store profile plus Mac installer signing proof, or the same App Store Connect API-key cloud signing path.
 
