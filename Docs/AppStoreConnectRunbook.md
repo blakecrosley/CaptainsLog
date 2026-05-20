@@ -137,6 +137,19 @@ That script is dry-run by default. For the Watch companion, only run `Scripts/en
 
 Use `Docs/AppStoreMetadata.md`.
 
+For a paste-focused, no-mutation packet generated from the current metadata source, run:
+
+```sh
+Scripts/print_app_store_entry_packet.py
+```
+
+For a machine-readable packet or a pre-session validation check, run:
+
+```sh
+Scripts/print_app_store_entry_packet.py --json
+Scripts/print_app_store_entry_packet.py --check
+```
+
 No-screenshot metadata pass:
 
 - Use the existing reviewed media package for any App Store media upload prompt.

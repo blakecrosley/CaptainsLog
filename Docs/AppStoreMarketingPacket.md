@@ -2,6 +2,8 @@
 
 Prepared for the first English (U.S.) App Store Connect entry. This packet is focused on metadata and marketing copy, not screenshot generation. Use it with `Docs/AppStoreMetadata.md` for the complete field list, `Docs/AppStorePrivacyAnswers.md` for the privacy questionnaire, and `Docs/AppStoreConnectRunbook.md` for the account/signing sequence.
 
+For the current paste packet generated from the metadata source, run `Scripts/print_app_store_entry_packet.py`. For validation only, run `Scripts/print_app_store_entry_packet.py --check`.
+
 ## Current Status
 
 As of the May 20, 2026 no-media refresh, the metadata itself is locally ready: `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.

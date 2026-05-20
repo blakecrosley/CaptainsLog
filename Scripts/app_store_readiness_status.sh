@@ -1152,6 +1152,12 @@ else
     fail "App Store preflight failed"
 fi
 
+if "$ROOT_DIR/Scripts/print_app_store_entry_packet.py" --check; then
+    pass "App Store Connect entry packet"
+else
+    fail "App Store Connect entry packet"
+fi
+
 printf_platform_target_status
 
 printf '\nIPA local check\n'
