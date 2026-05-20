@@ -70,6 +70,9 @@ After active App Store provisioning profiles exist and either local distribution
 
 ```sh
 Scripts/app_store_signing_status.sh
+Scripts/ensure_app_store_profiles.py --target ios
+Scripts/ensure_app_store_profiles.py --target macos
+Scripts/ensure_app_store_profiles.py --target tvos
 Scripts/ensure_app_store_profiles.py --target ios --download-existing
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 Scripts/app_store_readiness_status.sh

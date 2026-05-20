@@ -150,9 +150,12 @@ Preview the account work without mutating the account:
 
 ```sh
 Scripts/ensure_platform_bundle_ids.py
+Scripts/ensure_app_store_profiles.py --target ios
+Scripts/ensure_app_store_profiles.py --target macos
+Scripts/ensure_app_store_profiles.py --target tvos
 ```
 
-That script is dry-run by default. For the Watch companion, only run `Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ` after explicit approval to mutate Apple Developer/App Store Connect state; git push approval is not account-mutation approval. The helper refuses `--apply` unless the existing iOS bundle ID is visible under team `M4WTLM6RAQ`, and it rechecks exact bundle/capability visibility after mutation. Mac and TV use the shared iOS bundle ID and should not create separate `.mac` or `.tv` bundle IDs unless a future separate app-record strategy is intentionally chosen with the additional `--confirm-separate-platform-records` flag. The script still does not create the iOS App Store Connect app record; that remains a web-UI step.
+These commands are dry-run by default. For the Watch companion, only run `Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ` after explicit approval to mutate Apple Developer/App Store Connect state; git push approval is not account-mutation approval. For iOS, native Mac, and Apple TV profiles, only run the matching `Scripts/ensure_app_store_profiles.py --target <platform> --apply --confirm-team M4WTLM6RAQ` after reviewing the dry-run output and getting explicit account-mutation approval. The bundle-ID helper refuses `--apply` unless the existing iOS bundle ID is visible under team `M4WTLM6RAQ`, and it rechecks exact bundle/capability visibility after mutation. Mac and TV use the shared iOS bundle ID and should not create separate `.mac` or `.tv` bundle IDs unless a future separate app-record strategy is intentionally chosen with the additional `--confirm-separate-platform-records` flag. The scripts still do not create the iOS App Store Connect app record; that remains a web-UI step.
 
 ## 2. Enter Product Metadata
 

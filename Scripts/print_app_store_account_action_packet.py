@@ -173,6 +173,12 @@ def build_packet() -> dict[str, Any]:
                 "Scripts/ensure_app_store_profiles.py",
                 "Scripts/print_platform_readiness_matrix.py --require-local",
             ],
+            "dry_run_planning": [
+                "Scripts/ensure_platform_bundle_ids.py",
+                "Scripts/ensure_app_store_profiles.py --target ios",
+                "Scripts/ensure_app_store_profiles.py --target macos",
+                "Scripts/ensure_app_store_profiles.py --target tvos",
+            ],
             "mutating_after_approval": [
                 "Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ",
                 "Scripts/ensure_app_store_profiles.py --target ios --apply --confirm-team M4WTLM6RAQ",
@@ -258,6 +264,16 @@ def print_markdown(packet: dict[str, Any]) -> None:
     print()
     print("```sh")
     for command in packet["commands"]["read_only"]:
+        print(command)
+    print("```")
+    print()
+
+    print("## Dry-Run Planning Commands")
+    print()
+    print("Run these before any account mutation so each platform action is reviewed separately.")
+    print()
+    print("```sh")
+    for command in packet["commands"]["dry_run_planning"]:
         print(command)
     print("```")
     print()
