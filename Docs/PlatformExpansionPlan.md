@@ -10,7 +10,7 @@ This plan turns the current platform-readiness answer into implementation gates.
 - Apple Watch: companion target exists, compiles/launches with signing disabled, has a phone-synced aggregate snapshot path, and has an AppIcon asset. It is not ready until signed build/export, TestFlight, App Store platform availability, paired-device QA, provisioning validation, and store-media acceptance are complete.
 - Apple TV: read-only companion target exists, now shares the iOS app bundle ID `com.blakecrosley.captainslog`, compiles/launches with signing disabled, reads the same aggregate snapshot through iCloud key-value sync, and has app icon/top-shelf assets. It is not ready until signed build/export, TestFlight, App Store platform availability, TV QA, provisioning validation, and store-media acceptance are complete.
 
-Current May 19, 2026 account/signing audit:
+Current May 20, 2026 account/signing audit:
 
 - `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` still fails local readiness because the current iOS IPA and export manifest are missing. CaptainsLog is clean but ahead of `origin/main`, and linked `../941Kit` is clean but ahead of `origin/main` by 1 commit at `fe4bfd3 Add Kit941 localization catalog entries`; push or explicitly accept both unpushed save points before final release export.
 - `Scripts/check_remote_signing_assets.py --require` reports 2 usable / 2 visible iOS App Store distribution certificates, 2 usable / 2 visible Mac App Store application certificates through Apple Distribution, 0 usable visible Mac installer certificates, an invalid visible `IOS_APP_STORE` profile for `com.blakecrosley.captainslog`, no required active iOS/Mac/tvOS App Store profiles, and the Watch companion bundle ID missing.
