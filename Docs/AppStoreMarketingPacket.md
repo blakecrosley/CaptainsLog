@@ -2,7 +2,7 @@
 
 Prepared for the first English (U.S.) App Store Connect entry. This packet is focused on metadata and marketing copy, not screenshot generation. Use it with `Docs/AppStoreMetadata.md` for the complete field list, `Docs/AppStorePrivacyAnswers.md` for the privacy questionnaire, and `Docs/AppStoreConnectRunbook.md` for the account/signing sequence.
 
-For the current paste packet generated from the metadata source, run `Scripts/print_app_store_entry_packet.py`. For validation only, run `Scripts/print_app_store_entry_packet.py --check`.
+For the current paste packet generated from the metadata source, run `Scripts/print_app_store_entry_packet.py`. For validation only, run `Scripts/print_app_store_entry_packet.py --check`. For held native Mac, Watch, TV, and native visionOS guard copy, run `Scripts/print_held_platform_marketing_packet.py`; validate it with `Scripts/print_held_platform_marketing_packet.py --check`.
 
 ## Current Status
 

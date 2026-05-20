@@ -1188,6 +1188,12 @@ else
     fail "App Store Connect entry packet"
 fi
 
+if "$ROOT_DIR/Scripts/print_held_platform_marketing_packet.py" --check; then
+    pass "held platform marketing packet"
+else
+    fail "held platform marketing packet"
+fi
+
 printf_platform_target_status
 
 printf '\nIPA local check\n'
@@ -1329,6 +1335,7 @@ Next local action:
    Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-local
 2. Validate the paste-ready App Store Connect fields without account mutation:
    Scripts/print_app_store_entry_packet.py --check
+   Scripts/print_held_platform_marketing_packet.py --check
    Scripts/print_app_store_entry_packet.py
    Use that packet in the App Store Connect web UI to create the missing iOS app record for com.blakecrosley.captainslog with SKU captainslog-ios; then verify with Scripts/check_app_store_connect_record.py.
 3. Run Scripts/app_store_signing_status.sh.
@@ -1360,7 +1367,7 @@ if (( external_blockers > 0 )); then
 
 Next external actions:
 1. Open Docs/PlatformExpansionPlan.md for the platform verdict, run Scripts/print_platform_readiness_matrix.py --require-local, then open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet. For the first iPhone/iPad plus compatible Vision release path, run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-local.
-2. Run Scripts/print_app_store_entry_packet.py and use its output to create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
+2. Run Scripts/print_app_store_entry_packet.py and use its output to create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them. Run Scripts/print_held_platform_marketing_packet.py only when native Mac, Watch, or TV platform gates have closed.
 3. If Watch is intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ after confirming the dry-run output and explicit Apple account mutation approval. Mac/TV now use the shared iOS app record bundle ID.
 4. Check signing state with Scripts/app_store_signing_status.sh and Scripts/check_remote_signing_assets.py --require, preview missing profiles with Scripts/ensure_app_store_profiles.py --target ios, install active remote profiles with Scripts/ensure_app_store_profiles.py --target ios --download-existing or regenerate/download active App Store profiles after explicit mutation approval, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export

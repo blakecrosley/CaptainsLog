@@ -164,6 +164,13 @@ For a paste-focused, no-mutation packet generated from the current metadata sour
 Scripts/print_app_store_entry_packet.py
 ```
 
+For held platform-version marketing copy after native Mac, Watch, or TV gates close, run:
+
+```sh
+Scripts/print_held_platform_marketing_packet.py --check
+Scripts/print_held_platform_marketing_packet.py
+```
+
 For a machine-readable packet or a pre-session validation check, run:
 
 ```sh

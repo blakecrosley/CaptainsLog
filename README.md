@@ -16,6 +16,13 @@ For a concise no-screenshot account/signing session packet:
 Scripts/print_app_store_account_action_packet.py
 ```
 
+For held native Mac, Apple Watch, Apple TV, and native visionOS guard copy after the matching platform gates close:
+
+```sh
+Scripts/print_held_platform_marketing_packet.py --check
+Scripts/print_held_platform_marketing_packet.py
+```
+
 Use the full local gate only when product-page media artifacts are part of the pass:
 
 ```sh

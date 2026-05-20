@@ -134,6 +134,7 @@ def build_packet() -> dict[str, Any]:
     profile_plan = run_json(["Scripts/ensure_app_store_profiles.py", "--json"])
     matrix = run_json(["Scripts/print_platform_readiness_matrix.py", "--json"])
     entry_check = run_text(["Scripts/print_app_store_entry_packet.py", "--check"])
+    held_marketing_check = run_text(["Scripts/print_held_platform_marketing_packet.py", "--check"])
 
     app_record_exists = (
         app_record.get("appRecordCount", 0) > 0 and app_record.get("appRecordMetadataMatches") is True
@@ -151,6 +152,7 @@ def build_packet() -> dict[str, Any]:
             "expected_name_matches": app_record.get("expectedNameAppRecordCount", 0),
         },
         "entry_packet_valid": entry_check["_returncode"] == 0,
+        "held_platform_marketing_valid": held_marketing_check["_returncode"] == 0,
         "source_custody": [
             git_summary(ROOT_DIR, "CaptainsLog"),
             git_summary(KIT941_DIR, "Kit941"),
@@ -164,6 +166,7 @@ def build_packet() -> dict[str, Any]:
                 "git status --short --branch",
                 "git -C ../941Kit status --short --branch",
                 "Scripts/print_app_store_entry_packet.py --check",
+                "Scripts/print_held_platform_marketing_packet.py --check",
                 "Scripts/check_app_store_connect_record.py",
                 "Scripts/check_remote_signing_assets.py --require",
                 "Scripts/ensure_platform_bundle_ids.py",
@@ -230,6 +233,10 @@ def print_markdown(packet: dict[str, Any]) -> None:
         print(f"- Enable missing bundle capability/capabilities: {missing}.")
     elif app_record["bundle_id_exists"]:
         print("- Developer Portal iOS bundle ID is visible and required iCloud capability is present.")
+    if packet["entry_packet_valid"]:
+        print("- First-release App Store Connect entry packet validates.")
+    if packet["held_platform_marketing_valid"]:
+        print("- Held native Mac, Watch, and TV marketing packet validates; keep it held until the matching platform gates close.")
     print()
 
     print("## Bundle IDs And Profiles")
@@ -301,6 +308,8 @@ def validate_packet(packet: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if not packet.get("entry_packet_valid"):
         errors.append("App Store entry packet validation failed")
+    if not packet.get("held_platform_marketing_valid"):
+        errors.append("Held platform marketing packet validation failed")
     if not packet.get("platforms"):
         errors.append("Platform readiness matrix is empty")
     if not packet.get("commands", {}).get("read_only"):
