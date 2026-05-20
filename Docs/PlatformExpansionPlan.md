@@ -2,6 +2,8 @@
 
 This plan turns the current platform-readiness answer into implementation gates. Do not count a platform as ready because another 941 app already has that platform; Return and Get Bananas are references, not substitute evidence for Captain's Log.
 
+For a current read-only platform verdict, run `Scripts/print_platform_readiness_matrix.py`. It does not generate screenshots or mutate Apple Developer/App Store Connect state.
+
 ## Current Verdict
 
 - iPhone and iPad: the universal iOS app is the first release path. Local readiness supports iPad through target family `1,2` and a no-screenshot iPad launch smoke, but signed IPA export and upload remain open.
