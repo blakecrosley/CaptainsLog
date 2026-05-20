@@ -64,7 +64,7 @@ Use this packet for the next App Store Connect / Apple Developer session. It is 
    Scripts/app_store_readiness_status.sh
    ```
 
-Do not treat this packet as platform approval. iPad and Vision are local iOS availability paths until the signed iOS upload is processed. Native Mac, Watch, and TV still need signed export, TestFlight, platform QA, provisioning validation, and human screenshot acceptance before enabling store availability.
+Do not treat this packet as platform approval. iPad and Vision are local iOS availability paths until the signed iOS upload is processed. Native Mac, Watch, and TV still need signed export, TestFlight, platform QA, provisioning validation, and store-media acceptance before enabling store availability.
 
 If readiness reports a missing or stale IPA, regenerate/download the active App Store profile and make either Xcode distribution signing or `xcodebuild` API-key provisioning auth with cloud-managed distribution certificate access available, then run:
 
@@ -167,8 +167,8 @@ Platform availability notes for the first App Review submission:
 
 - iPhone and iPad: submit as the current universal iOS app.
 - Apple Vision Pro: make available as the compatible iPhone/iPad app after `Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke` still reaches the first-run UI. Do not add native visionOS screenshots or metadata unless a separate visionOS target exists.
-- Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until the shared bundle ID and required capabilities are verified for the Mac path, `Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke`, `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export`, screenshot marketing acceptance, TestFlight, and human QA are complete.
-- Apple Watch and Apple TV: no action in App Store Connect for this release unless the companion targets are intentionally finished. They now compile and launch in unsigned simulator smokes as Captain's Log targets, have an aggregate snapshot data path, include platform icon/top-shelf assets, and produce local App Store screenshot artifacts. Watch still needs its Developer Portal companion bundle ID and iCloud capability created after explicit account-mutation approval. Apple TV uses the existing shared `com.blakecrosley.captainslog` bundle ID, so its remaining blockers are signed export, TestFlight, provisioning validation, living-room QA, and human screenshot acceptance before availability.
+- Mac: do not enable the iPhone/iPad app on Apple Silicon Mac for the first release, and do not submit the native macOS target until the shared bundle ID and required capabilities are verified for the Mac path, `Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke`, `CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export`, store-media acceptance, TestFlight, and human QA are complete.
+- Apple Watch and Apple TV: no action in App Store Connect for this release unless the companion targets are intentionally finished. They now compile and launch in unsigned simulator smokes as Captain's Log targets, have an aggregate snapshot data path, and include platform icon/top-shelf assets. Watch still needs its Developer Portal companion bundle ID and iCloud capability created after explicit account-mutation approval. Apple TV uses the existing shared `com.blakecrosley.captainslog` bundle ID, so its remaining blockers are signed export, TestFlight, provisioning validation, living-room QA, and store-media acceptance before availability.
 
 Evidence that closes this step: App Store Connect shows the version ready to add for review with no missing-metadata warnings, and private details remain only in App Store Connect.
 

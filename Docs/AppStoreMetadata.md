@@ -1,6 +1,6 @@
 # Captain's Log App Store Metadata
 
-Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision. For the detailed privacy questionnaire entry, use `Docs/AppStorePrivacyAnswers.md`; for platform availability decisions, use `Docs/PlatformExpansionPlan.md`.
+Draft for English (U.S.) App Store Connect fields. This is paste-ready except for legal review of the privacy copy and the final review-test account decision. For the broader website, launch, and positioning copy, use `Docs/AppStoreMarketingPacket.md`; for the detailed privacy questionnaire entry, use `Docs/AppStorePrivacyAnswers.md`; for platform availability decisions, use `Docs/PlatformExpansionPlan.md`.
 
 ## Source Constraints
 
@@ -76,7 +76,7 @@ Privacy Policy URL:
 https://blakecrosley.com/captains-log/privacy
 ```
 
-Verified by preflight on May 18, 2026. Before submission, use the published copy or a legally reviewed replacement.
+Verified by preflight on May 19, 2026. Before submission, use the published copy or a legally reviewed replacement.
 
 Support URL:
 
@@ -84,7 +84,7 @@ Support URL:
 https://blakecrosley.com/captains-log/support
 ```
 
-Verified by preflight on May 18, 2026 with a real support contact path.
+Verified by preflight on May 19, 2026 with a real support contact path.
 
 Copyright:
 
@@ -113,8 +113,8 @@ These fields are not all pasteable text fields, but they should be decided befor
 | Pricing | Free | Captain's Log has no in-app purchases or subscriptions in this build. Revisit if paid features are added. |
 | App Availability | All countries or regions where the App Store can distribute the app, unless legal review narrows this | The app has no known region-specific content, commerce, medical, gambling, or location behavior. |
 | Apple Vision Pro Availability | Make available as the compatible iPhone/iPad app, pending final smoke-test acceptance | Apple makes iPhone and iPad apps available on Apple Vision Pro by default unless edited in App Store Connect. Current local evidence proves the compatible app builds, installs, launches, and renders its first-run UI on a Vision Pro simulator without the previous raw keychain warning; confirm signed TestFlight/auth behavior before final acceptance. This is not a native visionOS app; keep native visionOS screenshots/metadata out of the first submission unless a separate visionOS target is added later. |
-| Apple Silicon Mac Availability | Opt out for the first release unless a Mac/TestFlight pass is completed | Apple can make compatible iPhone and iPad apps available on Apple Silicon Macs through the Mac App Store unless availability is edited. Captain's Log has a native macOS target aligned to the shared App Store bundle ID plus an iOS-on-Mac destination; the native target has automatic signing build settings and local smoke/screenshots, but signed Mac App Store export, TestFlight pass, and human QA acceptance are still open. |
-| Apple Watch / Apple TV Availability | No action for the first release unless the platform work is intentionally finished | Captain's Log now has watchOS and tvOS companion targets that build, launch with signing disabled, include platform icon/top-shelf assets, produce local App Store screenshot artifacts, and share an aggregate snapshot through WatchConnectivity plus iCloud key-value sync. Return and Get Bananas remain useful local precedents, not substitute evidence. Watch still needs its Developer Portal companion bundle ID and iCloud capability after explicit account-mutation approval. Apple TV uses the existing shared `com.blakecrosley.captainslog` bundle ID, so its remaining blockers are signed export, TestFlight, provisioning validation, human screenshot acceptance, and living-room QA. |
+| Apple Silicon Mac Availability | Opt out for the first release unless a Mac/TestFlight pass is completed | Apple can make compatible iPhone and iPad apps available on Apple Silicon Macs through the Mac App Store unless availability is edited. Captain's Log has a native macOS target aligned to the shared App Store bundle ID plus an iOS-on-Mac destination, but signed Mac App Store export, TestFlight pass, and human QA acceptance are still open. Do not market Mac availability until those gates close. |
+| Apple Watch / Apple TV Availability | No action for the first release unless the platform work is intentionally finished | Captain's Log has watchOS and tvOS companion targets and a privacy-safe aggregate snapshot path through WatchConnectivity plus iCloud key-value sync. Return and Get Bananas remain useful local precedents, not substitute evidence. Watch still needs its Developer Portal companion bundle ID and iCloud capability after explicit account-mutation approval. Apple TV uses the existing shared `com.blakecrosley.captainslog` bundle ID, so its remaining blockers are signed export, TestFlight, provisioning validation, and living-room QA. Do not market Watch or TV availability until those gates close. |
 | Region-specific Availability Prompts | Resolve if App Store Connect shows them, or narrow availability | Apple's required-properties table lists country-specific availability/compliance fields for some regions. If App Store Connect requests extra information for South Korea, China mainland, Vietnam, or another storefront, resolve it in App Store Connect before review or remove that storefront from the first release. |
 | EU Digital Services Act Trader Status | Legal/business-owner decision required before EU availability | Apple requires a trader/non-trader declaration. If distributing in the EU as a trader, Apple may display provided address, phone, and email contact information on the App Store product page. Enter any private contact details only in App Store Connect. |
 | Labels and Markings URLs | Leave blank unless legal/product has required labeling URLs | Apple lists Labels and Markings URLs as app information. Captain's Log has no regulated physical product labels or markings in the current binary, so only provide a legal-approved URL if App Store Connect asks for one. |
@@ -143,27 +143,28 @@ Turn selected GitHub repositories into a calm daily work journal with commits, d
 Description:
 
 ```text
-Captain's Log turns selected GitHub repositories into a simple work journal.
+Captain's Log turns selected GitHub repositories into a private work journal.
 
-Connect GitHub, choose the repositories you care about, and see your work as a readable timeline instead of a wall of commits. The dashboard shows recent activity, changed lines, commit volume, and a contribution-style work map so you can understand what changed over time.
+Connect GitHub, choose the repositories you care about, and see your work as a readable timeline instead of a wall of commits. Work Map shows commit volume and changed lines across days, weeks, months, and years, while journal entries turn the evidence into notes you can actually remember.
 
-Use it to answer practical questions:
+Use Captain's Log to answer practical questions:
 
 - What did I ship today?
 - Which repositories took most of my week?
 - Was this a small cleanup day or a heavy diff day?
 - What should I remember from the actual commits?
 
-Captain's Log is designed to be quiet and local-first. GitHub tokens and optional AI provider keys are stored on device in Keychain. Journal summaries use Apple Foundation Models when available. If you attach your own OpenAI or Anthropic key, the app sends selected commit evidence directly to that provider only when you generate a journal entry.
+Captain's Log is built for memory, not surveillance. It focuses on the repositories you select, keeps GitHub tokens and optional AI provider keys in Keychain, and explains its data flow in the app.
 
 Features:
 
 - GitHub Device Flow sign-in
-- Repository selection for installed GitHub App access
+- Repository selection through GitHub App access
 - Daily, weekly, monthly, and yearly work views
-- Contribution-style work map for commits and changed lines
+- Work Map for commits and changed lines
 - Diff stats, changed files, language, and work-type breakdowns
 - Daily journal summaries backed by commit evidence
+- Apple on-device summaries when available
 - Optional bring-your-own-key OpenAI and Anthropic support
 - In-app privacy and data explanation
 
@@ -200,7 +201,9 @@ Background processing indexes older Git history in batches. The app remains usab
 
 ## Screenshot Set
 
-Run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state, then verify, package, and generate the human review page/contact sheet with:
+No screenshot work is required for the current metadata/marketing pass. The existing package remains useful for the App Store media field, but the remaining release blockers are app-record creation, signing/profiles, signed export, TestFlight, legal/privacy review, and final real-account acceptance.
+
+If screenshots need to be regenerated later, run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state, then verify, package, and generate the human review page/contact sheet with:
 
 ```sh
 Scripts/app_store_preflight.sh <screenshot-dir>

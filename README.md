@@ -10,11 +10,12 @@ Start with the current gate:
 Scripts/app_store_readiness_status.sh
 ```
 
-As of the current App Store packet, the local metadata, privacy manifest, screenshot package, design review, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
+As of the current App Store packet, the local metadata, marketing copy, privacy manifest, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
 
 - Create or make visible the App Store Connect app record for `com.blakecrosley.captainslog`; current REST evidence finds the Developer Portal bundle ID and required `ICLOUD` capability, but no app record by exact bundle, expected SKU `captainslog-ios`, or expected name `Captain's Log`.
 - Regenerate or download an active App Store provisioning profile for `com.blakecrosley.captainslog`, then prove one iOS export signing path: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or the local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`.
 - Regenerate the signed IPA and `ExportManifest.txt`.
+- Reconcile the linked `../941Kit` package source before final export; the latest readiness run reports `Sources/Kit941/Resources/Localizable.xcstrings` is dirty after the previous IPA export.
 
 Native Mac, Apple Watch, and Apple TV are separate platform gates. Mac and Apple TV now follow the single App Store record/universal-purchase bundle-ID model and share `com.blakecrosley.captainslog`; do not create separate `.mac` or `.tv` account state. Current REST evidence still reports the Captain's Log Watch companion bundle ID is missing or not visible. Native Mac App Store export additionally needs an active Mac App Store profile plus Mac installer signing proof, or the same App Store Connect API-key cloud signing path.
 
@@ -22,8 +23,8 @@ Current platform availability status:
 
 - iPhone and iPad: locally prepared through the universal iOS app; not store-ready until a signed IPA is exported and uploaded.
 - Apple Vision Pro: locally prepared through the compatible iPhone/iPad app path; not store-ready until signed upload, final smoke-test acceptance, and App Store Connect availability selection are complete. This is not a native visionOS app.
-- Mac: a native macOS target exists and local Mac screenshot candidates can be generated, but do not submit it until Mac signing/export, TestFlight, screenshot acceptance, and human QA are complete.
-- Apple Watch and Apple TV: companion targets now build, launch, have platform icon/top-shelf assets, have local App Store screenshot captures, and share an aggregate snapshot data path based on WatchConnectivity plus iCloud key-value sync. Do not submit them until signed export, TestFlight, provisioning validation, human screenshot acceptance, and platform QA are complete.
+- Mac: a native macOS target exists, but do not submit or market it until Mac signing/export, TestFlight, and human QA are complete.
+- Apple Watch and Apple TV: companion targets exist and share an aggregate snapshot data path based on WatchConnectivity plus iCloud key-value sync. Do not submit or market them until signed export, TestFlight, provisioning validation, and platform QA are complete.
 
 For the current platform verdict and the Watch/TV path after the first submission, use `Docs/PlatformExpansionPlan.md`.
 
@@ -37,12 +38,6 @@ Refresh the local native Mac launch smoke before accepting Mac availability:
 
 ```sh
 Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke
-```
-
-Refresh the local Mac screenshot candidates before Mac screenshot acceptance:
-
-```sh
-Scripts/capture_macos_app_store_screenshots.sh /tmp/captainslog-macos-appstore-screenshots
 ```
 
 Refresh the local Watch/TV launch smokes before accepting the companion snapshot UI:
@@ -73,18 +68,8 @@ CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/c
 - Completion audit: `Docs/AppStoreCompletionAudit.md`
 - Submission evidence packet: `Docs/AppStoreConnectSubmission.md`
 - Paste-ready metadata: `Docs/AppStoreMetadata.md`
+- Marketing packet: `Docs/AppStoreMarketingPacket.md`
 - Privacy answers: `Docs/AppStorePrivacyAnswers.md`
 - Design review: `Docs/AppStoreDesignReview.md`
-
-Review the screenshot packet before upload:
-
-```sh
-Scripts/open_app_store_screenshot_review.sh
-```
-
-```text
-/tmp/captainslog-appstore-review/review.html
-/tmp/captainslog-appstore-review/contact-sheet.png
-```
 
 Do not commit App Store Connect contact details, demo credentials, API key IDs, issuer IDs, provider IDs, `.p8` private keys, provisioning profiles, certificates, exported IPAs, or archives.
