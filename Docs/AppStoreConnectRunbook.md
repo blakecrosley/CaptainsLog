@@ -137,6 +137,13 @@ That script is dry-run by default. For the Watch companion, only run `Scripts/en
 
 Use `Docs/AppStoreMetadata.md`.
 
+No-screenshot metadata pass:
+
+- Use the existing reviewed media package for any App Store media upload prompt.
+- Do not regenerate screenshots during the account/signing/metadata session.
+- Keep the platform claim to iPhone and iPad, with Apple Vision Pro only through the compatible iPhone/iPad availability path after signed iOS upload and final acceptance.
+- Do not market native Mac, Apple Watch, or Apple TV until signed export, TestFlight, platform QA, provisioning validation, and store-media acceptance are complete.
+
 Enter the paste-ready fields:
 
 - Name, subtitle, category, SKU, bundle ID.
@@ -287,9 +294,9 @@ Scripts/upload_app_store_ipa.sh status "/tmp/captainslog-current-appstore-export
 
 Evidence that closes this step: upload succeeds and build `1.0.0 (1)` is processed/available in App Store Connect or TestFlight.
 
-## 6. Upload Screenshots
+## 6. Store Media Acceptance
 
-If the screenshot set needs to be regenerated, run the capture, preflight, package, contact-sheet, and screenshot text-audit commands from `Docs/AppStoreConnectSubmission.md`. The package and review scripts stage output first, then replace the current upload/review folders only after generation succeeds, so a failed regeneration should leave the last reviewed screenshots intact.
+For the current no-screenshot path, do not regenerate screenshots. Use the existing packaged folders if App Store Connect asks for media, then leave final media acceptance as a human approval gate. If a later marketing pass explicitly reopens screenshot work, run the capture, preflight, package, contact-sheet, and screenshot text-audit commands from `Docs/AppStoreConnectSubmission.md`. The package and review scripts stage output first, then replace the current upload/review folders only after generation succeeds, so a failed regeneration should leave the last reviewed screenshots intact.
 
 Use the packaged folders:
 
@@ -305,7 +312,7 @@ Upload in this order for each family:
 5. `05-ai-providers.png`
 6. `06-privacy-data.png`
 
-Before upload, open:
+Before upload, either use App Store Connect's own media previews or open the existing local review packet:
 
 ```sh
 Scripts/open_app_store_screenshot_review.sh
