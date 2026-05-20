@@ -7,10 +7,10 @@ Use this during the first App Store Connect/TestFlight session. It is the short 
 From the repo root:
 
 ```sh
-Scripts/app_store_readiness_status.sh
+CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
 ```
 
-Use the summary as the gate. If it reports Kit941 upstream drift, push the clean Kit941 commits or explicitly accept the unpushed local package state before final export because Captain's Log links `../941Kit` directly and the export manifest records that package commit. If readiness only reports the known missing/stale IPA state after source custody is settled, regenerate/download the active App Store profile and make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported signing paths are a local Apple Distribution/iOS Distribution identity/profile pair for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, manual fields, upload/TestFlight processing, screenshot approval, legal/privacy review, and final real-account tap-through.
+Use the no-media summary as the gate when the goal is signing/account/export readiness. If it reports Kit941 source drift, push or explicitly accept the linked package state before final export because Captain's Log links `../941Kit` directly and the export manifest records that package commit and dirty state. If readiness only reports the known missing/stale IPA state after source custody is settled, regenerate/download the active App Store profile and make one export-signing path complete, then regenerate the IPA before continuing into App Store Connect. The two supported signing paths are a local Apple Distribution/iOS Distribution identity/profile pair for team `M4WTLM6RAQ`, or App Store Connect API-key env vars for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access. After the current IPA passes local checks, the expected remaining blockers before submission are external: app-record creation, manual fields, upload/TestFlight processing, store-media acceptance, legal/privacy review, and final real-account tap-through.
 
 Do not commit private App Store Connect contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private keys.
 
@@ -36,11 +36,19 @@ Use this packet for the next App Store Connect / Apple Developer session. It is 
 
 2. Create the Watch companion bundle ID only after explicit Apple account mutation approval:
 
+   Dry run:
+
+   ```sh
+   Scripts/ensure_platform_bundle_ids.py --target watchos
+   ```
+
+   Apply after approval:
+
    ```sh
    Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ
    ```
 
-   Do not create `com.blakecrosley.captainslog.mac` or `com.blakecrosley.captainslog.tv`. Apple's add-platform guidance says macOS, tvOS, and visionOS platform versions added to the same app record use the same Apple ID, SKU, and bundle ID as the iOS app. Current Captain's Log Mac and TV targets share `com.blakecrosley.captainslog`, and the dry-run currently reports that shared bundle ID exists with required capabilities for both Mac and TV.
+   The latest dry run plans only `com.blakecrosley.captainslog.watchkitapp` plus `ICLOUD`. Do not create `com.blakecrosley.captainslog.mac` or `com.blakecrosley.captainslog.tv`. Apple's add-platform guidance says macOS, tvOS, and visionOS platform versions added to the same app record use the same Apple ID, SKU, and bundle ID as the iOS app. Current Captain's Log Mac and TV targets share `com.blakecrosley.captainslog`, and the dry-run currently reports that shared bundle ID exists with required capabilities for both Mac and TV.
 
    Official reference: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-platforms
 

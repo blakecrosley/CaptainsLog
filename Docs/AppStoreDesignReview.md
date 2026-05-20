@@ -34,7 +34,7 @@ The iPhone set is the stronger marketing set. It is compact, legible, and makes 
 
 The iPad set is acceptable for v1. Some screens intentionally preserve calm whitespace instead of filling the canvas with extra dashboard furniture. This is a reasonable tradeoff for a developer journal app, but it should still be checked by a person at App Store preview scale before upload.
 
-The May 18 contact-sheet spot-check found that the iPad thumbnails make the lower whitespace look more severe than the full-size screenshots. The full-size iPad dashboard still reads as a complete adaptive layout, while the Work Map detail remains the main composition to approve or reject during the final human screenshot pass.
+The May 18 contact-sheet spot-check found that the iPad thumbnails make the lower whitespace look more severe than the full-size screenshots. The full-size iPad dashboard still reads as a complete adaptive layout, while the Work Map detail remains the main composition to approve or reject during final product-page media acceptance.
 
 A later May 18 dashboard polish pass removed the second full-width segmented control from the selected-period card. The dashboard still supports Day, Week, Month, and Year, but the period choice now lives in a compact header menu so the first screen has one obvious global lens control and less visible decision clutter.
 
@@ -52,7 +52,7 @@ Reviewed against the local `.impeccable.md` direction and the `frontend-design`,
 - Progressive disclosure: acceptable. Dashboard, Work Map, journal, repository access, AI provider, and Privacy & Data screenshots each say one clear thing.
 - Control weight: improved. The dashboard keeps `Changes / Commits` as the primary lens and moves period changes into a smaller local menu, while the Work detail sheet keeps the full segmented period control for deeper analysis.
 - Remaining taste risk: iPad screenshots are calm and spacious. This is defensible for a developer journal, and the repository access split reduces one of the more obviously underused tablet compositions, but final App Store preview should still judge whether the whitespace feels intentional at actual upload scale.
-- Recommendation: no more local UI work before first TestFlight unless human screenshot approval finds clipped text, exposed private data, confusing disabled controls, active sync progress, or an unfinished iPad composition.
+- Recommendation: no more local UI work before first TestFlight unless product-page media acceptance finds clipped text, exposed private data, confusing disabled controls, active sync progress, or an unfinished iPad composition.
 
 ## What Passes
 
@@ -101,8 +101,8 @@ Do not add major new features before the first TestFlight/App Store Connect pass
 2. App Store Connect API credentials.
 3. Build validation and upload.
 4. TestFlight processing.
-5. Human screenshot approval using `/tmp/captainslog-appstore-review/review.html`.
+5. Product-page media acceptance using the existing reviewed package or App Store Connect previews.
 6. Legal/privacy review.
 7. Final real-account tap-through.
 
-Only make UI changes before submission if the final human screenshot review finds clipped text, exposed private data, confusing disabled controls, or an obviously unfinished iPad composition.
+Only make UI changes before submission if final product-page media acceptance finds clipped text, exposed private data, confusing disabled controls, or an obviously unfinished iPad composition.

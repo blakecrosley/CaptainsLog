@@ -4,16 +4,16 @@ Captain's Log is an iPhone and iPad app for turning GitHub history into a privat
 
 ## App Store Connect Status
 
-Start with the current gate:
-
-```sh
-Scripts/app_store_readiness_status.sh
-```
-
-For a blocker-focused pass that does not inspect screenshot/media artifacts:
+Start with the blocker-focused gate when the current work is account, signing, export, or platform readiness:
 
 ```sh
 CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
+```
+
+Use the full local gate only when product-page media artifacts are part of the pass:
+
+```sh
+Scripts/app_store_readiness_status.sh
 ```
 
 As of the current App Store packet, the local metadata, marketing copy, privacy manifest, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
