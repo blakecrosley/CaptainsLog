@@ -378,7 +378,13 @@ def main() -> int:
         )
     else:
         print("Captain's Log App Store provisioning profile plan")
-        print(f"Mode: {'apply' if args.apply else 'dry-run'}")
+        if args.apply:
+            mode = "apply"
+        elif args.download_existing:
+            mode = "download-existing"
+        else:
+            mode = "dry-run"
+        print(f"Mode: {mode}")
         if args.download_existing:
             print("Existing active profile download: enabled")
         if team_context:
@@ -420,7 +426,16 @@ def main() -> int:
                 print(f"[done] wrote existing profile: {downloaded}")
             if not result.get("actions") and usable_profile_count == 0 and result.get("bundleExists"):
                 print("[ok] no profile action required by this target")
-        if not args.apply:
+        if args.download_existing:
+            print(
+                "\nNo Apple Developer/App Store Connect profile state was created or changed. "
+                "Active existing profiles, if present, were downloaded only to the local Xcode provisioning profile directory."
+            )
+            print(
+                f"Re-run with --apply --confirm-team {TEAM_ID} only after explicit approval to mutate "
+                "Apple Developer/App Store Connect profile state."
+            )
+        elif not args.apply:
             print(
                 f"\nDry run only. Re-run with --apply --confirm-team {TEAM_ID} "
                 "only after explicit approval to mutate Apple Developer/App Store Connect profile state."
