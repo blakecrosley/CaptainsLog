@@ -185,6 +185,8 @@ Enter the paste-ready fields:
 - Promotional text, description, keywords.
 - App Review notes.
 
+Held platform copy lives in `Docs/AppStoreMarketingPacket.md`. Use it only after the matching native Mac, Watch, or TV gates close. For Mac and TV platform versions, App Store Connect may transfer some existing metadata from the iOS version, but promotional text, description, and screenshots still need platform-specific review. For Watch, include Apple Watch functionality in the submitted description and provide the required Watch media/icon only after the Watch bundle/signing/TestFlight path is complete.
+
 Make the manual choices from the table in `Docs/AppStoreMetadata.md`:
 
 - Price: free.

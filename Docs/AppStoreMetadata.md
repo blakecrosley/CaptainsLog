@@ -203,6 +203,8 @@ Background processing indexes older Git history in batches. The app remains usab
 
 No screenshot work is required for the current metadata/marketing pass. The existing package remains useful for the App Store media field, but the remaining release blockers are app-record creation, signing/profiles, signed export artifacts, TestFlight, legal/privacy review, and final real-account acceptance.
 
+Held native Mac, Apple Watch, Apple TV, and native visionOS copy is in `Docs/AppStoreMarketingPacket.md`. Do not paste that copy into App Store Connect until the matching platform's signed export, TestFlight, platform QA, provisioning validation, and store-media acceptance are complete. The current Vision plan is compatible iPhone/iPad availability, not native visionOS metadata.
+
 If screenshots need to be regenerated later, run `Scripts/capture_app_store_screenshots.sh` for repeatable iPhone and iPad captures from the neutral fixture state, then verify, package, and generate the human review page/contact sheet with:
 
 ```sh

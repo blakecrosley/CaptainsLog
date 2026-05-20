@@ -210,6 +210,58 @@ All-platform copy to use only after `Scripts/print_platform_readiness_matrix.py 
 Available for iPhone, iPad, Mac, Apple Watch, and Apple TV, with Apple Vision Pro availability through the compatible iPhone/iPad app path.
 ```
 
+## Held Platform Version Copy
+
+Use this only after the matching platform's signed export, TestFlight processing, platform QA, provisioning validation, and store-media acceptance are complete. Apple transfers much of an existing platform version's metadata when adding Mac, TV, or Vision platform versions, but promotional text, description, and screenshots still need platform review. Apple Watch also needs watch-specific information, screenshots, and an icon.
+
+Native Mac promotional text:
+
+```text
+Turn GitHub history into a focused desktop work journal with Work Map activity, diff stats, and daily notes from selected repositories.
+```
+
+Native Mac description addendum:
+
+```text
+Captain's Log for Mac gives the same private GitHub work journal more room to breathe on the desktop.
+
+Use the Mac app to review selected repository activity, scan Work Map patterns across longer time ranges, and open journal entries backed by commit evidence. GitHub tokens and optional AI provider keys stay in Keychain, and cloud AI calls happen only when you attach a key and generate a journal entry.
+
+Do not use this copy until the native Mac App Store package, TestFlight pass, store media, and human QA are complete.
+```
+
+Apple Watch description addendum:
+
+```text
+The Apple Watch companion is a glanceable status view for your own GitHub work journal.
+
+It shows a compact private snapshot: today's activity, week context, journal availability, selected repository count, and sync state. It does not show repository names, commit messages, changed file paths, generated journal text, GitHub tokens, or AI provider keys. Use the iPhone app for GitHub sign-in, repository selection, AI settings, and long-form journal review.
+
+Do not use this copy until the Watch bundle ID, signed export, TestFlight pass, paired-device QA, store media, and App Review acceptance are complete.
+```
+
+Apple TV promotional text:
+
+```text
+See your selected GitHub work as a calm read-only dashboard for the room, with Work Map context and current activity.
+```
+
+Apple TV description addendum:
+
+```text
+Captain's Log for Apple TV is a read-only companion for reviewing your work rhythm on a larger screen.
+
+The TV app shows an aggregate snapshot from your selected GitHub work journal, including current activity, week context, journal availability, selected repository count, and sync state. It is designed for shared spaces: no GitHub sign-in, repository administration, AI key management, commit text, file paths, tokens, or provider keys appear on the TV app.
+
+Do not use this copy until the signed tvOS export, TestFlight pass, provisioning validation, living-room QA, store media, and App Review acceptance are complete.
+```
+
+Native visionOS copy:
+
+```text
+Do not add native visionOS copy for the current plan. Use Apple Vision Pro only through the compatible iPhone/iPad app availability path unless a separate native visionOS target, signed export, screenshots, TestFlight pass, and Vision QA are completed later.
+```
+
 ## Website FAQ
 
 ```text
@@ -255,7 +307,10 @@ Use these for App Store Connect unless legal/product review changes them:
 ## Official Apple Cross-Check
 
 - Apple says an App Store Connect app record must be created before uploading a build, and multi-platform single-purchase apps can be created as one record with shared bundle ID and platform-specific information: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
+- Apple's add-platform guidance says macOS, tvOS, and visionOS platform versions can be added to the existing app record, use the same Apple ID/SKU/bundle ID as the iOS app, and transfer existing metadata except promotional text, description, and screenshots: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-platforms
+- Apple's watchOS guidance says an iOS app with a watchOS counterpart needs Apple Watch-specific information, screenshots, and an icon, and the description should include Apple Watch functionality: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-watchos-app-information
 - Apple's platform version reference sets promotional text, description, keyword, support URL, and screenshot requirements and limits: https://developer.apple.com/help/app-store-connect/reference/platform-version-information/
+- Apple's screenshot/upload guidance says screenshots are uploaded per platform version and at least one and at most ten screenshots are required: https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots
 - Apple's product page guidance says the first sentence matters, promotional text can be updated without a new app version, and descriptions should focus on unique features rather than unnecessary keyword stuffing: https://developer.apple.com/app-store/product-page/
 - Apple says iPhone and iPad apps are available on Apple Vision Pro unless availability is edited in App Store Connect: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-apple-vision-pro
 - Apple says App Privacy details are required for new apps and updates and must include app and integrated third-party data practices: https://developer.apple.com/app-store/app-privacy-details/
