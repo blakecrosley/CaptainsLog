@@ -238,6 +238,14 @@ def selected_platform_keys(selected: list[str] | None) -> set[str]:
     return set(selected)
 
 
+def filtered_matrix(matrix: dict[str, Any], platforms: set[str]) -> dict[str, Any]:
+    if platforms == set(PLATFORM_KEYS):
+        return matrix
+    filtered = dict(matrix)
+    filtered["platforms"] = [platform for platform in matrix["platforms"] if platform["key"] in platforms]
+    return filtered
+
+
 def check_matrix(
     matrix: dict[str, Any],
     require_local: bool,
@@ -269,8 +277,8 @@ def parse_args() -> argparse.Namespace:
         action="append",
         choices=("all", *PLATFORM_KEYS),
         help=(
-            "Restrict --require-local/--require-store checks to selected platform key. "
-            "Repeat for multiple platforms. Defaults to all. Output still shows every platform."
+            "Restrict output and --require-local/--require-store checks to selected platform key. "
+            "Repeat for multiple platforms. Defaults to all."
         ),
     )
     parser.add_argument(
@@ -298,16 +306,18 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    selected_platforms = selected_platform_keys(args.platform)
     matrix = build_matrix(args)
+    output_matrix = filtered_matrix(matrix, selected_platforms)
     if args.json:
-        print(json.dumps(matrix, indent=2, sort_keys=True))
+        print(json.dumps(output_matrix, indent=2, sort_keys=True))
     else:
-        print_markdown(matrix)
+        print_markdown(output_matrix)
     failures = check_matrix(
         matrix,
         args.require_local,
         args.require_store,
-        selected_platform_keys(args.platform),
+        selected_platforms,
     )
     if failures:
         for failure in failures:
