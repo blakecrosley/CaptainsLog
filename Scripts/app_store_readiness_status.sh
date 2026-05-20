@@ -23,6 +23,8 @@ BANANA_LIST_REFERENCE_PROJECT="${CAPTAINS_LOG_BANANA_LIST_REFERENCE_PROJECT:-$RO
 VISION_SMOKE_DIR="${CAPTAINS_LOG_VISION_SMOKE_DIR:-/tmp/captainslog-vision-smoke}"
 VISION_SMOKE_SCREENSHOT="$VISION_SMOKE_DIR/vision-compatible-launch.png"
 VISION_SMOKE_OCR="$VISION_SMOKE_DIR/vision-compatible-launch-ocr.txt"
+VISION_SMOKE_LAUNCH="$VISION_SMOKE_DIR/vision-compatible-launch.log"
+VISION_SMOKE_SUMMARY="$VISION_SMOKE_DIR/vision-compatible-launch-summary.txt"
 MACOS_SMOKE_DIR="${CAPTAINS_LOG_MACOS_SMOKE_DIR:-/tmp/captainslog-macos-smoke}"
 MACOS_SMOKE_METADATA="$MACOS_SMOKE_DIR/macos-bundle-metadata.txt"
 MACOS_SMOKE_CODESIGN="$MACOS_SMOKE_DIR/macos-codesign.txt"
@@ -812,8 +814,12 @@ printf_platform_target_status() {
         else
             pass "Vision compatible launch OCR did not find Keychain returned status -34018"
         fi
+    elif [[ -f "$VISION_SMOKE_LAUNCH" && -f "$VISION_SMOKE_SUMMARY" ]] \
+        && rg -q '^screenshot=skipped$' "$VISION_SMOKE_SUMMARY" \
+        && rg -q "^${IOS_BUNDLE_ID//./[.]}: [0-9]+" "$VISION_SMOKE_LAUNCH"; then
+        pass "Vision compatible no-screenshot launch smoke recorded"
     else
-        warn "Vision compatible launch smoke artifacts missing; run Scripts/smoke_vision_compatible_launch.sh $VISION_SMOKE_DIR before final Vision acceptance"
+        warn "Vision compatible launch smoke artifacts missing; run CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1 Scripts/smoke_vision_compatible_launch.sh $VISION_SMOKE_DIR before non-media Vision launch acceptance"
     fi
 }
 

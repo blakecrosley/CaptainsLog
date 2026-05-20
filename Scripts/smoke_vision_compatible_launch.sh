@@ -11,6 +11,7 @@ VISION_DEVICE_NAME="${VISION_DEVICE_NAME:-Apple Vision Pro}"
 VISION_DEVICE_ID="${VISION_DEVICE_ID:-}"
 SCREENSHOT_DELAY_SECONDS="${SCREENSHOT_DELAY_SECONDS:-12}"
 STRICT_KEYCHAIN="${CAPTAINS_LOG_VISION_SMOKE_STRICT_KEYCHAIN:-0}"
+SKIP_SCREENSHOT="${CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS:-${CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOT:-0}}"
 
 failures=0
 warnings=0
@@ -138,6 +139,10 @@ SCREENSHOT_PATH="$OUTPUT_DIR/vision-compatible-launch.png"
 OCR_OUTPUT="$OUTPUT_DIR/vision-compatible-launch-ocr.txt"
 BUILD_LOG="$OUTPUT_DIR/vision-compatible-build.log"
 LAUNCH_LOG="$OUTPUT_DIR/vision-compatible-launch.log"
+SUMMARY_PATH="$OUTPUT_DIR/vision-compatible-launch-summary.txt"
+if [[ "$SKIP_SCREENSHOT" == "1" ]]; then
+    rm -f "$SCREENSHOT_PATH" "$OCR_OUTPUT"
+fi
 
 if ! command -v xcrun >/dev/null 2>&1; then
     fail "xcrun missing"
@@ -203,10 +208,42 @@ pass "app installed on Vision simulator"
 
 xcrun simctl launch --terminate-running-process "$VISION_DEVICE_ID" "$BUNDLE_ID" | tee "$LAUNCH_LOG"
 pass "app launch command returned"
+if rg -q "^${BUNDLE_ID//./[.]}: [0-9]+" "$LAUNCH_LOG"; then
+    pass "app launched on Vision simulator"
+else
+    fail "Vision simulator launch log did not include a process id"
+fi
+
+cat > "$SUMMARY_PATH" <<EOF
+bundle_id=$BUNDLE_ID
+device_id=$VISION_DEVICE_ID
+app_path=$app_path
+build_log=$BUILD_LOG
+launch_log=$LAUNCH_LOG
+screenshot=skipped
+EOF
+
+if [[ "$SKIP_SCREENSHOT" == "1" ]]; then
+    pass "Vision screenshot and OCR skipped by CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1"
+
+    printf '\nVision compatible launch smoke output:\n'
+    printf '  build log: %s\n' "$BUILD_LOG"
+    printf '  launch log: %s\n' "$LAUNCH_LOG"
+    printf '  summary: %s\n' "$SUMMARY_PATH"
+
+    if (( failures > 0 )); then
+        printf '\nVision compatible launch smoke failed with %d issue(s).\n' "$failures" >&2
+        exit 1
+    fi
+
+    printf '\nVision compatible launch smoke passed without screenshot capture.\n'
+    exit 0
+fi
 
 sleep "$SCREENSHOT_DELAY_SECONDS"
 xcrun simctl io "$VISION_DEVICE_ID" screenshot "$SCREENSHOT_PATH" >/dev/null
 pass "Vision screenshot captured: $SCREENSHOT_PATH"
+perl -0pi -e 's/screenshot=skipped/screenshot=captured/' "$SUMMARY_PATH"
 
 swift_source="$(mktemp -t captainslog-vision-smoke-ocr.XXXXXX.swift)"
 cleanup() {
