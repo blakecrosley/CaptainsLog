@@ -13,7 +13,7 @@ Draft for English (U.S.) App Store Connect fields. This is paste-ready except fo
 - Privacy Policy URL: required for iOS and macOS apps.
 - App Review notes: 4000 bytes maximum.
 
-Official references:
+Official references, rechecked on May 20, 2026:
 
 - App information: https://developer.apple.com/help/app-store-connect/reference/app-information/app-information
 - Platform version information: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information

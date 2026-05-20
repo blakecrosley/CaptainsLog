@@ -22,6 +22,34 @@ The release is not store-ready yet. The current blockers are account, signing, u
 - Source custody: CaptainsLog and linked `../941Kit` are clean but not synced to `origin/main`; a final export must either push those save points or explicitly accept the unpushed source state.
 - Final gates: TestFlight processing, legal/privacy review, App Review contact/demo-account entry, and final real-account tap-through remain open.
 
+## No-Screenshot Metadata Handoff
+
+Use this handoff for the next App Store Connect session. It prepares metadata and marketing copy only; it does not regenerate screenshots, create app records, create signing assets, run exports, or upload builds.
+
+Prepared public claim for the first release:
+
+```text
+Captain's Log is a private GitHub work journal for iPhone and iPad, with Apple Vision Pro availability through the compatible iPhone/iPad app path after signed iOS upload and final acceptance.
+```
+
+Do not paste native Mac, Apple Watch, Apple TV, or native visionOS availability claims into public copy yet. Their held copy remains below and is only for later platform versions after signed export, TestFlight, provisioning validation, platform QA, and store-media acceptance.
+
+Copy sources:
+
+- App Store Connect paste fields: `Scripts/print_app_store_entry_packet.py`
+- Field validation: `Scripts/print_app_store_entry_packet.py --check`
+- Marketing, website, launch, social, FAQ, and platform guidance: this file
+- Held native Mac, Watch, TV, and native visionOS guard copy: `Scripts/print_held_platform_marketing_packet.py`
+- Privacy questionnaire: `Docs/AppStorePrivacyAnswers.md`
+
+Manual fields still entered only in App Store Connect:
+
+- App Review contact and phone number.
+- Optional GitHub demo review account credentials.
+- EU DSA trader status and any trader contact details.
+- Region-specific availability/compliance prompts.
+- Apple Vision Pro compatible-app availability, Apple Silicon Mac opt-out, and any App Store Connect warning prompts after the app record exists.
+
 ## App Store Connect Entry Order
 
 Paste or enter these fields first after the App Store Connect app record exists:
@@ -305,6 +333,8 @@ Use these for App Store Connect unless legal/product review changes them:
 | Apple Watch / Apple TV | Do not add public availability claims until signed export, TestFlight, provisioning validation, and QA are complete |
 
 ## Official Apple Cross-Check
+
+Rechecked against official Apple documentation on May 20, 2026. The current copy avoids unsupported native-platform claims and keeps private account, signing, and credential details out of public marketing.
 
 - Apple says an App Store Connect app record must be created before uploading a build, and multi-platform single-purchase apps can be created as one record with shared bundle ID and platform-specific information: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/
 - Apple's add-platform guidance says macOS, tvOS, and visionOS platform versions can be added to the existing app record, use the same Apple ID/SKU/bundle ID as the iOS app, and transfer existing metadata except promotional text, description, and screenshots: https://developer.apple.com/help/app-store-connect/create-an-app-record/add-platforms
