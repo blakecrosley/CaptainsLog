@@ -1,12 +1,12 @@
 # Captain's Log App Store Marketing Packet
 
-Prepared for the first English (U.S.) App Store Connect entry. This packet is focused on metadata and marketing copy, not screenshot generation. Use it with `Docs/AppStoreMetadata.md` for the complete field list and `Docs/AppStorePrivacyAnswers.md` for the privacy questionnaire.
+Prepared for the first English (U.S.) App Store Connect entry. This packet is focused on metadata and marketing copy, not screenshot generation. Use it with `Docs/AppStoreMetadata.md` for the complete field list, `Docs/AppStorePrivacyAnswers.md` for the privacy questionnaire, and `Docs/AppStoreConnectRunbook.md` for the account/signing sequence.
 
 ## Current Status
 
-As of May 19, 2026, the metadata itself is locally ready: `Scripts/app_store_readiness_status.sh` ran `Scripts/app_store_preflight.sh /tmp/captainslog-key-state-audit`, and preflight passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.
+As of the May 19, 2026 no-media refresh, the metadata itself is locally ready: `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.
 
-No new screenshot work was done for this packet refresh. The current no-sign Release build refresh passed for iOS, native Mac, Apple Watch, and Apple TV against linked Kit941 `fe4bfd3`; Vision, Watch, and TV also have no-screenshot simulator launch smokes that recorded `simctl launch` process IDs. Those checks prove compile/package/launch viability only and do not change the first-release marketing claim.
+No new screenshot work was done for this packet refresh. The readiness gate recognized the existing no-screenshot Vision, Watch, and TV simulator launch smokes, which recorded `simctl launch` process IDs. Those checks prove local compile/package/launch viability only and do not change the first-release marketing claim.
 
 The release is not store-ready yet. The current blockers are account, signing, upload, and human review gates, not more marketing copy:
 
@@ -18,6 +18,17 @@ The release is not store-ready yet. The current blockers are account, signing, u
 - Apple TV signing: shared bundle ID exists, but active `TVOS_APP_STORE` profile is missing.
 - Linked package custody: `../941Kit` is clean but ahead of `origin/main` by 1 commit at `fe4bfd3 Add Kit941 localization catalog entries`, so a final export must either push that package save point or explicitly accept the unpushed linked package state.
 - Final gates: TestFlight processing, legal/privacy review, App Review contact/demo-account entry, and final real-account tap-through remain open.
+
+## App Store Connect Entry Order
+
+Paste or enter these fields first after the App Store Connect app record exists:
+
+1. App information from `Docs/AppStoreMetadata.md`: name, subtitle, categories, SKU, bundle ID, copyright, Support URL, and Privacy Policy URL.
+2. Version information below: promotional text, description, keywords, and App Review notes.
+3. Privacy questionnaire from `Docs/AppStorePrivacyAnswers.md`.
+4. Manual store choices below: free pricing, public distribution, manual release, not Made for Kids, Apple Standard EULA, compatible Apple Vision Pro availability after signed iOS upload and final acceptance, and Apple Silicon Mac opt-out unless Mac/TestFlight/QA are complete.
+
+Do not paste private App Review contact details, demo-account credentials, trader contact details, Apple IDs, API keys, issuer IDs, or `.p8` private-key paths into repository files. Enter those only in App Store Connect or private local shell state.
 
 ## Positioning
 
