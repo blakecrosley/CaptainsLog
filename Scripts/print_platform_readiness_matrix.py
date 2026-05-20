@@ -212,9 +212,33 @@ def print_markdown(matrix: dict[str, Any]) -> None:
         )
 
 
+def check_matrix(matrix: dict[str, Any], require_local: bool, require_store: bool) -> list[str]:
+    failures: list[str] = []
+    if require_local:
+        for platform in matrix["platforms"]:
+            if platform["local_status"] != "local proof present":
+                failures.append(f"{platform['platform']}: {platform['local_status']}")
+    if require_store:
+        for platform in matrix["platforms"]:
+            if platform["store_status"] != "ready":
+                blockers = "; ".join(platform["blockers"])
+                failures.append(f"{platform['platform']}: store readiness blocked by {blockers}")
+    return failures
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    parser.add_argument(
+        "--require-local",
+        action="store_true",
+        help="Exit nonzero unless every platform has local no-screenshot proof",
+    )
+    parser.add_argument(
+        "--require-store",
+        action="store_true",
+        help="Exit nonzero unless every platform is store-ready",
+    )
     parser.add_argument("--ipa", type=Path, default=DEFAULT_IPA)
     parser.add_argument("--export-manifest", type=Path, default=DEFAULT_EXPORT_MANIFEST)
     parser.add_argument("--macos-export", type=Path, default=DEFAULT_MAC_EXPORT)
@@ -233,6 +257,11 @@ def main() -> int:
         print(json.dumps(matrix, indent=2, sort_keys=True))
     else:
         print_markdown(matrix)
+    failures = check_matrix(matrix, args.require_local, args.require_store)
+    if failures:
+        for failure in failures:
+            print(f"[fail] {failure}", file=sys.stderr)
+        return 1
     return 0
 
 

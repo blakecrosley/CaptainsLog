@@ -2,7 +2,7 @@
 
 This plan turns the current platform-readiness answer into implementation gates. Do not count a platform as ready because another 941 app already has that platform; Return and Get Bananas are references, not substitute evidence for Captain's Log.
 
-For a current read-only platform verdict, run `Scripts/print_platform_readiness_matrix.py`. It does not generate screenshots or mutate Apple Developer/App Store Connect state.
+For a current read-only platform verdict, run `Scripts/print_platform_readiness_matrix.py`. It does not generate screenshots or mutate Apple Developer/App Store Connect state. Use `Scripts/print_platform_readiness_matrix.py --require-local` to fail if local no-screenshot platform proof is missing, and `Scripts/print_platform_readiness_matrix.py --require-store` to fail until every requested store path is actually ready.
 
 ## Current Verdict
 
