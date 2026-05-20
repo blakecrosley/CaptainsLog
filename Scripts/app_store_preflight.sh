@@ -12,6 +12,7 @@ EXPECTED_BACKGROUND_TASK_ID="com.blakecrosley.captainslog.history-index"
 APP_ICON_DIR="$ROOT_DIR/CaptainsLog/Resources/Assets.xcassets/AppIcon.appiconset"
 APP_ICON="$APP_ICON_DIR/app-icon-1024-marketing.png"
 SCREENSHOT_DIR="${1:-$ROOT_DIR/Artifacts/AppStoreScreenshots}"
+SKIP_SCREENSHOT_CHECKS="${CAPTAINS_LOG_SKIP_SCREENSHOT_CHECKS:-${CAPTAINS_LOG_SKIP_MEDIA_CHECKS:-0}}"
 
 failures=0
 
@@ -237,7 +238,11 @@ check_build_setting() {
 
 printf 'Captain'\''s Log App Store preflight\n'
 printf 'Metadata: %s\n' "$METADATA_FILE"
-printf 'Screenshots: %s\n\n' "$SCREENSHOT_DIR"
+if [[ "$SKIP_SCREENSHOT_CHECKS" == "1" ]]; then
+    printf 'Screenshots: skipped by CAPTAINS_LOG_SKIP_SCREENSHOT_CHECKS=1\n\n'
+else
+    printf 'Screenshots: %s\n\n' "$SCREENSHOT_DIR"
+fi
 
 if [[ ! -f "$METADATA_FILE" ]]; then
     fail "Metadata file missing: $METADATA_FILE"
@@ -353,7 +358,9 @@ if (( icon_png_count == 0 )); then
     fail "No app icon PNGs found in $APP_ICON_DIR"
 fi
 
-if [[ ! -d "$SCREENSHOT_DIR" ]]; then
+if [[ "$SKIP_SCREENSHOT_CHECKS" == "1" ]]; then
+    pass "screenshot dimension checks skipped"
+elif [[ ! -d "$SCREENSHOT_DIR" ]]; then
     fail "Screenshot directory missing: $SCREENSHOT_DIR"
 else
     expected_screens=(

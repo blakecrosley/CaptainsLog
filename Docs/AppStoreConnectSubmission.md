@@ -128,6 +128,12 @@ Scripts/upload_app_store_ipa.sh local-check "/tmp/captainslog-current-appstore-e
 
 `Scripts/app_store_readiness_status.sh` is the fastest current-state gate. It checks the local IPA, source/media packet, clean source state, linked Kit941 package source, preflight, release local check, and upload credential guard self-test. It also reports any CaptainsLog or linked Kit941 source drift, then lists external blockers such as missing App Store Connect credentials, manual App Store Connect fields, TestFlight processing, legal review, and final store-media acceptance.
 
+When the goal is to avoid screenshot work and focus on signing/account/export blockers, run the same gate with media checks skipped:
+
+```sh
+CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
+```
+
 `Scripts/upload_app_store_ipa.sh credential-guard-self-test` uses fake throwaway values and temporary files to verify that the upload helper accepts valid-looking App Store Connect API credential inputs and rejects malformed key IDs, malformed issuers, missing `.p8` files, repo-local `.p8` paths, and non-private-key `.p8` contents without calling App Store Connect. The repo `.gitignore` also excludes local env files, `private_keys/`, `.p8`, `.mobileprovision`, `.provisionprofile`, `.cer`, and `.p12` files so common signing artifacts do not get staged accidentally.
 
 After App Store Connect API credentials are set, run `Scripts/upload_app_store_ipa.sh app-record` or `Scripts/check_app_store_connect_record.py` to verify the app record, expected SKU/name, and required bundle capabilities by bundle ID without requiring an altool provider public ID. Set `APP_STORE_CONNECT_PROVIDER_PUBLIC_ID` only if you need the older `Scripts/upload_app_store_ipa.sh app-record-altool` path; Xcode 26.5 `altool --list-providers` does not support API-key authentication.

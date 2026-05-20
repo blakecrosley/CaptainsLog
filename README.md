@@ -10,6 +10,12 @@ Start with the current gate:
 Scripts/app_store_readiness_status.sh
 ```
 
+For a blocker-focused pass that does not inspect screenshot/media artifacts:
+
+```sh
+CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh
+```
+
 As of the current App Store packet, the local metadata, marketing copy, privacy manifest, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
 
 - Create or make visible the App Store Connect app record for `com.blakecrosley.captainslog`; current REST evidence finds the Developer Portal bundle ID and required `ICLOUD` capability, but no app record by exact bundle, expected SKU `captainslog-ios`, or expected name `Captain's Log`.

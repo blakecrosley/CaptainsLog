@@ -16,6 +16,7 @@ EXPORT_MANIFEST="$(dirname "$IPA_PATH")/ExportManifest.txt"
 ARCHIVE_PATH="$(dirname "$(dirname "$IPA_PATH")")/CaptainsLog.xcarchive"
 PACKAGED_DIR="${CAPTAINS_LOG_PACKAGED_SCREENSHOTS:-/tmp/captainslog-key-state-packaged}"
 SCREENSHOT_REVIEW_DIR="${CAPTAINS_LOG_SCREENSHOT_REVIEW:-/tmp/captainslog-appstore-review}"
+SKIP_MEDIA_CHECKS="${CAPTAINS_LOG_SKIP_MEDIA_CHECKS:-${CAPTAINS_LOG_SKIP_SCREENSHOT_CHECKS:-0}}"
 KIT941_DIR="$ROOT_DIR/../941Kit"
 RETURN_REFERENCE_PROJECT="${CAPTAINS_LOG_RETURN_REFERENCE_PROJECT:-$ROOT_DIR/../Return/Return.xcodeproj}"
 BANANA_LIST_REFERENCE_PROJECT="${CAPTAINS_LOG_BANANA_LIST_REFERENCE_PROJECT:-$ROOT_DIR/../Banana List/Banana List.xcodeproj}"
@@ -459,7 +460,7 @@ printf_platform_target_status() {
 
     if project_list="$(xcodebuild -list -project "$ROOT_DIR/CaptainsLog.xcodeproj" 2>/dev/null)"; then
         if printf '%s\n' "$project_list" | rg -q '^[[:space:]]+CaptainsLog-macOS$'; then
-            warn "native macOS target exists, but first release still requires Mac signing/export, screenshots, TestFlight, and human QA before Mac App Store availability"
+            warn "native macOS target exists, but first release still requires Mac signing/export, store media, TestFlight, and human QA before Mac App Store availability"
 
             if macos_settings="$(xcodebuild -project "$ROOT_DIR/CaptainsLog.xcodeproj" -scheme CaptainsLog-macOS -configuration Release -showBuildSettings 2>/dev/null)"; then
                 if printf '%s\n' "$macos_settings" | rg -q "PRODUCT_BUNDLE_IDENTIFIER = ${MACOS_BUNDLE_ID//./[.]}"; then
@@ -494,7 +495,9 @@ printf_platform_target_status() {
                 fail "macOS launch smoke script missing or not executable"
             fi
 
-            if [[ -x "$ROOT_DIR/Scripts/capture_macos_app_store_screenshots.sh" ]]; then
+            if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+                pass "macOS store media checks skipped"
+            elif [[ -x "$ROOT_DIR/Scripts/capture_macos_app_store_screenshots.sh" ]]; then
                 pass "macOS screenshot capture script exists"
             else
                 fail "macOS screenshot capture script missing or not executable"
@@ -538,7 +541,9 @@ printf_platform_target_status() {
                 warn "macOS launch smoke artifacts missing; run Scripts/smoke_macos_launch.sh $MACOS_SMOKE_DIR before Mac availability acceptance"
             fi
 
-            if [[ -d "$MACOS_SCREENSHOT_DIR" ]]; then
+            if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+                :
+            elif [[ -d "$MACOS_SCREENSHOT_DIR" ]]; then
                 local macos_screenshot_count
                 local macos_screenshot
                 macos_screenshot_count="$(find "$MACOS_SCREENSHOT_DIR" -maxdepth 1 -type f -name '*.png' | wc -l | tr -d ' ')"
@@ -570,7 +575,7 @@ printf_platform_target_status() {
                     fail "macOS screenshot text audit missing or failed: $MACOS_SCREENSHOT_AUDIT"
                 fi
             else
-                warn "macOS screenshots missing; run Scripts/capture_macos_app_store_screenshots.sh $MACOS_SCREENSHOT_DIR before Mac screenshot acceptance"
+                warn "macOS screenshots missing; run Scripts/capture_macos_app_store_screenshots.sh $MACOS_SCREENSHOT_DIR before Mac store-media acceptance"
             fi
         else
             pass "no native macOS target found"
@@ -631,12 +636,16 @@ printf_platform_target_status() {
             else
                 warn "Apple Watch launch smoke artifacts missing; run Scripts/smoke_watchos_launch.sh $WATCHOS_SMOKE_DIR before Watch launch acceptance"
             fi
-            if [[ -x "$ROOT_DIR/Scripts/capture_watchos_app_store_screenshots.sh" ]]; then
+            if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+                pass "Apple Watch store media checks skipped"
+            elif [[ -x "$ROOT_DIR/Scripts/capture_watchos_app_store_screenshots.sh" ]]; then
                 pass "Apple Watch App Store screenshot capture script exists"
             else
                 fail "Apple Watch App Store screenshot capture script missing or not executable"
             fi
-            if [[ -f "$WATCHOS_SCREENSHOT_DIR/01-companion-snapshot.png" ]]; then
+            if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+                :
+            elif [[ -f "$WATCHOS_SCREENSHOT_DIR/01-companion-snapshot.png" ]]; then
                 check_png_size_any "$WATCHOS_SCREENSHOT_DIR/01-companion-snapshot.png" "watchOS/01-companion-snapshot.png" 422x514 410x502 416x496 396x484 368x448 312x390
                 if [[ -f "$WATCHOS_SCREENSHOT_MANIFEST" ]]; then
                     pass "Apple Watch screenshot manifest exists"
@@ -649,9 +658,9 @@ printf_platform_target_status() {
                     fail "Apple Watch screenshot text audit missing or failed: $WATCHOS_SCREENSHOT_AUDIT"
                 fi
             else
-                warn "Apple Watch App Store screenshots missing; run Scripts/capture_watchos_app_store_screenshots.sh $WATCHOS_SCREENSHOT_DIR before Watch screenshot acceptance"
+                warn "Apple Watch App Store screenshots missing; run Scripts/capture_watchos_app_store_screenshots.sh $WATCHOS_SCREENSHOT_DIR before Watch store-media acceptance"
             fi
-            warn "Apple Watch now has a phone-synced aggregate snapshot path plus local icon/screenshot artifacts; Watch release still requires signed archive/export, TestFlight, paired-device QA, provisioning validation, and human screenshot acceptance before availability"
+            warn "Apple Watch now has a phone-synced aggregate snapshot path plus local icon assets; Watch release still requires signed archive/export, TestFlight, paired-device QA, provisioning validation, and store-media acceptance before availability"
         else
             warn "Captain's Log has no Apple Watch app target or scheme; Apple Watch is not ready"
         fi
@@ -715,12 +724,16 @@ printf_platform_target_status() {
             else
                 warn "Apple TV launch smoke artifacts missing; run Scripts/smoke_tvos_launch.sh $TVOS_SMOKE_DIR before TV launch acceptance"
             fi
-            if [[ -x "$ROOT_DIR/Scripts/capture_tvos_app_store_screenshots.sh" ]]; then
+            if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+                pass "Apple TV store media checks skipped"
+            elif [[ -x "$ROOT_DIR/Scripts/capture_tvos_app_store_screenshots.sh" ]]; then
                 pass "Apple TV App Store screenshot capture script exists"
             else
                 fail "Apple TV App Store screenshot capture script missing or not executable"
             fi
-            if [[ -f "$TVOS_SCREENSHOT_DIR/01-read-only-dashboard.png" ]]; then
+            if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+                :
+            elif [[ -f "$TVOS_SCREENSHOT_DIR/01-read-only-dashboard.png" ]]; then
                 check_png_size_any "$TVOS_SCREENSHOT_DIR/01-read-only-dashboard.png" "tvOS/01-read-only-dashboard.png" 1920x1080 3840x2160
                 if [[ -f "$TVOS_SCREENSHOT_MANIFEST" ]]; then
                     pass "Apple TV screenshot manifest exists"
@@ -733,9 +746,9 @@ printf_platform_target_status() {
                     fail "Apple TV screenshot text audit missing or failed: $TVOS_SCREENSHOT_AUDIT"
                 fi
             else
-                warn "Apple TV App Store screenshots missing; run Scripts/capture_tvos_app_store_screenshots.sh $TVOS_SCREENSHOT_DIR before TV screenshot acceptance"
+                warn "Apple TV App Store screenshots missing; run Scripts/capture_tvos_app_store_screenshots.sh $TVOS_SCREENSHOT_DIR before TV store-media acceptance"
             fi
-            warn "Apple TV now has an iCloud read-only snapshot path plus local icon/top-shelf/screenshot artifacts; TV release still requires signed archive/export, TestFlight, living-room QA, provisioning validation, and human screenshot acceptance before availability"
+            warn "Apple TV now has an iCloud read-only snapshot path plus local icon/top-shelf assets; TV release still requires signed archive/export, TestFlight, living-room QA, provisioning validation, and store-media acceptance before availability"
         else
             warn "Captain's Log has no Apple TV app target or scheme; Apple TV is not ready"
         fi
@@ -794,17 +807,23 @@ printf_platform_target_status() {
 
 printf "Captain's Log App Store readiness status\n"
 printf 'Repo: %s\n' "$ROOT_DIR"
-printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
-printf 'Packaged screenshots: %s\n' "$PACKAGED_DIR"
-printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
+if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+    printf 'Store media checks: skipped by CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1\n'
+else
+    printf 'Screenshots: %s\n' "$SCREENSHOT_DIR"
+    printf 'Packaged screenshots: %s\n' "$PACKAGED_DIR"
+    printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
+fi
 printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
 printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
-printf 'macOS screenshots: %s\n' "$MACOS_SCREENSHOT_DIR"
 printf 'macOS package: %s\n' "$MACOS_PACKAGE_LABEL"
 printf 'watchOS smoke: %s\n' "$WATCHOS_SMOKE_DIR"
-printf 'watchOS screenshots: %s\n' "$WATCHOS_SCREENSHOT_DIR"
 printf 'tvOS smoke: %s\n' "$TVOS_SMOKE_DIR"
-printf 'tvOS screenshots: %s\n' "$TVOS_SCREENSHOT_DIR"
+if [[ "$SKIP_MEDIA_CHECKS" != "1" ]]; then
+    printf 'macOS screenshots: %s\n' "$MACOS_SCREENSHOT_DIR"
+    printf 'watchOS screenshots: %s\n' "$WATCHOS_SCREENSHOT_DIR"
+    printf 'tvOS screenshots: %s\n' "$TVOS_SCREENSHOT_DIR"
+fi
 printf 'IPA: %s\n\n' "$IPA_PATH"
 
 need_command git
@@ -917,13 +936,15 @@ else
     fail "export manifest missing: $EXPORT_MANIFEST"
 fi
 
-if [[ -d "$SCREENSHOT_DIR" ]]; then
+if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+    pass "store media artifact checks skipped"
+elif [[ -d "$SCREENSHOT_DIR" ]]; then
     pass "screenshot source exists"
 else
     fail "screenshot source missing: $SCREENSHOT_DIR"
 fi
 
-if [[ -d "$PACKAGED_DIR/iphone-6.9" && -d "$PACKAGED_DIR/ipad-13" ]]; then
+if [[ "$SKIP_MEDIA_CHECKS" != "1" && -d "$PACKAGED_DIR/iphone-6.9" && -d "$PACKAGED_DIR/ipad-13" ]]; then
     packaged_count="$(find "$PACKAGED_DIR" -maxdepth 2 -type f -name '*.png' | wc -l | tr -d ' ')"
     if [[ "$packaged_count" == "12" ]]; then
         pass "packaged screenshot count: 12"
@@ -943,17 +964,21 @@ if [[ -d "$PACKAGED_DIR/iphone-6.9" && -d "$PACKAGED_DIR/ipad-13" ]]; then
         check_png_size "$PACKAGED_DIR/iphone-6.9/$screen" 1320 2868 "iphone-6.9/$screen"
         check_png_size_any "$PACKAGED_DIR/ipad-13/$screen" "ipad-13/$screen" 2064x2752 2752x2064
     done
-else
+elif [[ "$SKIP_MEDIA_CHECKS" != "1" ]]; then
     fail "packaged screenshot folders missing under $PACKAGED_DIR"
 fi
 
-if [[ -f "$SCREENSHOT_REVIEW_DIR/contact-sheet.png" ]]; then
+if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+    :
+elif [[ -f "$SCREENSHOT_REVIEW_DIR/contact-sheet.png" ]]; then
     pass "screenshot review contact sheet exists"
 else
     fail "screenshot review contact sheet missing: $SCREENSHOT_REVIEW_DIR/contact-sheet.png"
 fi
 
-if [[ -f "$SCREENSHOT_REVIEW_DIR/README.md" ]]; then
+if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+    :
+elif [[ -f "$SCREENSHOT_REVIEW_DIR/README.md" ]]; then
     if rg -q "Approval checklist" "$SCREENSHOT_REVIEW_DIR/README.md"; then
         pass "screenshot review checklist exists"
     else
@@ -963,7 +988,9 @@ else
     fail "screenshot review README missing: $SCREENSHOT_REVIEW_DIR/README.md"
 fi
 
-if [[ -f "$SCREENSHOT_REVIEW_DIR/review.html" ]]; then
+if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+    :
+elif [[ -f "$SCREENSHOT_REVIEW_DIR/review.html" ]]; then
     if rg -q "Screenshot approval pass" "$SCREENSHOT_REVIEW_DIR/review.html"; then
         pass "screenshot review page exists"
     else
@@ -973,7 +1000,9 @@ else
     fail "screenshot review page missing: $SCREENSHOT_REVIEW_DIR/review.html"
 fi
 
-if "$ROOT_DIR/Scripts/audit_app_store_screenshot_text.sh" "$PACKAGED_DIR"; then
+if [[ "$SKIP_MEDIA_CHECKS" == "1" ]]; then
+    pass "screenshot text audit skipped"
+elif "$ROOT_DIR/Scripts/audit_app_store_screenshot_text.sh" "$PACKAGED_DIR"; then
     pass "screenshot text audit"
 else
     fail "screenshot text audit failed"
@@ -1075,7 +1104,7 @@ $kit_source_changes"
 fi
 
 printf '\nPreflight\n'
-if "$ROOT_DIR/Scripts/app_store_preflight.sh" "$SCREENSHOT_DIR"; then
+if CAPTAINS_LOG_SKIP_SCREENSHOT_CHECKS="$SKIP_MEDIA_CHECKS" "$ROOT_DIR/Scripts/app_store_preflight.sh" "$SCREENSHOT_DIR"; then
     pass "App Store preflight"
 else
     fail "App Store preflight failed"
@@ -1204,7 +1233,7 @@ if (( app_record_checked == 0 )); then
 fi
 external "complete manual App Store Connect fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them"
 external "upload build and verify TestFlight processing"
-external "complete human screenshot marketing acceptance"
+external "complete store-media acceptance"
 external "complete legal/privacy review"
 pass "blakecrosley.com PR 15 source state reconciled"
 external "final human tap-through on the real large-account install"
@@ -1251,7 +1280,7 @@ Next external actions:
    Scripts/check_app_store_connect_record.py
    Scripts/upload_app_store_ipa.sh validate "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
    Scripts/upload_app_store_ipa.sh upload "/tmp/captainslog-current-appstore-export/Export/Captain's Log.ipa"
-8. Open /tmp/captainslog-appstore-review/contact-sheet.png for human screenshot approval.
+8. Complete product-page store-media acceptance using the existing reviewed media packet or App Store Connect previews.
 9. Complete legal/privacy review and final real-account tap-through before submitting.
 NEXT_STEPS
 fi
