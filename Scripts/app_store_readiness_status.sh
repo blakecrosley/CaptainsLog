@@ -1303,15 +1303,18 @@ Next local action:
    Use that packet in the App Store Connect web UI to create the missing iOS app record for com.blakecrosley.captainslog with SKU captainslog-ios; then verify with Scripts/check_app_store_connect_record.py.
 3. Run Scripts/app_store_signing_status.sh.
 4. Run Scripts/check_remote_signing_assets.py --require to confirm which visible remote certificates/profiles or platform bundle IDs are still blocking export.
-5. If Watch remote bundle ID is missing, preview the account mutation with:
+5. Preview the missing iOS App Store provisioning profile action without mutation:
+   Scripts/ensure_app_store_profiles.py --target ios
+   After explicit Apple account mutation approval, run Scripts/ensure_app_store_profiles.py --target ios --apply --confirm-team M4WTLM6RAQ to create/download the missing profile.
+6. If Watch remote bundle ID is missing, preview the account mutation with:
    Scripts/ensure_platform_bundle_ids.py
    After confirming the team/account context and getting explicit Apple account mutation approval, run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ to create the Watch companion bundle ID and enable required capabilities. Mac/TV now share the iOS app record bundle ID and should not create separate `.mac` or `.tv` bundle IDs.
-6. Regenerate or download active App Store provisioning profiles for com.blakecrosley.captainslog, then make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
-7. Regenerate the current IPA and export manifest:
+7. Regenerate or download active App Store provisioning profiles for com.blakecrosley.captainslog, then make one App Store export-signing path complete: either Xcode Apple Distribution/iOS Distribution signing for team M4WTLM6RAQ with a private key, or APP_STORE_CONNECT_API_KEY and APP_STORE_CONNECT_API_ISSUER for xcodebuild provisioning updates plus cloud-managed distribution certificate access. APP_STORE_CONNECT_P8_FILE is optional when AuthKey_<key>.p8 is in ~/.appstoreconnect/private_keys. Fastlane ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH aliases are also accepted.
+8. Regenerate the current IPA and export manifest:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
-8. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
+9. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export
-9. Rerun Scripts/app_store_readiness_status.sh after export. After upload, TestFlight processing, App Store Connect availability setup, and final acceptance, run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store for the first-release path, or omit --platform to require every requested platform before marketing all of them as available.
+10. Rerun Scripts/app_store_readiness_status.sh after export. After upload, TestFlight processing, App Store Connect availability setup, and final acceptance, run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-store for the first-release path, or omit --platform to require every requested platform before marketing all of them as available.
 NEXT_LOCAL
     fi
     exit 1
@@ -1326,7 +1329,7 @@ Next external actions:
 1. Open Docs/PlatformExpansionPlan.md for the platform verdict, run Scripts/print_platform_readiness_matrix.py --require-local, then open Docs/AppStoreConnectRunbook.md and keep Docs/AppStoreConnectSubmission.md available as the evidence packet. For the first iPhone/iPad plus compatible Vision release path, run Scripts/print_platform_readiness_matrix.py --platform ipad --platform vision --require-local.
 2. Run Scripts/print_app_store_entry_packet.py and use its output to create or confirm the App Store Connect app record, then complete the manual fields from Docs/AppStoreMetadata.md, including regional availability prompts, Apple Vision Pro availability enabled for the compatible iPhone/iPad app, Apple Silicon Mac opt-out, EU DSA trader status, Labels and Markings URLs, regulated medical device status, and tax category if App Store Connect shows them.
 3. If Watch is intentionally in this release, run Scripts/ensure_platform_bundle_ids.py first, then run Scripts/ensure_platform_bundle_ids.py --target watchos --apply --confirm-team M4WTLM6RAQ after confirming the dry-run output and explicit Apple account mutation approval. Mac/TV now use the shared iOS app record bundle ID.
-4. Check signing state with Scripts/app_store_signing_status.sh and Scripts/check_remote_signing_assets.py --require, regenerate/download active App Store profiles, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
+4. Check signing state with Scripts/app_store_signing_status.sh and Scripts/check_remote_signing_assets.py --require, preview missing profiles with Scripts/ensure_app_store_profiles.py --target ios, regenerate/download active App Store profiles after explicit mutation approval, make either Xcode distribution signing or xcodebuild API-key provisioning auth with cloud-managed distribution certificate access available, then regenerate the current IPA if readiness reports it missing or stale:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 5. If intentionally adding the native Mac target to this release, regenerate the native Mac App Store package:
    CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_macos_app_store_pkg.sh /tmp/captainslog-current-macos-appstore-export

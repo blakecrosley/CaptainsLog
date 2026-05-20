@@ -19,7 +19,7 @@ Scripts/app_store_readiness_status.sh
 As of the current App Store packet, the local metadata, marketing copy, privacy manifest, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
 
 - Create or make visible the App Store Connect app record for `com.blakecrosley.captainslog`; current REST evidence finds the Developer Portal bundle ID and required `ICLOUD` capability, but no app record by exact bundle, expected SKU `captainslog-ios`, or expected name `Captain's Log`.
-- Regenerate or download an active App Store provisioning profile for `com.blakecrosley.captainslog`, then prove one iOS export signing path: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or the local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`.
+- Regenerate or download an active App Store provisioning profile for `com.blakecrosley.captainslog`, then prove one iOS export signing path: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or the local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`. Use `Scripts/ensure_app_store_profiles.py --target ios` as a dry-run plan before any profile mutation.
 - Regenerate the signed IPA and `ExportManifest.txt`.
 - Push or explicitly accept the linked `../941Kit` package save point before final export; the latest readiness run reports Kit941 is clean but ahead of `origin/main` by 1 commit (`fe4bfd3 Add Kit941 localization catalog entries`).
 
@@ -57,6 +57,7 @@ After active App Store provisioning profiles exist and either local distribution
 
 ```sh
 Scripts/app_store_signing_status.sh
+Scripts/ensure_app_store_profiles.py --target ios
 CAPTAINS_LOG_REQUIRE_CLEAN_EXPORT=1 Scripts/export_app_store_ipa.sh /tmp/captainslog-current-appstore-export
 Scripts/app_store_readiness_status.sh
 ```

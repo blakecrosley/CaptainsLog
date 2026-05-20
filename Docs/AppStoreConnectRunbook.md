@@ -67,7 +67,17 @@ Use this packet for the next App Store Connect / Apple Developer session. It is 
    ```sh
    Scripts/app_store_signing_status.sh
    Scripts/check_remote_signing_assets.py --require
+   Scripts/ensure_app_store_profiles.py --target ios
    ```
+
+   Dry-run profile creation before mutating account state:
+
+   ```sh
+   Scripts/ensure_app_store_profiles.py --target ios
+   Scripts/ensure_app_store_profiles.py --target ios --apply --confirm-team M4WTLM6RAQ
+   ```
+
+   For Mac/TV readiness, run the same helper with `--target macos` or `--target tvos` after the shared app record path is accepted. The helper creates profiles only after `--apply --confirm-team M4WTLM6RAQ`; without `--apply`, it is read-only.
 
 4. Regenerate release artifacts only after the signing checks above are green enough to prove the real export path:
 
