@@ -39,10 +39,25 @@ pid_for_bundle_id() {
 quit_or_kill() {
     local pid="$1"
 
-    osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
+    osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 &
+    local quit_pid=$!
+    local waited=0
+    while kill -0 "$quit_pid" >/dev/null 2>&1 && (( waited < 5 )); do
+        sleep 1
+        waited=$((waited + 1))
+    done
+    if kill -0 "$quit_pid" >/dev/null 2>&1; then
+        kill "$quit_pid" >/dev/null 2>&1 || true
+    fi
+    wait "$quit_pid" >/dev/null 2>&1 || true
+
     sleep 1
     if [[ -n "$pid" ]] && ps -p "$pid" >/dev/null 2>&1; then
         kill "$pid" >/dev/null 2>&1 || true
+        sleep 1
+    fi
+    if [[ -n "$pid" ]] && ps -p "$pid" >/dev/null 2>&1; then
+        kill -KILL "$pid" >/dev/null 2>&1 || true
     fi
 }
 
