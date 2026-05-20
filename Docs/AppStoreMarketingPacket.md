@@ -4,9 +4,9 @@ Prepared for the first English (U.S.) App Store Connect entry. This packet is fo
 
 ## Current Status
 
-As of the May 19, 2026 no-media refresh, the metadata itself is locally ready: `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.
+As of the May 20, 2026 no-media refresh, the metadata itself is locally ready: `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.
 
-No new screenshot work was done for this packet refresh. The readiness gate recognized the existing no-screenshot Vision, Watch, and TV simulator launch smokes, which recorded `simctl launch` process IDs. Those checks prove local compile/package/launch viability only and do not change the first-release marketing claim.
+No new screenshot work was done for this packet refresh. The readiness gate recognized no-screenshot iPad, Vision, Watch, and TV simulator launch smokes, which recorded `simctl launch` process IDs. Those checks prove local compile/package/launch viability only and do not change the first-release marketing claim.
 
 The release is not store-ready yet. The current blockers are account, signing, upload, and human review gates, not more marketing copy:
 

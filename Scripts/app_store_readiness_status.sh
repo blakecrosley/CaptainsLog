@@ -25,6 +25,10 @@ VISION_SMOKE_SCREENSHOT="$VISION_SMOKE_DIR/vision-compatible-launch.png"
 VISION_SMOKE_OCR="$VISION_SMOKE_DIR/vision-compatible-launch-ocr.txt"
 VISION_SMOKE_LAUNCH="$VISION_SMOKE_DIR/vision-compatible-launch.log"
 VISION_SMOKE_SUMMARY="$VISION_SMOKE_DIR/vision-compatible-launch-summary.txt"
+IPAD_SMOKE_DIR="${CAPTAINS_LOG_IPAD_SMOKE_DIR:-/tmp/captainslog-ipad-smoke}"
+IPAD_SMOKE_METADATA="$IPAD_SMOKE_DIR/ipad-bundle-metadata.txt"
+IPAD_SMOKE_LAUNCH="$IPAD_SMOKE_DIR/ipad-launch.log"
+IPAD_SMOKE_SUMMARY="$IPAD_SMOKE_DIR/ipad-launch-summary.txt"
 MACOS_SMOKE_DIR="${CAPTAINS_LOG_MACOS_SMOKE_DIR:-/tmp/captainslog-macos-smoke}"
 MACOS_SMOKE_METADATA="$MACOS_SMOKE_DIR/macos-bundle-metadata.txt"
 MACOS_SMOKE_CODESIGN="$MACOS_SMOKE_DIR/macos-codesign.txt"
@@ -455,6 +459,25 @@ printf_platform_target_status() {
             fail "iOS target is not configured as a universal iPhone/iPad app"
         fi
 
+        if [[ -x "$ROOT_DIR/Scripts/smoke_ipad_launch.sh" ]]; then
+            pass "iPad launch smoke script exists"
+        else
+            fail "iPad launch smoke script missing or not executable"
+        fi
+
+        if [[ -f "$IPAD_SMOKE_METADATA" && -f "$IPAD_SMOKE_LAUNCH" && -f "$IPAD_SMOKE_SUMMARY" ]] \
+            && rg -q '^screenshot=skipped$' "$IPAD_SMOKE_SUMMARY" \
+            && rg -q "^${IOS_BUNDLE_ID//./[.]}: [0-9]+" "$IPAD_SMOKE_LAUNCH"; then
+            if rg -q "^CFBundleIdentifier: ${IOS_BUNDLE_ID//./[.]}$" "$IPAD_SMOKE_METADATA" \
+                && rg -q '^UIDeviceFamily: .*2' "$IPAD_SMOKE_METADATA"; then
+                pass "iPad no-screenshot launch smoke recorded"
+            else
+                fail "iPad launch smoke metadata missing bundle id or iPad device family"
+            fi
+        else
+            warn "iPad launch smoke artifacts missing; run Scripts/smoke_ipad_launch.sh $IPAD_SMOKE_DIR before non-media iPad launch acceptance"
+        fi
+
         if printf '%s\n' "$ios_settings" | rg -q 'SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES'; then
             pass "Apple Vision Pro compatible iPhone/iPad availability is supported by build settings"
         else
@@ -833,6 +856,7 @@ else
     printf 'Screenshot review: %s\n' "$SCREENSHOT_REVIEW_DIR"
 fi
 printf 'Vision smoke: %s\n' "$VISION_SMOKE_DIR"
+printf 'iPad smoke: %s\n' "$IPAD_SMOKE_DIR"
 printf 'macOS smoke: %s\n' "$MACOS_SMOKE_DIR"
 printf 'macOS package: %s\n' "$MACOS_PACKAGE_LABEL"
 printf 'watchOS smoke: %s\n' "$WATCHOS_SMOKE_DIR"
