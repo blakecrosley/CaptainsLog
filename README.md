@@ -37,7 +37,7 @@ For the current platform verdict and the Watch/TV path after the first submissio
 Refresh the local Vision compatible-app smoke before final Vision acceptance:
 
 ```sh
-Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke
+CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1 Scripts/smoke_vision_compatible_launch.sh /tmp/captainslog-vision-smoke
 ```
 
 Refresh the local native Mac launch smoke before accepting Mac availability:
@@ -49,8 +49,8 @@ Scripts/smoke_macos_launch.sh /tmp/captainslog-macos-smoke
 Refresh the local Watch/TV launch smokes before accepting the companion snapshot UI:
 
 ```sh
-Scripts/smoke_watchos_launch.sh /tmp/captainslog-watchos-smoke
-Scripts/smoke_tvos_launch.sh /tmp/captainslog-tvos-smoke
+CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1 Scripts/smoke_watchos_launch.sh /tmp/captainslog-watchos-smoke
+CAPTAINS_LOG_SKIP_SMOKE_SCREENSHOTS=1 Scripts/smoke_tvos_launch.sh /tmp/captainslog-tvos-smoke
 ```
 
 After active App Store provisioning profiles exist and either local distribution signing or API-key cloud signing is available:
