@@ -146,7 +146,6 @@ def build_matrix(args: argparse.Namespace) -> dict[str, Any]:
             vision_local,
             "missing compatible Vision smoke proof",
             [
-                "native visionOS app not present; use compatible iPhone/iPad path only",
                 *([] if app_record_exists else ["App Store Connect app record missing"]),
                 *([] if ios_distribution_ready else target_blockers(remote, "ios")),
                 *([] if ipa_exists else [f"missing IPA {args.ipa}"]),
