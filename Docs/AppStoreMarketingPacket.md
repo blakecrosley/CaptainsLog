@@ -6,9 +6,9 @@ For the current paste packet generated from the metadata source, run `Scripts/pr
 
 ## Current Status
 
-As of the May 20, 2026 no-media refresh, the metadata itself is locally ready: `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` passed the App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings.
+As of the May 20, 2026 no-media refresh, the metadata surface is locally ready: `CAPTAINS_LOG_SKIP_MEDIA_CHECKS=1 Scripts/app_store_readiness_status.sh` reports passing App Store field limits, published Support URL, published Privacy Policy URL, privacy manifest, export-compliance flag, icon checks, and current iPhone/iPad build settings before stopping on real account/signing/export blockers.
 
-No new screenshot work was done for this packet refresh. The readiness gate recognized no-screenshot iPad, Vision, Watch, and TV simulator launch smokes, which recorded `simctl launch` process IDs. Those checks prove local compile/package/launch viability only and do not change the first-release marketing claim.
+No new screenshot work was done for this packet refresh. The readiness gate recognizes current no-screenshot iPad, compatible Vision, Watch, and TV simulator launch smokes plus the macOS launch smoke. Those checks prove local compile/package/launch viability only and do not change the public availability claim until signed exports, TestFlight processing, and platform QA close.
 
 The release is not store-ready yet. The current blockers are account, signing, upload, and human review gates, not more marketing copy:
 
@@ -19,7 +19,7 @@ The release is not store-ready yet. The current blockers are account, signing, u
 - Apple Watch account state: Watch companion bundle ID `com.blakecrosley.captainslog.watchkitapp` is missing or not visible.
 - Apple Watch export artifacts: guarded export helper exists, but no signed Watch App Store IPA or `WatchExportManifest.txt` exists under `/tmp/captainslog-current-watchos-appstore-export/Export/`.
 - Apple TV signing/export artifacts: shared bundle ID and guarded export helper exist, but active `TVOS_APP_STORE` profile plus signed TV App Store IPA and `TvOSExportManifest.txt` are missing.
-- Linked package custody: `../941Kit` is clean but ahead of `origin/main` by 1 commit at `fe4bfd3 Add Kit941 localization catalog entries`, so a final export must either push that package save point or explicitly accept the unpushed linked package state.
+- Source custody: CaptainsLog and linked `../941Kit` are clean but not synced to `origin/main`; a final export must either push those save points or explicitly accept the unpushed source state.
 - Final gates: TestFlight processing, legal/privacy review, App Review contact/demo-account entry, and final real-account tap-through remain open.
 
 ## App Store Connect Entry Order
@@ -204,6 +204,12 @@ Hold this copy until the native platform gates close:
 Native Mac, Apple Watch, and Apple TV companions are planned, but not part of the first public availability claim.
 ```
 
+All-platform copy to use only after `Scripts/print_platform_readiness_matrix.py --require-store` passes:
+
+```text
+Available for iPhone, iPad, Mac, Apple Watch, and Apple TV, with Apple Vision Pro availability through the compatible iPhone/iPad app path.
+```
+
 ## Website FAQ
 
 ```text
@@ -223,7 +229,7 @@ Is this for team monitoring?
 No. Captain's Log is a personal developer journal for understanding and remembering your own work.
 
 Does it support Mac, Apple Watch, Apple TV, or Apple Vision Pro?
-The first release path is iPhone and iPad, with Apple Vision Pro through the compatible iPhone/iPad app availability path. Native Mac, Apple Watch, and Apple TV companion work should not be marketed as available until signed export, TestFlight, and platform QA are complete.
+The first release path is iPhone and iPad, with Apple Vision Pro through the compatible iPhone/iPad app availability path. Native Mac, Apple Watch, and Apple TV companion work exists locally, but should not be marketed as available until signed export, TestFlight, and platform QA are complete.
 ```
 
 ## Manual Store Choices

@@ -22,21 +22,21 @@ Use the full local gate only when product-page media artifacts are part of the p
 Scripts/app_store_readiness_status.sh
 ```
 
-As of the current App Store packet, the local metadata, marketing copy, privacy manifest, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
+As of the current App Store packet, the local metadata, marketing copy, privacy manifest, no-screenshot platform smokes, and helper scripts are ready for handoff, but the App Store path is still blocked until these external gates are closed:
 
 - Create or make visible the App Store Connect app record for `com.blakecrosley.captainslog`; current REST evidence finds the Developer Portal bundle ID and required `ICLOUD` capability, but no app record by exact bundle, expected SKU `captainslog-ios`, or expected name `Captain's Log`.
 - Regenerate or download an active App Store provisioning profile for `com.blakecrosley.captainslog`, then prove one iOS export signing path: App Store Connect API-key auth for `xcodebuild` provisioning updates plus cloud-managed distribution certificate access, or the local Apple Distribution/iOS Distribution identity for team `M4WTLM6RAQ`. Use `Scripts/ensure_app_store_profiles.py --target ios` as a dry-run plan before any profile mutation.
 - Regenerate the signed IPA and `ExportManifest.txt`.
-- Push or explicitly accept the linked `../941Kit` package save point before final export; the latest readiness run reports Kit941 is clean but ahead of `origin/main` by 1 commit (`fe4bfd3 Add Kit941 localization catalog entries`).
+- Push or explicitly accept the CaptainsLog and linked `../941Kit` save points before final export; the latest readiness run reports both trees clean but not synced to `origin/main`.
 
 Native Mac, Apple Watch, and Apple TV are separate platform gates. Mac and Apple TV now follow the single App Store record/universal-purchase bundle-ID model and share `com.blakecrosley.captainslog`; do not create separate `.mac` or `.tv` account state. Current REST evidence still reports the Captain's Log Watch companion bundle ID is missing or not visible. Native Mac App Store export additionally needs an active Mac App Store profile plus Mac installer signing proof, or the same App Store Connect API-key cloud signing path.
 
 Current platform availability status:
 
 - iPhone and iPad: locally prepared through the universal iOS app; not store-ready until a signed IPA is exported and uploaded.
-- Apple Vision Pro: locally prepared through the compatible iPhone/iPad app path; not store-ready until signed upload, final smoke-test acceptance, and App Store Connect availability selection are complete. This is not a native visionOS app.
-- Mac: a native macOS target exists, but do not submit or market it until Mac signing/export, TestFlight, and human QA are complete.
-- Apple Watch and Apple TV: companion targets exist and share an aggregate snapshot data path based on WatchConnectivity plus iCloud key-value sync. Do not submit or market them until signed export, TestFlight, provisioning validation, and platform QA are complete.
+- Apple Vision Pro: locally prepared through the compatible iPhone/iPad app path; not store-ready until signed upload, final acceptance, and App Store Connect availability selection are complete. This is not a native visionOS app.
+- Mac: native target, local Release build, bundle metadata, launch, and quit proof exist; do not submit or market it until Mac signing/export, TestFlight, and human QA are complete.
+- Apple Watch and Apple TV: companion targets exist, local no-screenshot launch proof exists, and the aggregate snapshot path is based on WatchConnectivity plus iCloud key-value sync. Do not submit or market them until signed export, TestFlight, provisioning validation, and platform QA are complete.
 
 For the current platform verdict and the Watch/TV path after the first submission, use `Docs/PlatformExpansionPlan.md`.
 
